@@ -1,1 +1,1 @@
-aclocal && autoheader && automake -a && autoconf
+autoheader && automake -a && autoconf

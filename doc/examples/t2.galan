@@ -1,0 +1,3820 @@
+Mjik
+ObjectStore 0 [
+  version = i1
+  rootkey = i1
+]
+
+Sheet 1 [
+  components = a35:o2:o241:o237:o10:o22:o417:o443:o431:o87:o91:o146:o80:o167:o141:o120:o215:o55:o179:o171:o46:o204:o33:o208:o95:o38:o100:o6:o17:o391:o233:o229:o329:o263:o256:o251:
+]
+
+Component 2 [
+  x_coord = i432
+  width = i71
+  height = i55
+  y_coord = i550
+  gencomp_generator = o285
+  connectors = a3:o3:o487:o490:
+  class_tag = s7:gencomp:
+]
+
+Connector 3 [
+  x_coord = i66
+  y_coord = i27
+  targets = a2:o5:o486:
+  source_ref = o4
+]
+
+ConnectorReference 4 [
+  is_output = i1
+  queue_number = i0
+  component = o2
+  kind = i2
+]
+
+ConnectorReference 5 [
+  is_output = i0
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+Component 6 [
+  x_coord = i611
+  width = i78
+  height = i55
+  y_coord = i407
+  gencomp_generator = o65
+  connectors = a2:o7:o480:
+  class_tag = s7:gencomp:
+]
+
+Connector 7 [
+  x_coord = i73
+  y_coord = i27
+  targets = a2:o9:o479:
+  source_ref = o8
+]
+
+ConnectorReference 8 [
+  is_output = i1
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+ConnectorReference 9 [
+  is_output = i0
+  queue_number = i1
+  component = o10
+  kind = i2
+]
+
+Component 10 [
+  x_coord = i712
+  width = i94
+  height = i60
+  y_coord = i320
+  gencomp_generator = o67
+  connectors = a3:o11:o14:o477:
+  class_tag = s7:gencomp:
+]
+
+Connector 11 [
+  x_coord = i5
+  y_coord = i35
+  targets = a1:o13:
+  source_ref = o12
+]
+
+ConnectorReference 12 [
+  is_output = i0
+  queue_number = i1
+  component = o10
+  kind = i2
+]
+
+ConnectorReference 13 [
+  is_output = i1
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+Connector 14 [
+  x_coord = i5
+  y_coord = i25
+  targets = a1:o16:
+  source_ref = o15
+]
+
+ConnectorReference 15 [
+  is_output = i0
+  queue_number = i0
+  component = o10
+  kind = i2
+]
+
+ConnectorReference 16 [
+  is_output = i1
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+Component 17 [
+  x_coord = i610
+  width = i78
+  height = i55
+  y_coord = i318
+  gencomp_generator = o74
+  connectors = a2:o18:o30:
+  class_tag = s7:gencomp:
+]
+
+Connector 18 [
+  x_coord = i73
+  y_coord = i27
+  targets = a2:o20:o21:
+  source_ref = o19
+]
+
+ConnectorReference 19 [
+  is_output = i1
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+ConnectorReference 20 [
+  is_output = i0
+  queue_number = i0
+  component = o10
+  kind = i2
+]
+
+ConnectorReference 21 [
+  is_output = i0
+  queue_number = i0
+  component = o22
+  kind = i2
+]
+
+Component 22 [
+  x_coord = i713
+  width = i109
+  height = i103
+  y_coord = i369
+  gencomp_generator = o29
+  connectors = a2:o23:o26:
+  class_tag = s7:gencomp:
+]
+
+Connector 23 [
+  x_coord = i5
+  y_coord = i63
+  targets = a1:o25:
+  source_ref = o24
+]
+
+ConnectorReference 24 [
+  is_output = i0
+  queue_number = i1
+  component = o22
+  kind = i2
+]
+
+ConnectorReference 25 [
+  is_output = i1
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+Connector 26 [
+  x_coord = i5
+  y_coord = i39
+  targets = a1:o28:
+  source_ref = o27
+]
+
+ConnectorReference 27 [
+  is_output = i0
+  queue_number = i0
+  component = o22
+  kind = i2
+]
+
+ConnectorReference 28 [
+  is_output = i1
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+Generator 29 [
+  name = s11:audio_out33:
+  out_events = a0:
+  class_name = s9:audio_out:
+  out_signals = a0:
+  controls = a0:
+]
+
+Connector 30 [
+  x_coord = i5
+  y_coord = i27
+  targets = a5:o32:o473:o474:o475:o476:
+  source_ref = o31
+]
+
+ConnectorReference 31 [
+  is_output = i0
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+ConnectorReference 32 [
+  is_output = i1
+  queue_number = i0
+  component = o33
+  kind = i2
+]
+
+Component 33 [
+  x_coord = i250
+  width = i72
+  height = i55
+  y_coord = i364
+  gencomp_generator = o161
+  connectors = a3:o34:o467:o470:
+  class_tag = s7:gencomp:
+]
+
+Connector 34 [
+  x_coord = i67
+  y_coord = i27
+  targets = a2:o36:o37:
+  source_ref = o35
+]
+
+ConnectorReference 35 [
+  is_output = i1
+  queue_number = i0
+  component = o33
+  kind = i2
+]
+
+ConnectorReference 36 [
+  is_output = i0
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+ConnectorReference 37 [
+  is_output = i0
+  queue_number = i0
+  component = o38
+  kind = i2
+]
+
+Component 38 [
+  x_coord = i472
+  width = i85
+  height = i55
+  y_coord = i453
+  gencomp_generator = o63
+  connectors = a5:o39:o42:o461:o463:o465:
+  class_tag = s7:gencomp:
+]
+
+Connector 39 [
+  x_coord = i80
+  y_coord = i27
+  targets = a1:o41:
+  source_ref = o40
+]
+
+ConnectorReference 40 [
+  is_output = i1
+  queue_number = i0
+  component = o38
+  kind = i2
+]
+
+ConnectorReference 41 [
+  is_output = i0
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+Connector 42 [
+  x_coord = i5
+  y_coord = i27
+  targets = a3:o44:o45:o460:
+  source_ref = o43
+]
+
+ConnectorReference 43 [
+  is_output = i0
+  queue_number = i0
+  component = o38
+  kind = i2
+]
+
+ConnectorReference 44 [
+  is_output = i1
+  queue_number = i0
+  component = o33
+  kind = i2
+]
+
+ConnectorReference 45 [
+  is_output = i1
+  queue_number = i0
+  component = o46
+  kind = i2
+]
+
+Component 46 [
+  x_coord = i301
+  width = i72
+  height = i55
+  y_coord = i409
+  gencomp_generator = o61
+  connectors = a3:o47:o52:o77:
+  class_tag = s7:gencomp:
+]
+
+Connector 47 [
+  x_coord = i67
+  y_coord = i27
+  targets = a3:o49:o50:o51:
+  source_ref = o48
+]
+
+ConnectorReference 48 [
+  is_output = i1
+  queue_number = i0
+  component = o46
+  kind = i2
+]
+
+ConnectorReference 49 [
+  is_output = i0
+  queue_number = i0
+  component = o38
+  kind = i2
+]
+
+ConnectorReference 50 [
+  is_output = i0
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+ConnectorReference 51 [
+  is_output = i0
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+Connector 52 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o54:
+  source_ref = o53
+]
+
+ConnectorReference 53 [
+  is_output = i0
+  queue_number = i0
+  component = o46
+  kind = i2
+]
+
+ConnectorReference 54 [
+  is_output = i1
+  queue_number = i0
+  component = o55
+  kind = i2
+]
+
+Component 55 [
+  x_coord = i0
+  width = i85
+  height = i55
+  y_coord = i405
+  gencomp_generator = o59
+  connectors = a1:o56:
+  class_tag = s7:gencomp:
+]
+
+Connector 56 [
+  x_coord = i80
+  y_coord = i27
+  targets = a1:o58:
+  source_ref = o57
+]
+
+ConnectorReference 57 [
+  is_output = i1
+  queue_number = i0
+  component = o55
+  kind = i2
+]
+
+ConnectorReference 58 [
+  is_output = i0
+  queue_number = i0
+  component = o46
+  kind = i2
+]
+
+Generator 59 [
+  voice_filename = s55:/home/tonyg/src/alan/galan/doc/examples/samples/003.wav:
+  name = s7:voice12:
+  voice_store_sample = i0
+  voice_bypass_libaudiofile = i0
+  out_events = a0:
+  class_name = s5:voice:
+  out_signals = a1:a1:o60::
+  controls = a0:
+]
+
+EventLink 60 [
+  src_q = i0
+  dst = o61
+  src = o59
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 61 [
+  name = s6:rart16:
+  out_events = a0:
+  class_name = s4:rart:
+  out_signals = a1:a3:o62:o72:o73::
+  controls = a0:
+]
+
+EventLink 62 [
+  src_q = i0
+  dst = o63
+  src = o61
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 63 [
+  delay_feedback = d0.5
+  name = s7:delay22:
+  out_events = a0:
+  delay_limit = d1
+  class_name = s5:delay:
+  delay_delay = i16538
+  out_signals = a1:a1:o64::
+  controls = a2:o70:o71:
+]
+
+EventLink 64 [
+  src_q = i0
+  dst = o65
+  src = o63
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 65 [
+  name = s6:atan18:
+  out_events = a0:
+  class_name = s4:atan:
+  out_signals = a1:a2:o66:o69::
+  controls = a0:
+]
+
+EventLink 66 [
+  src_q = i0
+  dst = o67
+  src = o65
+  is_signal = i1
+  dst_q = i1
+]
+
+Generator 67 [
+  name = s8:pcm_out1:
+  out_events = a0:
+  class_name = s7:pcm_out:
+  out_signals = a0:
+  controls = a1:o68:
+]
+
+Control 68 [
+  x_coord = i0
+  page = d0
+  generator = o67
+  desc_index = i0
+  min = d0
+  y_coord = i96
+  step = d0
+  max = d0
+]
+
+EventLink 69 [
+  src_q = i0
+  dst = o29
+  src = o65
+  is_signal = i1
+  dst_q = i1
+]
+
+Control 70 [
+  x_coord = i432
+  page = d0.001
+  generator = o63
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d0.0025
+  max = d1
+]
+
+Control 71 [
+  x_coord = i496
+  page = d0.01
+  generator = o63
+  desc_index = i1
+  min = d0
+  y_coord = i0
+  step = d0.01
+  max = d1
+]
+
+EventLink 72 [
+  src_q = i0
+  dst = o65
+  src = o61
+  is_signal = i1
+  dst_q = i0
+]
+
+EventLink 73 [
+  src_q = i0
+  dst = o74
+  src = o61
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 74 [
+  name = s6:atan19:
+  out_events = a0:
+  class_name = s4:atan:
+  out_signals = a1:a2:o75:o76::
+  controls = a0:
+]
+
+EventLink 75 [
+  src_q = i0
+  dst = o67
+  src = o74
+  is_signal = i1
+  dst_q = i0
+]
+
+EventLink 76 [
+  src_q = i0
+  dst = o29
+  src = o74
+  is_signal = i1
+  dst_q = i0
+]
+
+Connector 77 [
+  x_coord = i36
+  y_coord = i5
+  targets = a1:o79:
+  source_ref = o78
+]
+
+ConnectorReference 78 [
+  is_output = i0
+  queue_number = i0
+  component = o46
+  kind = i1
+]
+
+ConnectorReference 79 [
+  is_output = i1
+  queue_number = i0
+  component = o80
+  kind = i1
+]
+
+Component 80 [
+  x_coord = i297
+  width = i84
+  height = i55
+  y_coord = i209
+  gencomp_generator = o366
+  connectors = a4:o81:o84:o454:o457:
+  class_tag = s7:gencomp:
+]
+
+Connector 81 [
+  x_coord = i42
+  y_coord = i50
+  targets = a1:o83:
+  source_ref = o82
+]
+
+ConnectorReference 82 [
+  is_output = i1
+  queue_number = i0
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 83 [
+  is_output = i0
+  queue_number = i0
+  component = o46
+  kind = i1
+]
+
+Connector 84 [
+  x_coord = i54
+  y_coord = i5
+  targets = a1:o86:
+  source_ref = o85
+]
+
+ConnectorReference 85 [
+  is_output = i0
+  queue_number = i2
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 86 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Component 87 [
+  x_coord = i256
+  width = i90
+  height = i55
+  y_coord = i86
+  gencomp_generator = o399
+  connectors = a8:o88:o378:o386:o388:o414:o428:o440:o452:
+  class_tag = s7:gencomp:
+]
+
+Connector 88 [
+  x_coord = i60
+  y_coord = i50
+  targets = a6:o90:o373:o374:o375:o376:o377:
+  source_ref = o89
+]
+
+ConnectorReference 89 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+ConnectorReference 90 [
+  is_output = i0
+  queue_number = i2
+  component = o91
+  kind = i1
+]
+
+Component 91 [
+  x_coord = i180
+  width = i84
+  height = i55
+  y_coord = i209
+  gencomp_generator = o361
+  connectors = a4:o92:o132:o135:o138:
+  class_tag = s7:gencomp:
+]
+
+Connector 92 [
+  x_coord = i42
+  y_coord = i50
+  targets = a1:o94:
+  source_ref = o93
+]
+
+ConnectorReference 93 [
+  is_output = i1
+  queue_number = i0
+  component = o91
+  kind = i1
+]
+
+ConnectorReference 94 [
+  is_output = i0
+  queue_number = i0
+  component = o95
+  kind = i1
+]
+
+Component 95 [
+  x_coord = i185
+  width = i72
+  height = i55
+  y_coord = i316
+  gencomp_generator = o126
+  connectors = a3:o96:o117:o129:
+  class_tag = s7:gencomp:
+]
+
+Connector 96 [
+  x_coord = i67
+  y_coord = i27
+  targets = a2:o98:o99:
+  source_ref = o97
+]
+
+ConnectorReference 97 [
+  is_output = i1
+  queue_number = i0
+  component = o95
+  kind = i2
+]
+
+ConnectorReference 98 [
+  is_output = i0
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+ConnectorReference 99 [
+  is_output = i0
+  queue_number = i0
+  component = o100
+  kind = i2
+]
+
+Component 100 [
+  x_coord = i418
+  width = i85
+  height = i55
+  y_coord = i318
+  gencomp_generator = o113
+  connectors = a5:o101:o104:o107:o109:o111:
+  class_tag = s7:gencomp:
+]
+
+Connector 101 [
+  x_coord = i80
+  y_coord = i27
+  targets = a1:o103:
+  source_ref = o102
+]
+
+ConnectorReference 102 [
+  is_output = i1
+  queue_number = i0
+  component = o100
+  kind = i2
+]
+
+ConnectorReference 103 [
+  is_output = i0
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+Connector 104 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o106:
+  source_ref = o105
+]
+
+ConnectorReference 105 [
+  is_output = i0
+  queue_number = i0
+  component = o100
+  kind = i2
+]
+
+ConnectorReference 106 [
+  is_output = i1
+  queue_number = i0
+  component = o95
+  kind = i2
+]
+
+Connector 107 [
+  x_coord = i54
+  y_coord = i5
+  targets = a0:
+  source_ref = o108
+]
+
+ConnectorReference 108 [
+  is_output = i0
+  queue_number = i2
+  component = o100
+  kind = i1
+]
+
+Connector 109 [
+  x_coord = i41
+  y_coord = i5
+  targets = a0:
+  source_ref = o110
+]
+
+ConnectorReference 110 [
+  is_output = i0
+  queue_number = i1
+  component = o100
+  kind = i1
+]
+
+Connector 111 [
+  x_coord = i28
+  y_coord = i5
+  targets = a0:
+  source_ref = o112
+]
+
+ConnectorReference 112 [
+  is_output = i0
+  queue_number = i0
+  component = o100
+  kind = i1
+]
+
+Generator 113 [
+  delay_feedback = d0.5
+  name = s7:delay26:
+  out_events = a0:
+  delay_limit = d1
+  class_name = s5:delay:
+  delay_delay = i16538
+  out_signals = a1:a1:o114::
+  controls = a2:o115:o116:
+]
+
+EventLink 114 [
+  src_q = i0
+  dst = o74
+  src = o113
+  is_signal = i1
+  dst_q = i0
+]
+
+Control 115 [
+  x_coord = i432
+  page = d0.001
+  generator = o113
+  desc_index = i0
+  min = d0
+  y_coord = i96
+  step = d0.0025
+  max = d1
+]
+
+Control 116 [
+  x_coord = i496
+  page = d0.01
+  generator = o113
+  desc_index = i1
+  min = d0
+  y_coord = i96
+  step = d0.01
+  max = d1
+]
+
+Connector 117 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o119:
+  source_ref = o118
+]
+
+ConnectorReference 118 [
+  is_output = i0
+  queue_number = i0
+  component = o95
+  kind = i2
+]
+
+ConnectorReference 119 [
+  is_output = i1
+  queue_number = i0
+  component = o120
+  kind = i2
+]
+
+Component 120 [
+  x_coord = i0
+  width = i85
+  height = i55
+  y_coord = i314
+  gencomp_generator = o124
+  connectors = a1:o121:
+  class_tag = s7:gencomp:
+]
+
+Connector 121 [
+  x_coord = i80
+  y_coord = i27
+  targets = a1:o123:
+  source_ref = o122
+]
+
+ConnectorReference 122 [
+  is_output = i1
+  queue_number = i0
+  component = o120
+  kind = i2
+]
+
+ConnectorReference 123 [
+  is_output = i0
+  queue_number = i0
+  component = o95
+  kind = i2
+]
+
+Generator 124 [
+  voice_filename = s55:/home/tonyg/src/alan/galan/doc/examples/samples/020.wav:
+  name = s7:voice10:
+  voice_store_sample = i0
+  voice_bypass_libaudiofile = i0
+  out_events = a0:
+  class_name = s5:voice:
+  out_signals = a1:a1:o125::
+  controls = a0:
+]
+
+EventLink 125 [
+  src_q = i0
+  dst = o126
+  src = o124
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 126 [
+  name = s6:rart14:
+  out_events = a0:
+  class_name = s4:rart:
+  out_signals = a1:a2:o127:o128::
+  controls = a0:
+]
+
+EventLink 127 [
+  src_q = i0
+  dst = o65
+  src = o126
+  is_signal = i1
+  dst_q = i0
+]
+
+EventLink 128 [
+  src_q = i0
+  dst = o113
+  src = o126
+  is_signal = i1
+  dst_q = i0
+]
+
+Connector 129 [
+  x_coord = i36
+  y_coord = i5
+  targets = a1:o131:
+  source_ref = o130
+]
+
+ConnectorReference 130 [
+  is_output = i0
+  queue_number = i0
+  component = o95
+  kind = i1
+]
+
+ConnectorReference 131 [
+  is_output = i1
+  queue_number = i0
+  component = o91
+  kind = i1
+]
+
+Connector 132 [
+  x_coord = i54
+  y_coord = i5
+  targets = a1:o134:
+  source_ref = o133
+]
+
+ConnectorReference 133 [
+  is_output = i0
+  queue_number = i2
+  component = o91
+  kind = i1
+]
+
+ConnectorReference 134 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Connector 135 [
+  x_coord = i41
+  y_coord = i5
+  targets = a1:o137:
+  source_ref = o136
+]
+
+ConnectorReference 136 [
+  is_output = i0
+  queue_number = i1
+  component = o91
+  kind = i1
+]
+
+ConnectorReference 137 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 138 [
+  x_coord = i28
+  y_coord = i5
+  targets = a1:o140:
+  source_ref = o139
+]
+
+ConnectorReference 139 [
+  is_output = i0
+  queue_number = i0
+  component = o91
+  kind = i1
+]
+
+ConnectorReference 140 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+Component 141 [
+  x_coord = i130
+  width = i64
+  height = i55
+  y_coord = i89
+  gencomp_generator = o359
+  connectors = a2:o142:o357:
+  class_tag = s7:gencomp:
+]
+
+Connector 142 [
+  x_coord = i32
+  y_coord = i50
+  targets = a6:o144:o145:o165:o166:o203:o356:
+  source_ref = o143
+]
+
+ConnectorReference 143 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+ConnectorReference 144 [
+  is_output = i0
+  queue_number = i0
+  component = o91
+  kind = i1
+]
+
+ConnectorReference 145 [
+  is_output = i0
+  queue_number = i0
+  component = o146
+  kind = i1
+]
+
+Component 146 [
+  x_coord = i238
+  width = i84
+  height = i55
+  y_coord = i209
+  gencomp_generator = o159
+  connectors = a4:o147:o150:o153:o156:
+  class_tag = s7:gencomp:
+]
+
+Connector 147 [
+  x_coord = i42
+  y_coord = i50
+  targets = a1:o149:
+  source_ref = o148
+]
+
+ConnectorReference 148 [
+  is_output = i1
+  queue_number = i0
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 149 [
+  is_output = i0
+  queue_number = i0
+  component = o33
+  kind = i1
+]
+
+Connector 150 [
+  x_coord = i54
+  y_coord = i5
+  targets = a1:o152:
+  source_ref = o151
+]
+
+ConnectorReference 151 [
+  is_output = i0
+  queue_number = i2
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 152 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Connector 153 [
+  x_coord = i41
+  y_coord = i5
+  targets = a1:o155:
+  source_ref = o154
+]
+
+ConnectorReference 154 [
+  is_output = i0
+  queue_number = i1
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 155 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 156 [
+  x_coord = i28
+  y_coord = i5
+  targets = a1:o158:
+  source_ref = o157
+]
+
+ConnectorReference 157 [
+  is_output = i0
+  queue_number = i0
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 158 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+Generator 159 [
+  trigseq_patterns = a512:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i1:i1:i1:i0:i0:i0:i0:i0:i1:i1:i1:i0:i0:i0:i1:i1:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:
+  name = s8:trigseq6:
+  trigseq_edit = i0
+  out_events = a1:a1:o160::
+  class_name = s7:trigseq:
+  out_signals = a0:
+  trigseq_play = i5
+  controls = a1:o164:
+]
+
+EventLink 160 [
+  src_q = i0
+  dst = o161
+  src = o159
+  is_signal = i0
+  dst_q = i0
+]
+
+Generator 161 [
+  name = s6:rart15:
+  out_events = a0:
+  class_name = s4:rart:
+  out_signals = a1:a2:o162:o163::
+  controls = a0:
+]
+
+EventLink 162 [
+  src_q = i0
+  dst = o74
+  src = o161
+  is_signal = i1
+  dst_q = i0
+]
+
+EventLink 163 [
+  src_q = i0
+  dst = o63
+  src = o161
+  is_signal = i1
+  dst_q = i0
+]
+
+Control 164 [
+  x_coord = i0
+  page = d0
+  generator = o159
+  desc_index = i0
+  min = d0
+  y_coord = i208
+  step = d0
+  max = d0
+]
+
+ConnectorReference 165 [
+  is_output = i0
+  queue_number = i0
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 166 [
+  is_output = i0
+  queue_number = i0
+  component = o167
+  kind = i1
+]
+
+Component 167 [
+  x_coord = i355
+  width = i84
+  height = i55
+  y_coord = i209
+  gencomp_generator = o200
+  connectors = a4:o168:o191:o194:o197:
+  class_tag = s7:gencomp:
+]
+
+Connector 168 [
+  x_coord = i42
+  y_coord = i50
+  targets = a1:o170:
+  source_ref = o169
+]
+
+ConnectorReference 169 [
+  is_output = i1
+  queue_number = i0
+  component = o167
+  kind = i1
+]
+
+ConnectorReference 170 [
+  is_output = i0
+  queue_number = i0
+  component = o171
+  kind = i1
+]
+
+Component 171 [
+  x_coord = i357
+  width = i72
+  height = i55
+  y_coord = i453
+  gencomp_generator = o185
+  connectors = a3:o172:o176:o188:
+  class_tag = s7:gencomp:
+]
+
+Connector 172 [
+  x_coord = i67
+  y_coord = i27
+  targets = a2:o174:o175:
+  source_ref = o173
+]
+
+ConnectorReference 173 [
+  is_output = i1
+  queue_number = i0
+  component = o171
+  kind = i2
+]
+
+ConnectorReference 174 [
+  is_output = i0
+  queue_number = i0
+  component = o38
+  kind = i2
+]
+
+ConnectorReference 175 [
+  is_output = i0
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+Connector 176 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o178:
+  source_ref = o177
+]
+
+ConnectorReference 177 [
+  is_output = i0
+  queue_number = i0
+  component = o171
+  kind = i2
+]
+
+ConnectorReference 178 [
+  is_output = i1
+  queue_number = i0
+  component = o179
+  kind = i2
+]
+
+Component 179 [
+  x_coord = i0
+  width = i85
+  height = i55
+  y_coord = i451
+  gencomp_generator = o183
+  connectors = a1:o180:
+  class_tag = s7:gencomp:
+]
+
+Connector 180 [
+  x_coord = i80
+  y_coord = i27
+  targets = a1:o182:
+  source_ref = o181
+]
+
+ConnectorReference 181 [
+  is_output = i1
+  queue_number = i0
+  component = o179
+  kind = i2
+]
+
+ConnectorReference 182 [
+  is_output = i0
+  queue_number = i0
+  component = o171
+  kind = i2
+]
+
+Generator 183 [
+  voice_filename = s55:/home/tonyg/src/alan/galan/doc/examples/samples/004.wav:
+  name = s7:voice13:
+  voice_store_sample = i0
+  voice_bypass_libaudiofile = i0
+  out_events = a0:
+  class_name = s5:voice:
+  out_signals = a1:a1:o184::
+  controls = a0:
+]
+
+EventLink 184 [
+  src_q = i0
+  dst = o185
+  src = o183
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 185 [
+  name = s6:rart17:
+  out_events = a0:
+  class_name = s4:rart:
+  out_signals = a1:a2:o186:o187::
+  controls = a0:
+]
+
+EventLink 186 [
+  src_q = i0
+  dst = o63
+  src = o185
+  is_signal = i1
+  dst_q = i0
+]
+
+EventLink 187 [
+  src_q = i0
+  dst = o74
+  src = o185
+  is_signal = i1
+  dst_q = i0
+]
+
+Connector 188 [
+  x_coord = i36
+  y_coord = i5
+  targets = a1:o190:
+  source_ref = o189
+]
+
+ConnectorReference 189 [
+  is_output = i0
+  queue_number = i0
+  component = o171
+  kind = i1
+]
+
+ConnectorReference 190 [
+  is_output = i1
+  queue_number = i0
+  component = o167
+  kind = i1
+]
+
+Connector 191 [
+  x_coord = i54
+  y_coord = i5
+  targets = a1:o193:
+  source_ref = o192
+]
+
+ConnectorReference 192 [
+  is_output = i0
+  queue_number = i2
+  component = o167
+  kind = i1
+]
+
+ConnectorReference 193 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Connector 194 [
+  x_coord = i41
+  y_coord = i5
+  targets = a1:o196:
+  source_ref = o195
+]
+
+ConnectorReference 195 [
+  is_output = i0
+  queue_number = i1
+  component = o167
+  kind = i1
+]
+
+ConnectorReference 196 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 197 [
+  x_coord = i28
+  y_coord = i5
+  targets = a1:o199:
+  source_ref = o198
+]
+
+ConnectorReference 198 [
+  is_output = i0
+  queue_number = i0
+  component = o167
+  kind = i1
+]
+
+ConnectorReference 199 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+Generator 200 [
+  trigseq_patterns = a512:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i1:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i1:i1:i1:i0:i0:i0:i0:i1:i1:i1:i1:i0:i0:i0:i0:i1:i1:i1:i1:i0:i0:i0:i0:i1:i1:i1:i1:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:
+  name = s8:trigseq8:
+  trigseq_edit = i0
+  out_events = a1:a1:o201::
+  class_name = s7:trigseq:
+  out_signals = a0:
+  trigseq_play = i5
+  controls = a1:o202:
+]
+
+EventLink 201 [
+  src_q = i0
+  dst = o185
+  src = o200
+  is_signal = i0
+  dst_q = i0
+]
+
+Control 202 [
+  x_coord = i0
+  page = d0
+  generator = o200
+  desc_index = i0
+  min = d0
+  y_coord = i304
+  step = d0
+  max = d0
+]
+
+ConnectorReference 203 [
+  is_output = i0
+  queue_number = i0
+  component = o204
+  kind = i1
+]
+
+Component 204 [
+  x_coord = i108
+  width = i97
+  height = i55
+  y_coord = i209
+  gencomp_generator = o352
+  connectors = a4:o205:o343:o346:o349:
+  class_tag = s7:gencomp:
+]
+
+Connector 205 [
+  x_coord = i48
+  y_coord = i50
+  targets = a2:o207:o228:
+  source_ref = o206
+]
+
+ConnectorReference 206 [
+  is_output = i1
+  queue_number = i0
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 207 [
+  is_output = i0
+  queue_number = i0
+  component = o208
+  kind = i1
+]
+
+Component 208 [
+  x_coord = i115
+  width = i104
+  height = i55
+  y_coord = i362
+  gencomp_generator = o221
+  connectors = a4:o209:o212:o223:o225:
+  class_tag = s7:gencomp:
+]
+
+Connector 209 [
+  x_coord = i99
+  y_coord = i27
+  targets = a1:o211:
+  source_ref = o210
+]
+
+ConnectorReference 210 [
+  is_output = i1
+  queue_number = i0
+  component = o208
+  kind = i2
+]
+
+ConnectorReference 211 [
+  is_output = i0
+  queue_number = i0
+  component = o33
+  kind = i2
+]
+
+Connector 212 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o214:
+  source_ref = o213
+]
+
+ConnectorReference 213 [
+  is_output = i0
+  queue_number = i0
+  component = o208
+  kind = i2
+]
+
+ConnectorReference 214 [
+  is_output = i1
+  queue_number = i0
+  component = o215
+  kind = i2
+]
+
+Component 215 [
+  x_coord = i0
+  width = i85
+  height = i55
+  y_coord = i360
+  gencomp_generator = o219
+  connectors = a1:o216:
+  class_tag = s7:gencomp:
+]
+
+Connector 216 [
+  x_coord = i80
+  y_coord = i27
+  targets = a1:o218:
+  source_ref = o217
+]
+
+ConnectorReference 217 [
+  is_output = i1
+  queue_number = i0
+  component = o215
+  kind = i2
+]
+
+ConnectorReference 218 [
+  is_output = i0
+  queue_number = i0
+  component = o208
+  kind = i2
+]
+
+Generator 219 [
+  voice_filename = s55:/home/tonyg/src/alan/galan/doc/examples/samples/002.wav:
+  name = s7:voice11:
+  voice_store_sample = i0
+  voice_bypass_libaudiofile = i0
+  out_events = a0:
+  class_name = s5:voice:
+  out_signals = a1:a1:o220::
+  controls = a0:
+]
+
+EventLink 220 [
+  src_q = i0
+  dst = o221
+  src = o219
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 221 [
+  resample_factor = d0.24
+  name = s10:resample24:
+  out_events = a0:
+  class_name = s8:resample:
+  out_signals = a1:a1:o222::
+  controls = a0:
+]
+
+EventLink 222 [
+  src_q = i0
+  dst = o161
+  src = o221
+  is_signal = i1
+  dst_q = i0
+]
+
+Connector 223 [
+  x_coord = i63
+  y_coord = i5
+  targets = a0:
+  source_ref = o224
+]
+
+ConnectorReference 224 [
+  is_output = i0
+  queue_number = i1
+  component = o208
+  kind = i1
+]
+
+Connector 225 [
+  x_coord = i39
+  y_coord = i5
+  targets = a1:o227:
+  source_ref = o226
+]
+
+ConnectorReference 226 [
+  is_output = i0
+  queue_number = i0
+  component = o208
+  kind = i1
+]
+
+ConnectorReference 227 [
+  is_output = i1
+  queue_number = i0
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 228 [
+  is_output = i0
+  queue_number = i0
+  component = o229
+  kind = i1
+]
+
+Component 229 [
+  x_coord = i90
+  width = i83
+  height = i55
+  y_coord = i495
+  gencomp_generator = o337
+  connectors = a3:o230:o326:o340:
+  class_tag = s7:gencomp:
+]
+
+Connector 230 [
+  x_coord = i41
+  y_coord = i50
+  targets = a1:o232:
+  source_ref = o231
+]
+
+ConnectorReference 231 [
+  is_output = i1
+  queue_number = i0
+  component = o229
+  kind = i1
+]
+
+ConnectorReference 232 [
+  is_output = i0
+  queue_number = i1
+  component = o233
+  kind = i1
+]
+
+Component 233 [
+  x_coord = i86
+  width = i90
+  height = i103
+  y_coord = i558
+  gencomp_generator = o323
+  connectors = a4:o234:o316:o318:o321:
+  class_tag = s7:gencomp:
+]
+
+Connector 234 [
+  x_coord = i85
+  y_coord = i51
+  targets = a1:o236:
+  source_ref = o235
+]
+
+ConnectorReference 235 [
+  is_output = i1
+  queue_number = i0
+  component = o233
+  kind = i2
+]
+
+ConnectorReference 236 [
+  is_output = i0
+  queue_number = i1
+  component = o237
+  kind = i2
+]
+
+Component 237 [
+  x_coord = i266
+  width = i68
+  height = i60
+  y_coord = i550
+  gencomp_generator = o281
+  connectors = a3:o238:o310:o313:
+  class_tag = s7:gencomp:
+]
+
+Connector 238 [
+  x_coord = i63
+  y_coord = i30
+  targets = a1:o240:
+  source_ref = o239
+]
+
+ConnectorReference 239 [
+  is_output = i1
+  queue_number = i0
+  component = o237
+  kind = i2
+]
+
+ConnectorReference 240 [
+  is_output = i0
+  queue_number = i0
+  component = o241
+  kind = i2
+]
+
+Component 241 [
+  x_coord = i337
+  width = i86
+  height = i55
+  y_coord = i550
+  gencomp_generator = o283
+  connectors = a3:o242:o245:o248:
+  class_tag = s7:gencomp:
+]
+
+Connector 242 [
+  x_coord = i81
+  y_coord = i27
+  targets = a1:o244:
+  source_ref = o243
+]
+
+ConnectorReference 243 [
+  is_output = i1
+  queue_number = i0
+  component = o241
+  kind = i2
+]
+
+ConnectorReference 244 [
+  is_output = i0
+  queue_number = i0
+  component = o2
+  kind = i2
+]
+
+Connector 245 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o247:
+  source_ref = o246
+]
+
+ConnectorReference 246 [
+  is_output = i0
+  queue_number = i0
+  component = o241
+  kind = i2
+]
+
+ConnectorReference 247 [
+  is_output = i1
+  queue_number = i0
+  component = o237
+  kind = i2
+]
+
+Connector 248 [
+  x_coord = i43
+  y_coord = i5
+  targets = a1:o250:
+  source_ref = o249
+]
+
+ConnectorReference 249 [
+  is_output = i0
+  queue_number = i0
+  component = o241
+  kind = i1
+]
+
+ConnectorReference 250 [
+  is_output = i1
+  queue_number = i0
+  component = o251
+  kind = i1
+]
+
+Component 251 [
+  x_coord = i49
+  width = i84
+  height = i55
+  y_coord = i208
+  gencomp_generator = o306
+  connectors = a4:o252:o297:o300:o303:
+  class_tag = s7:gencomp:
+]
+
+Connector 252 [
+  x_coord = i42
+  y_coord = i50
+  targets = a2:o254:o255:
+  source_ref = o253
+]
+
+ConnectorReference 253 [
+  is_output = i1
+  queue_number = i0
+  component = o251
+  kind = i1
+]
+
+ConnectorReference 254 [
+  is_output = i0
+  queue_number = i0
+  component = o241
+  kind = i1
+]
+
+ConnectorReference 255 [
+  is_output = i0
+  queue_number = i0
+  component = o256
+  kind = i1
+]
+
+Component 256 [
+  x_coord = i207
+  width = i65
+  height = i55
+  y_coord = i521
+  gencomp_generator = o279
+  connectors = a3:o257:o260:o294:
+  class_tag = s7:gencomp:
+]
+
+Connector 257 [
+  x_coord = i60
+  y_coord = i27
+  targets = a1:o259:
+  source_ref = o258
+]
+
+ConnectorReference 258 [
+  is_output = i1
+  queue_number = i0
+  component = o256
+  kind = i2
+]
+
+ConnectorReference 259 [
+  is_output = i0
+  queue_number = i0
+  component = o237
+  kind = i2
+]
+
+Connector 260 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o262:
+  source_ref = o261
+]
+
+ConnectorReference 261 [
+  is_output = i0
+  queue_number = i0
+  component = o256
+  kind = i2
+]
+
+ConnectorReference 262 [
+  is_output = i1
+  queue_number = i0
+  component = o263
+  kind = i2
+]
+
+Component 263 [
+  x_coord = i0
+  width = i90
+  height = i55
+  y_coord = i516
+  gencomp_generator = o277
+  connectors = a6:o264:o267:o269:o271:o273:o275:
+  class_tag = s7:gencomp:
+]
+
+Connector 264 [
+  x_coord = i85
+  y_coord = i27
+  targets = a1:o266:
+  source_ref = o265
+]
+
+ConnectorReference 265 [
+  is_output = i1
+  queue_number = i0
+  component = o263
+  kind = i2
+]
+
+ConnectorReference 266 [
+  is_output = i0
+  queue_number = i0
+  component = o256
+  kind = i2
+]
+
+Connector 267 [
+  x_coord = i65
+  y_coord = i5
+  targets = a0:
+  source_ref = o268
+]
+
+ConnectorReference 268 [
+  is_output = i0
+  queue_number = i4
+  component = o263
+  kind = i1
+]
+
+Connector 269 [
+  x_coord = i55
+  y_coord = i5
+  targets = a0:
+  source_ref = o270
+]
+
+ConnectorReference 270 [
+  is_output = i0
+  queue_number = i3
+  component = o263
+  kind = i1
+]
+
+Connector 271 [
+  x_coord = i45
+  y_coord = i5
+  targets = a0:
+  source_ref = o272
+]
+
+ConnectorReference 272 [
+  is_output = i0
+  queue_number = i2
+  component = o263
+  kind = i1
+]
+
+Connector 273 [
+  x_coord = i35
+  y_coord = i5
+  targets = a0:
+  source_ref = o274
+]
+
+ConnectorReference 274 [
+  is_output = i0
+  queue_number = i1
+  component = o263
+  kind = i1
+]
+
+Connector 275 [
+  x_coord = i25
+  y_coord = i5
+  targets = a0:
+  source_ref = o276
+]
+
+ConnectorReference 276 [
+  is_output = i0
+  queue_number = i0
+  component = o263
+  kind = i1
+]
+
+Generator 277 [
+  adsr_attack_time = d0
+  adsr_sustain_level = d0.76
+  name = s5:adsr7:
+  adsr_release_time = d0.17
+  out_events = a0:
+  adsr_decay_halftime = d0.03
+  class_name = s4:adsr:
+  out_signals = a1:a1:o278::
+  adsr_sustain_time = d1
+  controls = a5:o289:o290:o291:o292:o293:
+]
+
+EventLink 278 [
+  src_q = i0
+  dst = o279
+  src = o277
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 279 [
+  name = s5:rart8:
+  out_events = a0:
+  class_name = s4:rart:
+  out_signals = a1:a1:o280::
+  controls = a0:
+]
+
+EventLink 280 [
+  src_q = i0
+  dst = o281
+  src = o279
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 281 [
+  name = s4:vca6:
+  out_events = a0:
+  class_name = s3:vca:
+  out_signals = a1:a1:o282::
+  controls = a0:
+]
+
+EventLink 282 [
+  src_q = i0
+  dst = o283
+  src = o281
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 283 [
+  smooth_linear_ramp_time = d0.003
+  name = s7:smooth1:
+  smooth_exp_merge_halftime = d0.0005
+  out_events = a0:
+  class_name = s6:smooth:
+  out_signals = a1:a1:o284::
+  controls = a0:
+]
+
+EventLink 284 [
+  src_q = i0
+  dst = o285
+  src = o283
+  is_signal = i1
+  dst_q = i0
+]
+
+Generator 285 [
+  name = s5:gain5:
+  out_events = a0:
+  gain_gain = d1
+  class_name = s4:gain:
+  out_signals = a1:a2:o286:o287::
+  controls = a1:o288:
+]
+
+EventLink 286 [
+  src_q = i0
+  dst = o65
+  src = o285
+  is_signal = i1
+  dst_q = i0
+]
+
+EventLink 287 [
+  src_q = i0
+  dst = o74
+  src = o285
+  is_signal = i1
+  dst_q = i0
+]
+
+Control 288 [
+  x_coord = i560
+  page = d0.01
+  generator = o285
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d0.01
+  max = d1
+]
+
+Control 289 [
+  x_coord = i48
+  page = d0.01
+  generator = o277
+  desc_index = i0
+  min = d0
+  y_coord = i512
+  step = d0.01
+  max = d5
+]
+
+Control 290 [
+  x_coord = i96
+  page = d0.01
+  generator = o277
+  desc_index = i1
+  min = d0
+  y_coord = i512
+  step = d0.01
+  max = d5
+]
+
+Control 291 [
+  x_coord = i144
+  page = d0.01
+  generator = o277
+  desc_index = i2
+  min = d0
+  y_coord = i512
+  step = d0.01
+  max = d10
+]
+
+Control 292 [
+  x_coord = i192
+  page = d0.01
+  generator = o277
+  desc_index = i3
+  min = d0
+  y_coord = i512
+  step = d0.01
+  max = d5
+]
+
+Control 293 [
+  x_coord = i256
+  page = d0.01
+  generator = o277
+  desc_index = i4
+  min = d0
+  y_coord = i512
+  step = d0.01
+  max = d1
+]
+
+Connector 294 [
+  x_coord = i32
+  y_coord = i5
+  targets = a1:o296:
+  source_ref = o295
+]
+
+ConnectorReference 295 [
+  is_output = i0
+  queue_number = i0
+  component = o256
+  kind = i1
+]
+
+ConnectorReference 296 [
+  is_output = i1
+  queue_number = i0
+  component = o251
+  kind = i1
+]
+
+Connector 297 [
+  x_coord = i54
+  y_coord = i5
+  targets = a1:o299:
+  source_ref = o298
+]
+
+ConnectorReference 298 [
+  is_output = i0
+  queue_number = i2
+  component = o251
+  kind = i1
+]
+
+ConnectorReference 299 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Connector 300 [
+  x_coord = i41
+  y_coord = i5
+  targets = a1:o302:
+  source_ref = o301
+]
+
+ConnectorReference 301 [
+  is_output = i0
+  queue_number = i1
+  component = o251
+  kind = i1
+]
+
+ConnectorReference 302 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 303 [
+  x_coord = i28
+  y_coord = i5
+  targets = a1:o305:
+  source_ref = o304
+]
+
+ConnectorReference 304 [
+  is_output = i0
+  queue_number = i0
+  component = o251
+  kind = i1
+]
+
+ConnectorReference 305 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+Generator 306 [
+  trigseq_patterns = a512:i1:i0:i0:i1:i1:i0:i0:i0:i0:i1:i0:i1:i1:i0:i0:i0:i0:i0:i1:i0:i1:i0:i1:i0:i0:i0:i0:i1:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i1:i0:i0:i1:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:
+  name = s8:trigseq1:
+  trigseq_edit = i0
+  out_events = a1:a2:o307:o308::
+  class_name = s7:trigseq:
+  out_signals = a0:
+  trigseq_play = i5
+  controls = a1:o309:
+]
+
+EventLink 307 [
+  src_q = i0
+  dst = o283
+  src = o306
+  is_signal = i0
+  dst_q = i0
+]
+
+EventLink 308 [
+  src_q = i0
+  dst = o279
+  src = o306
+  is_signal = i0
+  dst_q = i0
+]
+
+Control 309 [
+  x_coord = i0
+  page = d0
+  generator = o306
+  desc_index = i0
+  min = d0
+  y_coord = i608
+  step = d0
+  max = d0
+]
+
+Connector 310 [
+  x_coord = i5
+  y_coord = i35
+  targets = a1:o312:
+  source_ref = o311
+]
+
+ConnectorReference 311 [
+  is_output = i0
+  queue_number = i1
+  component = o237
+  kind = i2
+]
+
+ConnectorReference 312 [
+  is_output = i1
+  queue_number = i0
+  component = o233
+  kind = i2
+]
+
+Connector 313 [
+  x_coord = i5
+  y_coord = i25
+  targets = a1:o315:
+  source_ref = o314
+]
+
+ConnectorReference 314 [
+  is_output = i0
+  queue_number = i0
+  component = o237
+  kind = i2
+]
+
+ConnectorReference 315 [
+  is_output = i1
+  queue_number = i0
+  component = o256
+  kind = i2
+]
+
+Connector 316 [
+  x_coord = i60
+  y_coord = i5
+  targets = a0:
+  source_ref = o317
+]
+
+ConnectorReference 317 [
+  is_output = i0
+  queue_number = i2
+  component = o233
+  kind = i1
+]
+
+Connector 318 [
+  x_coord = i45
+  y_coord = i5
+  targets = a1:o320:
+  source_ref = o319
+]
+
+ConnectorReference 319 [
+  is_output = i0
+  queue_number = i1
+  component = o233
+  kind = i1
+]
+
+ConnectorReference 320 [
+  is_output = i1
+  queue_number = i0
+  component = o229
+  kind = i1
+]
+
+Connector 321 [
+  x_coord = i30
+  y_coord = i5
+  targets = a0:
+  source_ref = o322
+]
+
+ConnectorReference 322 [
+  is_output = i0
+  queue_number = i0
+  component = o233
+  kind = i1
+]
+
+Generator 323 [
+  osc_phase = d19723.7
+  name = s4:vco2:
+  osc_frequency = d60
+  out_events = a0:
+  class_name = s3:vco:
+  out_signals = a1:a1:o324::
+  osc_kind = i0
+  controls = a1:o325:
+]
+
+EventLink 324 [
+  src_q = i0
+  dst = o281
+  src = o323
+  is_signal = i1
+  dst_q = i1
+]
+
+Control 325 [
+  x_coord = i560
+  page = d1
+  generator = o323
+  desc_index = i0
+  min = d0
+  y_coord = i288
+  step = d0
+  max = d2
+]
+
+Connector 326 [
+  x_coord = i49
+  y_coord = i5
+  targets = a1:o328:
+  source_ref = o327
+]
+
+ConnectorReference 327 [
+  is_output = i0
+  queue_number = i1
+  component = o229
+  kind = i1
+]
+
+ConnectorReference 328 [
+  is_output = i1
+  queue_number = i0
+  component = o329
+  kind = i1
+]
+
+Component 329 [
+  x_coord = i137
+  width = i64
+  height = i55
+  y_coord = i434
+  gencomp_generator = o335
+  connectors = a2:o330:o333:
+  class_tag = s7:gencomp:
+]
+
+Connector 330 [
+  x_coord = i32
+  y_coord = i50
+  targets = a1:o332:
+  source_ref = o331
+]
+
+ConnectorReference 331 [
+  is_output = i1
+  queue_number = i0
+  component = o329
+  kind = i1
+]
+
+ConnectorReference 332 [
+  is_output = i0
+  queue_number = i1
+  component = o229
+  kind = i1
+]
+
+Connector 333 [
+  x_coord = i32
+  y_coord = i5
+  targets = a0:
+  source_ref = o334
+]
+
+ConnectorReference 334 [
+  is_output = i0
+  queue_number = i0
+  component = o329
+  kind = i1
+]
+
+Generator 335 [
+  name = s5:ctrl4:
+  ctrl_value = d250
+  ctrl_min = d0
+  out_events = a1:a1:o336::
+  ctrl_max = d440
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  out_signals = a0:
+  ctrl_page = d1
+  controls = a1:o339:
+]
+
+EventLink 336 [
+  src_q = i0
+  dst = o337
+  src = o335
+  is_signal = i0
+  dst_q = i1
+]
+
+Generator 337 [
+  name = s7:evtmul3:
+  evtmul_factor = d250
+  out_events = a1:a1:o338::
+  class_name = s6:evtmul:
+  out_signals = a0:
+  controls = a0:
+]
+
+EventLink 338 [
+  src_q = i0
+  dst = o323
+  src = o337
+  is_signal = i0
+  dst_q = i1
+]
+
+Control 339 [
+  x_coord = i560
+  page = d1
+  generator = o335
+  desc_index = i0
+  min = d0
+  y_coord = i192
+  step = d1
+  max = d440
+]
+
+Connector 340 [
+  x_coord = i32
+  y_coord = i5
+  targets = a1:o342:
+  source_ref = o341
+]
+
+ConnectorReference 341 [
+  is_output = i0
+  queue_number = i0
+  component = o229
+  kind = i1
+]
+
+ConnectorReference 342 [
+  is_output = i1
+  queue_number = i0
+  component = o204
+  kind = i1
+]
+
+Connector 343 [
+  x_coord = i63
+  y_coord = i5
+  targets = a1:o345:
+  source_ref = o344
+]
+
+ConnectorReference 344 [
+  is_output = i0
+  queue_number = i2
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 345 [
+  is_output = i1
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Connector 346 [
+  x_coord = i47
+  y_coord = i5
+  targets = a1:o348:
+  source_ref = o347
+]
+
+ConnectorReference 347 [
+  is_output = i0
+  queue_number = i1
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 348 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 349 [
+  x_coord = i31
+  y_coord = i5
+  targets = a1:o351:
+  source_ref = o350
+]
+
+ConnectorReference 350 [
+  is_output = i0
+  queue_number = i0
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 351 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+Generator 352 [
+  seqnum_patterns = a512:d1:d0.14:d0.44:d0.81:d0.25:d0.49:d0.17:d0.3:d0.79:d0.16:d0.21:d0.21:d0.51:d0.44:d0.71:d0.33:d0.52:d0.67:d0.54:d0.62:d0.57:d0.17:d0.35:d1:d1:d1:d0.76:d0.52:d0.35:d0.37:d1:d0.71:d0:d0:d0.49:d0:d0:d0:d1:d0:d0:d0:d1:d0:d0:d0:d1:d0:d0:d0:d0.67:d0:d0:d0:d1:d0:d0:d0:d1:d0:d0:d1:d0:d0:d0.6:d0.51:d0.41:d0.65:d0.38:d0.51:d0.27:d0.48:d0.67:d0.37:d0.32:d0.25:d0.37:d0.25:d0.11:d0.21:d0.32:d0.65:d0.79:d0.87:d0.76:d0.08:d0.4:d0.29:d0.27:d0.17:d0.94:d0.78:d0.59:d0.4:d0.21:d0.05:d0.63:d0.43:d0.63:d0.54:d0.57:d0.7:d0.62:d0.49:d0.7:d0.49:d0.4:d0.56:d0.63:d0.63:d0.44:d0.59:d0.41:d0.51:d0.52:d0.43:d0.37:d0.3:d0.54:d0.75:d0.44:d0.44:d0.54:d0.41:d0.51:d0.38:d0.46:d0.44:d0.73:d0.29:d0.56:d0.21:d0:d0:d0:d0:d0:d0.51:d0.21:d0.52:d0.63:d0.57:d0.62:d0.65:d0.57:d0.3:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0.16:d0.16:d0.24:d0.25:d0.25:d0.27:d0.14:d0.13:d0.13:d0.13:d0.13:d0.11:d0.1:d0.11:d0.35:d0.16:d0.17:d0.17:d0.29:d0.3:d0.35:d0.38:d0.4:d0.24:d0.24:d0.24:d0.22:d0.32:d0.38:d0.38:d0.38:d0.22:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:d0:
+  name = s8:seqnum23:
+  out_events = a1:a2:o353:o354::
+  seqnum_play = i5
+  class_name = s6:seqnum:
+  seqnum_edit = i0
+  out_signals = a0:
+  controls = a1:o355:
+]
+
+EventLink 353 [
+  src_q = i0
+  dst = o221
+  src = o352
+  is_signal = i0
+  dst_q = i0
+]
+
+EventLink 354 [
+  src_q = i0
+  dst = o337
+  src = o352
+  is_signal = i0
+  dst_q = i0
+]
+
+Control 355 [
+  x_coord = i0
+  page = d0
+  generator = o352
+  desc_index = i0
+  min = d0
+  y_coord = i368
+  step = d0
+  max = d0
+]
+
+ConnectorReference 356 [
+  is_output = i0
+  queue_number = i0
+  component = o251
+  kind = i1
+]
+
+Connector 357 [
+  x_coord = i32
+  y_coord = i5
+  targets = a0:
+  source_ref = o358
+]
+
+ConnectorReference 358 [
+  is_output = i0
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+Generator 359 [
+  name = s5:ctrl9:
+  ctrl_value = d0
+  ctrl_min = d0
+  out_events = a1:a6:o360:o364:o365:o369:o370:o371::
+  ctrl_max = d15
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  out_signals = a0:
+  ctrl_page = d1
+  controls = a1:o372:
+]
+
+EventLink 360 [
+  src_q = i0
+  dst = o361
+  src = o359
+  is_signal = i0
+  dst_q = i0
+]
+
+Generator 361 [
+  trigseq_patterns = a512:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i1:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:
+  name = s8:trigseq5:
+  trigseq_edit = i0
+  out_events = a1:a1:o362::
+  class_name = s7:trigseq:
+  out_signals = a0:
+  trigseq_play = i5
+  controls = a1:o363:
+]
+
+EventLink 362 [
+  src_q = i0
+  dst = o126
+  src = o361
+  is_signal = i0
+  dst_q = i0
+]
+
+Control 363 [
+  x_coord = i0
+  page = d0
+  generator = o361
+  desc_index = i0
+  min = d0
+  y_coord = i160
+  step = d0
+  max = d0
+]
+
+EventLink 364 [
+  src_q = i0
+  dst = o159
+  src = o359
+  is_signal = i0
+  dst_q = i0
+]
+
+EventLink 365 [
+  src_q = i0
+  dst = o366
+  src = o359
+  is_signal = i0
+  dst_q = i0
+]
+
+Generator 366 [
+  trigseq_patterns = a512:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i1:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i1:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:i0:
+  name = s8:trigseq7:
+  trigseq_edit = i0
+  out_events = a1:a1:o367::
+  class_name = s7:trigseq:
+  out_signals = a0:
+  trigseq_play = i5
+  controls = a1:o368:
+]
+
+EventLink 367 [
+  src_q = i0
+  dst = o61
+  src = o366
+  is_signal = i0
+  dst_q = i0
+]
+
+Control 368 [
+  x_coord = i0
+  page = d0
+  generator = o366
+  desc_index = i0
+  min = d0
+  y_coord = i256
+  step = d0
+  max = d0
+]
+
+EventLink 369 [
+  src_q = i0
+  dst = o200
+  src = o359
+  is_signal = i0
+  dst_q = i0
+]
+
+EventLink 370 [
+  src_q = i0
+  dst = o352
+  src = o359
+  is_signal = i0
+  dst_q = i0
+]
+
+EventLink 371 [
+  src_q = i0
+  dst = o306
+  src = o359
+  is_signal = i0
+  dst_q = i0
+]
+
+Control 372 [
+  x_coord = i96
+  page = d1
+  generator = o359
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d1
+  max = d15
+]
+
+ConnectorReference 373 [
+  is_output = i0
+  queue_number = i2
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 374 [
+  is_output = i0
+  queue_number = i2
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 375 [
+  is_output = i0
+  queue_number = i2
+  component = o167
+  kind = i1
+]
+
+ConnectorReference 376 [
+  is_output = i0
+  queue_number = i2
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 377 [
+  is_output = i0
+  queue_number = i2
+  component = o251
+  kind = i1
+]
+
+Connector 378 [
+  x_coord = i45
+  y_coord = i50
+  targets = a6:o380:o381:o382:o383:o384:o385:
+  source_ref = o379
+]
+
+ConnectorReference 379 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+ConnectorReference 380 [
+  is_output = i0
+  queue_number = i1
+  component = o91
+  kind = i1
+]
+
+ConnectorReference 381 [
+  is_output = i0
+  queue_number = i1
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 382 [
+  is_output = i0
+  queue_number = i1
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 383 [
+  is_output = i0
+  queue_number = i1
+  component = o167
+  kind = i1
+]
+
+ConnectorReference 384 [
+  is_output = i0
+  queue_number = i1
+  component = o204
+  kind = i1
+]
+
+ConnectorReference 385 [
+  is_output = i0
+  queue_number = i1
+  component = o251
+  kind = i1
+]
+
+Connector 386 [
+  x_coord = i30
+  y_coord = i50
+  targets = a0:
+  source_ref = o387
+]
+
+ConnectorReference 387 [
+  is_output = i1
+  queue_number = i0
+  component = o87
+  kind = i1
+]
+
+Connector 388 [
+  x_coord = i65
+  y_coord = i5
+  targets = a1:o390:
+  source_ref = o389
+]
+
+ConnectorReference 389 [
+  is_output = i0
+  queue_number = i4
+  component = o87
+  kind = i1
+]
+
+ConnectorReference 390 [
+  is_output = i1
+  queue_number = i0
+  component = o391
+  kind = i1
+]
+
+Component 391 [
+  x_coord = i346
+  width = i64
+  height = i55
+  y_coord = i0
+  gencomp_generator = o397
+  connectors = a2:o392:o395:
+  class_tag = s7:gencomp:
+]
+
+Connector 392 [
+  x_coord = i32
+  y_coord = i50
+  targets = a1:o394:
+  source_ref = o393
+]
+
+ConnectorReference 393 [
+  is_output = i1
+  queue_number = i0
+  component = o391
+  kind = i1
+]
+
+ConnectorReference 394 [
+  is_output = i0
+  queue_number = i4
+  component = o87
+  kind = i1
+]
+
+Connector 395 [
+  x_coord = i32
+  y_coord = i5
+  targets = a0:
+  source_ref = o396
+]
+
+ConnectorReference 396 [
+  is_output = i0
+  queue_number = i0
+  component = o391
+  kind = i1
+]
+
+Generator 397 [
+  name = s5:ctrl1:
+  ctrl_value = d1
+  ctrl_min = d0
+  out_events = a1:a1:o398::
+  ctrl_max = d100
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  out_signals = a0:
+  ctrl_page = d1
+  controls = a1:o413:
+]
+
+EventLink 398 [
+  src_q = i0
+  dst = o399
+  src = o397
+  is_signal = i0
+  dst_q = i4
+]
+
+Generator 399 [
+  name = s8:patloop2:
+  patloop_seq_step = i25
+  patloop_edit = i4
+  patloop_length = i32
+  out_events = a3:a0::a6:o400:o401:o402:o403:o404:o405::a6:o406:o407:o408:o409:o410:o411::
+  patloop_step = i0
+  patloop_sequences = a16:a4:i0:i0:i1:i2::a4:i3:i3:i3:i3::a1:i15::a1:i4::a1:i5::a0::a0::a0::a0::a0::a0::a0::a0::a0::a0::a0::
+  class_name = s7:patloop:
+  patloop_play = i4
+  out_signals = a0:
+  controls = a1:o412:
+]
+
+EventLink 400 [
+  src_q = i1
+  dst = o361
+  src = o399
+  is_signal = i0
+  dst_q = i1
+]
+
+EventLink 401 [
+  src_q = i1
+  dst = o159
+  src = o399
+  is_signal = i0
+  dst_q = i1
+]
+
+EventLink 402 [
+  src_q = i1
+  dst = o366
+  src = o399
+  is_signal = i0
+  dst_q = i1
+]
+
+EventLink 403 [
+  src_q = i1
+  dst = o200
+  src = o399
+  is_signal = i0
+  dst_q = i1
+]
+
+EventLink 404 [
+  src_q = i1
+  dst = o352
+  src = o399
+  is_signal = i0
+  dst_q = i1
+]
+
+EventLink 405 [
+  src_q = i1
+  dst = o306
+  src = o399
+  is_signal = i0
+  dst_q = i1
+]
+
+EventLink 406 [
+  src_q = i2
+  dst = o361
+  src = o399
+  is_signal = i0
+  dst_q = i2
+]
+
+EventLink 407 [
+  src_q = i2
+  dst = o159
+  src = o399
+  is_signal = i0
+  dst_q = i2
+]
+
+EventLink 408 [
+  src_q = i2
+  dst = o366
+  src = o399
+  is_signal = i0
+  dst_q = i2
+]
+
+EventLink 409 [
+  src_q = i2
+  dst = o200
+  src = o399
+  is_signal = i0
+  dst_q = i2
+]
+
+EventLink 410 [
+  src_q = i2
+  dst = o352
+  src = o399
+  is_signal = i0
+  dst_q = i2
+]
+
+EventLink 411 [
+  src_q = i2
+  dst = o306
+  src = o399
+  is_signal = i0
+  dst_q = i2
+]
+
+Control 412 [
+  x_coord = i160
+  page = d0
+  generator = o399
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d0
+  max = d0
+]
+
+Control 413 [
+  x_coord = i0
+  page = d1
+  generator = o397
+  desc_index = i3
+  min = d0
+  y_coord = i0
+  step = d1
+  max = d100
+]
+
+Connector 414 [
+  x_coord = i55
+  y_coord = i5
+  targets = a1:o416:
+  source_ref = o415
+]
+
+ConnectorReference 415 [
+  is_output = i0
+  queue_number = i3
+  component = o87
+  kind = i1
+]
+
+ConnectorReference 416 [
+  is_output = i1
+  queue_number = i0
+  component = o417
+  kind = i1
+]
+
+Component 417 [
+  x_coord = i294
+  width = i77
+  height = i55
+  y_coord = i0
+  gencomp_generator = o425
+  connectors = a3:o418:o421:o423:
+  class_tag = s7:gencomp:
+]
+
+Connector 418 [
+  x_coord = i38
+  y_coord = i50
+  targets = a1:o420:
+  source_ref = o419
+]
+
+ConnectorReference 419 [
+  is_output = i1
+  queue_number = i0
+  component = o417
+  kind = i1
+]
+
+ConnectorReference 420 [
+  is_output = i0
+  queue_number = i3
+  component = o87
+  kind = i1
+]
+
+Connector 421 [
+  x_coord = i45
+  y_coord = i5
+  targets = a0:
+  source_ref = o422
+]
+
+ConnectorReference 422 [
+  is_output = i0
+  queue_number = i1
+  component = o417
+  kind = i1
+]
+
+Connector 423 [
+  x_coord = i30
+  y_coord = i5
+  targets = a0:
+  source_ref = o424
+]
+
+ConnectorReference 424 [
+  is_output = i0
+  queue_number = i0
+  component = o417
+  kind = i1
+]
+
+Generator 425 [
+  name = s6:clock1:
+  out_events = a1:a1:o426::
+  class_name = s5:clock:
+  out_signals = a0:
+  clock_period = i5511
+  controls = a1:o427:
+]
+
+EventLink 426 [
+  src_q = i0
+  dst = o399
+  src = o425
+  is_signal = i0
+  dst_q = i3
+]
+
+Control 427 [
+  x_coord = i48
+  page = d1
+  generator = o425
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d1
+  max = d500
+]
+
+Connector 428 [
+  x_coord = i45
+  y_coord = i5
+  targets = a1:o430:
+  source_ref = o429
+]
+
+ConnectorReference 429 [
+  is_output = i0
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+ConnectorReference 430 [
+  is_output = i1
+  queue_number = i0
+  component = o431
+  kind = i1
+]
+
+Component 431 [
+  x_coord = i258
+  width = i64
+  height = i55
+  y_coord = i0
+  gencomp_generator = o437
+  connectors = a2:o432:o435:
+  class_tag = s7:gencomp:
+]
+
+Connector 432 [
+  x_coord = i32
+  y_coord = i50
+  targets = a1:o434:
+  source_ref = o433
+]
+
+ConnectorReference 433 [
+  is_output = i1
+  queue_number = i0
+  component = o431
+  kind = i1
+]
+
+ConnectorReference 434 [
+  is_output = i0
+  queue_number = i2
+  component = o87
+  kind = i1
+]
+
+Connector 435 [
+  x_coord = i32
+  y_coord = i5
+  targets = a0:
+  source_ref = o436
+]
+
+ConnectorReference 436 [
+  is_output = i0
+  queue_number = i0
+  component = o431
+  kind = i1
+]
+
+Generator 437 [
+  name = s5:ctrl4:
+  ctrl_value = d4
+  ctrl_min = d0
+  out_events = a1:a1:o438::
+  ctrl_max = d15
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  out_signals = a0:
+  ctrl_page = d1
+  controls = a1:o439:
+]
+
+EventLink 438 [
+  src_q = i0
+  dst = o399
+  src = o437
+  is_signal = i0
+  dst_q = i2
+]
+
+Control 439 [
+  x_coord = i384
+  page = d1
+  generator = o437
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d1
+  max = d15
+]
+
+Connector 440 [
+  x_coord = i35
+  y_coord = i5
+  targets = a1:o442:
+  source_ref = o441
+]
+
+ConnectorReference 441 [
+  is_output = i0
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+ConnectorReference 442 [
+  is_output = i1
+  queue_number = i0
+  component = o443
+  kind = i1
+]
+
+Component 443 [
+  x_coord = i222
+  width = i64
+  height = i55
+  y_coord = i0
+  gencomp_generator = o449
+  connectors = a2:o444:o447:
+  class_tag = s7:gencomp:
+]
+
+Connector 444 [
+  x_coord = i32
+  y_coord = i50
+  targets = a1:o446:
+  source_ref = o445
+]
+
+ConnectorReference 445 [
+  is_output = i1
+  queue_number = i0
+  component = o443
+  kind = i1
+]
+
+ConnectorReference 446 [
+  is_output = i0
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 447 [
+  x_coord = i32
+  y_coord = i5
+  targets = a0:
+  source_ref = o448
+]
+
+ConnectorReference 448 [
+  is_output = i0
+  queue_number = i0
+  component = o443
+  kind = i1
+]
+
+Generator 449 [
+  name = s5:ctrl3:
+  ctrl_value = d4
+  ctrl_min = d0
+  out_events = a1:a1:o450::
+  ctrl_max = d15
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  out_signals = a0:
+  ctrl_page = d1
+  controls = a1:o451:
+]
+
+EventLink 450 [
+  src_q = i0
+  dst = o399
+  src = o449
+  is_signal = i0
+  dst_q = i1
+]
+
+Control 451 [
+  x_coord = i352
+  page = d1
+  generator = o449
+  desc_index = i0
+  min = d0
+  y_coord = i0
+  step = d1
+  max = d15
+]
+
+Connector 452 [
+  x_coord = i25
+  y_coord = i5
+  targets = a0:
+  source_ref = o453
+]
+
+ConnectorReference 453 [
+  is_output = i0
+  queue_number = i0
+  component = o87
+  kind = i1
+]
+
+Connector 454 [
+  x_coord = i41
+  y_coord = i5
+  targets = a1:o456:
+  source_ref = o455
+]
+
+ConnectorReference 455 [
+  is_output = i0
+  queue_number = i1
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 456 [
+  is_output = i1
+  queue_number = i1
+  component = o87
+  kind = i1
+]
+
+Connector 457 [
+  x_coord = i28
+  y_coord = i5
+  targets = a1:o459:
+  source_ref = o458
+]
+
+ConnectorReference 458 [
+  is_output = i0
+  queue_number = i0
+  component = o80
+  kind = i1
+]
+
+ConnectorReference 459 [
+  is_output = i1
+  queue_number = i0
+  component = o141
+  kind = i1
+]
+
+ConnectorReference 460 [
+  is_output = i1
+  queue_number = i0
+  component = o171
+  kind = i2
+]
+
+Connector 461 [
+  x_coord = i54
+  y_coord = i5
+  targets = a0:
+  source_ref = o462
+]
+
+ConnectorReference 462 [
+  is_output = i0
+  queue_number = i2
+  component = o38
+  kind = i1
+]
+
+Connector 463 [
+  x_coord = i41
+  y_coord = i5
+  targets = a0:
+  source_ref = o464
+]
+
+ConnectorReference 464 [
+  is_output = i0
+  queue_number = i1
+  component = o38
+  kind = i1
+]
+
+Connector 465 [
+  x_coord = i28
+  y_coord = i5
+  targets = a0:
+  source_ref = o466
+]
+
+ConnectorReference 466 [
+  is_output = i0
+  queue_number = i0
+  component = o38
+  kind = i1
+]
+
+Connector 467 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o469:
+  source_ref = o468
+]
+
+ConnectorReference 468 [
+  is_output = i0
+  queue_number = i0
+  component = o33
+  kind = i2
+]
+
+ConnectorReference 469 [
+  is_output = i1
+  queue_number = i0
+  component = o208
+  kind = i2
+]
+
+Connector 470 [
+  x_coord = i36
+  y_coord = i5
+  targets = a1:o472:
+  source_ref = o471
+]
+
+ConnectorReference 471 [
+  is_output = i0
+  queue_number = i0
+  component = o33
+  kind = i1
+]
+
+ConnectorReference 472 [
+  is_output = i1
+  queue_number = i0
+  component = o146
+  kind = i1
+]
+
+ConnectorReference 473 [
+  is_output = i1
+  queue_number = i0
+  component = o100
+  kind = i2
+]
+
+ConnectorReference 474 [
+  is_output = i1
+  queue_number = i0
+  component = o171
+  kind = i2
+]
+
+ConnectorReference 475 [
+  is_output = i1
+  queue_number = i0
+  component = o46
+  kind = i2
+]
+
+ConnectorReference 476 [
+  is_output = i1
+  queue_number = i0
+  component = o2
+  kind = i2
+]
+
+Connector 477 [
+  x_coord = i47
+  y_coord = i5
+  targets = a0:
+  source_ref = o478
+]
+
+ConnectorReference 478 [
+  is_output = i0
+  queue_number = i0
+  component = o10
+  kind = i1
+]
+
+ConnectorReference 479 [
+  is_output = i0
+  queue_number = i1
+  component = o22
+  kind = i2
+]
+
+Connector 480 [
+  x_coord = i5
+  y_coord = i27
+  targets = a4:o482:o483:o484:o485:
+  source_ref = o481
+]
+
+ConnectorReference 481 [
+  is_output = i0
+  queue_number = i0
+  component = o6
+  kind = i2
+]
+
+ConnectorReference 482 [
+  is_output = i1
+  queue_number = i0
+  component = o95
+  kind = i2
+]
+
+ConnectorReference 483 [
+  is_output = i1
+  queue_number = i0
+  component = o38
+  kind = i2
+]
+
+ConnectorReference 484 [
+  is_output = i1
+  queue_number = i0
+  component = o46
+  kind = i2
+]
+
+ConnectorReference 485 [
+  is_output = i1
+  queue_number = i0
+  component = o2
+  kind = i2
+]
+
+ConnectorReference 486 [
+  is_output = i0
+  queue_number = i0
+  component = o17
+  kind = i2
+]
+
+Connector 487 [
+  x_coord = i5
+  y_coord = i27
+  targets = a1:o489:
+  source_ref = o488
+]
+
+ConnectorReference 488 [
+  is_output = i0
+  queue_number = i0
+  component = o2
+  kind = i2
+]
+
+ConnectorReference 489 [
+  is_output = i1
+  queue_number = i0
+  component = o241
+  kind = i2
+]
+
+Connector 490 [
+  x_coord = i35
+  y_coord = i5
+  targets = a0:
+  source_ref = o491
+]
+
+ConnectorReference 491 [
+  is_output = i0
+  queue_number = i0
+  component = o2
+  kind = i1
+]
+

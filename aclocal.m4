@@ -760,7 +760,7 @@ AC_DEFUN(AM_PATH_GTKGL,
     AC_REQUIRE([AM_PATH_GTK])
     
     AC_ARG_WITH(gtkgl-prefix, [  --with-gtkgl-prefix=DIR prefix where GtkGLArea is installed ])
-    if test -n "${with_gtkgl_pefix}"; then
+    if test -n "${with_gtkgl_prefix}"; then
       gtkgl__Idir="-I${with_gtkgl_prefix}/include"
       gtkgl__Ldir="-L${with_gtkgl_prefix}/lib"
     fi

@@ -445,8 +445,13 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
 	popup_msgbox("Class not found", MSGBOX_CANCEL, 0, MSGBOX_CANCEL,
 		     "Generator-class not found: name = %s", name);
 	g_message("Generator Class not found; name = %s", name);
-	free(g);
-	return NULL;
+	//free(g);
+	//return NULL;
+	
+	// Make it the dummy class...
+	// XXX: Saving does not work now.
+	
+	k = g_hash_table_lookup( generatorclasses, "dummy" );
       }
       g->klass = k;
     }
@@ -1154,6 +1159,110 @@ PUBLIC void gen_send_events(Generator *g, gint index, int attachment_number, AEv
   }
 }
 
+
+// Dummy Generator...
+
+PRIVATE gboolean init_dummy(Generator *g) {
+  return TRUE;
+}
+
+PRIVATE void done_dummy(Generator *g) {
+}
+
+PRIVATE gboolean dummy_output_generator(Generator *g, SAMPLE *buf, int buflen) {
+
+    return FALSE;
+}
+
+PRIVATE void evt_dummy_handler(Generator *g, AEvent *event) {
+}
+
+PRIVATE InputSignalDescriptor input_sigs[] = {
+  { "Input1", SIG_FLAG_REALTIME },
+  { "Input2", SIG_FLAG_REALTIME },
+  { "Input3", SIG_FLAG_REALTIME },
+  { "Input4", SIG_FLAG_REALTIME },
+  { "Input5", SIG_FLAG_REALTIME },
+  { "Input6", SIG_FLAG_REALTIME },
+  { "Input7", SIG_FLAG_REALTIME },
+  { "Input8", SIG_FLAG_REALTIME },
+  { NULL, }
+};
+
+
+PRIVATE OutputSignalDescriptor output_sigs[] = {
+  { "Output1", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output2", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output3", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output4", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output5", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output6", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output7", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output8", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { NULL, }
+};
+
+PRIVATE ControlDescriptor dummy_controls[] = {
+  /* { kind, name, min,max,step,page, size,editable, is_dst,queue_number,
+       init,destroy,refresh,refresh_data }, */
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_KNOB, "defect", 0,5,0.01,0.01, 0,TRUE, TRUE,0,
+    NULL,NULL, NULL, NULL },
+  { CONTROL_KIND_NONE, }
+};
+PRIVATE void init_dummy_generator( void ) {
+
+    int i;
+    GeneratorClass *k = gen_new_generatorclass("dummy", FALSE,
+	    20, 20,
+	    input_sigs, output_sigs, dummy_controls,
+	    init_dummy, done_dummy,
+	    (AGenerator_pickle_t) init_dummy, NULL);
+
+
+    for( i=0; i<20; i++ ) {
+	gen_configure_event_output( k, i, "Out" );
+	gen_configure_event_input( k, i, "In", evt_dummy_handler );
+    }
+}
+
 PUBLIC GHashTable *get_generator_classes( void ) {
   return generatorclasses;
 }
@@ -1170,6 +1279,8 @@ PUBLIC void init_generator(void) {
     kill_thread = g_thread_create( gen_kill_generator_stage2_thread, NULL, TRUE, &err );
 
     generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
+
+    init_dummy_generator();
 }
 
 PUBLIC void done_generator(void) {

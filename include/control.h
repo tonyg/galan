@@ -88,6 +88,8 @@ struct Control {
   GtkWidget *title_label;		/* the label displaying the name */
   GtkWidget *entry;			/* The Text field */
 
+  GtkWidget *ebox;			/* An Eventbox for speed */
+
   ControlPanel *this_panel;
   Generator *g;				/* source for output events; owner of control _OR_
 					   target of output events; also owner of control?? */

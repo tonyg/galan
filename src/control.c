@@ -420,8 +420,11 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
     	c->entry = NULL;
     }
     
+    c->whole = gtk_event_box_new();
 
-    c->whole = c->title_frame;
+    gtk_widget_show( c->whole );
+
+    gtk_container_add( GTK_CONTAINER(c->whole),  c->title_frame );
     gtk_fixed_put(GTK_FIXED(panel == NULL ? global_panel->fixedwidget : panel->fixedwidget),
 	    c->whole, c->x, c->y);
 

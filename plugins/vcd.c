@@ -124,7 +124,7 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   if (!gen_read_realtime_input(g, SIG_INPUT, -1, tmpbuf, buflen))
       memset(tmpbuf, 0, buflen * sizeof(SAMPLE));
   if (!gen_read_realtime_input(g, SIG_DELAY, -1, phasebuf, buflen))
-      memset(tmpbuf, 0, buflen * sizeof(SAMPLE));
+      memset(phasebuf, 0, buflen * sizeof(SAMPLE));
 
   for (i = 0; i < buflen; i++) {
       int phaseoffset;
@@ -133,7 +133,7 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
       if (data->offset >= data->delay_bufsize)
 	  data->offset = 0;
       
-      phaseoffset = data->offset - MIN(data->delay_bufsize,GEN_DOUBLE_TO_INT( phasebuf[i] * SAMPLE_RATE ) );
+      phaseoffset = data->offset - MAX(0,MIN(data->delay_bufsize,GEN_DOUBLE_TO_INT( phasebuf[i] * SAMPLE_RATE )) );
       if (phaseoffset < 0)
 	  phaseoffset += data->delay_bufsize;
 

@@ -217,6 +217,7 @@ PRIVATE void evt_yscale_handler(Generator *g, AEvent *event) {
   data->ysize = event->d.number;
   data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->ysize+1));
   data->phase = 0; 
+  gen_update_controls( g, 1 );
 }
 
 PRIVATE void evt_xscale_handler(Generator *g, AEvent *event) {
@@ -226,6 +227,7 @@ PRIVATE void evt_xscale_handler(Generator *g, AEvent *event) {
    */
   Data *data = g->data;
   data->xsize = event->d.number;
+  gen_update_controls( g, 2 );
 }
 
 
@@ -236,6 +238,10 @@ PRIVATE InputSignalDescriptor input_sigs[] = {
 
 PRIVATE ControlDescriptor controls[] = {
   { CONTROL_KIND_USERDEF, "scope", 0,0,0,0, 0,FALSE, 0,0, init_scope, done_scope, refresh_scope },
+  { CONTROL_KIND_KNOB, "time", 0,0.5,0.001,0.001, 0,TRUE, TRUE,EVT_YSCALE,
+    NULL,NULL, control_double_updater, (gpointer) offsetof(Data, ysize) },
+  { CONTROL_KIND_KNOB, "YScale", 0,5,0.01,0.01, 0,TRUE, TRUE,EVT_XSCALE,
+    NULL,NULL, control_double_updater, (gpointer) offsetof(Data, xsize) },
   /* { kind, name, min,max,step,page, size,editable, is_dst,queue_number,
        init,destroy,refresh,refresh_data }, */
   { CONTROL_KIND_NONE, }

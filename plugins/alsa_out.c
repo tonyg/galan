@@ -387,6 +387,35 @@ PRIVATE void setup_class(void) {
   prefs_register_option("output_alsa_device", "hw:0,0");
   prefs_register_option("output_alsa_device", "plughw:0,0");
 
+  prefs_register_option("output_alsa_period_size", "64" );
+  prefs_register_option("output_alsa_period_size", "128" );
+  prefs_register_option("output_alsa_period_size", "256" );
+  prefs_register_option("output_alsa_period_size", "512" );
+  prefs_register_option("output_alsa_period_size", "1024" );
+  prefs_register_option("output_alsa_period_size", "2048" );
+  prefs_register_option("output_alsa_period_size", "4096" );
+
+  {
+    char *name = prefs_get_item("output_alsa_period_size");
+    int period_size;
+    if (name == NULL || sscanf(name, "%d", &period_size) != 1) {
+      period_size = 1024;
+    }
+    period_time = 1000000*period_size/SAMPLE_RATE;	 /* period time in us */
+  }
+
+  prefs_register_option("output_alsa_num_periods", "2" );
+  prefs_register_option("output_alsa_num_periods", "3" );
+  prefs_register_option("output_alsa_num_periods", "4" );
+
+  {
+    char *name = prefs_get_item("output_alsa_num_periods");
+    int num_period;
+    if (name == NULL || sscanf(name, "%d", &num_period) != 1) {
+      num_period = 2;
+    }
+    buffer_time = period_time * num_period;
+  }
 
   k = gen_new_generatorclass("audio_out", prefer, 0, 0,
 			     input_sigs, NULL, NULL,

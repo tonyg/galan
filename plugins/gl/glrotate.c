@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -122,9 +123,21 @@ PRIVATE InputSignalDescriptor input_sigs[] = {
   { NULL, }
 };
 
+PRIVATE ControlDescriptor controls[] = {
+  /* { kind, name, min,max,step,page, size,editable, is_dst,queue_number,
+       init,destroy,refresh,refresh_data }, */
+  { CONTROL_KIND_KNOB, "RotX", 0,360,1,1, 0,TRUE, TRUE,EVT_TRANSX,
+    NULL,NULL, control_double_updater, (gpointer) offsetof(Data, rx) },
+  { CONTROL_KIND_KNOB, "RotY", 0,360,1,1, 0,TRUE, TRUE,EVT_TRANSY,
+    NULL,NULL, control_double_updater, (gpointer) offsetof(Data, ry) },
+  { CONTROL_KIND_KNOB, "RotZ", 0,360,1,1, 0,TRUE, TRUE,EVT_TRANSZ,
+    NULL,NULL, control_double_updater, (gpointer) offsetof(Data, rz) },
+  { CONTROL_KIND_NONE, }
+};
+
 PRIVATE void setup_class(void) {
   GeneratorClass *k = gen_new_generatorclass("glrotate", FALSE, NUM_EVT_INPUTS, 0,
-					     input_sigs, output_sigs, NULL,
+					     input_sigs, output_sigs, controls,
 					     init_instance, destroy_instance,
 					     unpickle_instance, pickle_instance);
 

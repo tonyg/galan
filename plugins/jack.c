@@ -274,11 +274,6 @@ PRIVATE int playport_init_instance(Generator *g) {
   OData *data;
   //int err;
 
-  if (instance_count > 0)
-    /* Not allowed more than one of these things. */
-    return 0;
-
-  //instance_count++;
   jack_instance_count++;
 
   data = safe_malloc(sizeof(OData));
@@ -311,6 +306,44 @@ PRIVATE int playport_init_instance(Generator *g) {
   return 1;
 }
 
+PRIVATE int recport_init_instance(Generator *g) {
+  OData *data;
+  //int err;
+
+  jack_instance_count++;
+
+  data = safe_malloc(sizeof(OData));
+
+  //data->buf = safe_malloc( sizeof(SAMPLE) * 4096 );
+  //jack_timestamp = ;
+
+  if( jack_client == NULL )
+      jack_client = jack_client_new( "galan" );
+  
+
+  if (jack_client == NULL) {
+    free(data);
+    popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		 "Could not open Jack Client");
+    return 0;
+  }
+
+  data->port = jack_port_register (jack_client, g->name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+
+  if( jack_clock == NULL ) {
+      jack_clock = gen_register_clock(g, "Jack Clock", clock_handler);
+      gen_select_clock(jack_clock);	/* a not unreasonable assumption? */
+  }
+
+  g->data = data;
+
+  //gen_register_realtime_fn(g, playport_realtime_handler);
+
+  return 1;
+}
+
+// TODO: free buffers... and ports...
+
 PRIVATE void destroy_instance(Generator *g) {
   Data *data = g->data;
 
@@ -329,7 +362,7 @@ PRIVATE void destroy_instance(Generator *g) {
 }
 
 PRIVATE void playport_destroy_instance(Generator *g) {
-  Data *data = g->data;
+  OData *data = g->data;
 
   gen_deregister_realtime_fn(g, playport_realtime_handler);
 
@@ -344,6 +377,38 @@ PRIVATE void playport_destroy_instance(Generator *g) {
   jack_instance_count--;
 }
 
+PRIVATE void recport_destroy_instance(Generator *g) {
+  OData *data = g->data;
+
+  //gen_deregister_realtime_fn(g, playport_realtime_handler);
+
+  if (data != NULL) {
+
+    if( jack_instance_count == 1 )
+	gen_deregister_clock(jack_clock);
+
+    free(data);
+  }
+
+  jack_instance_count--;
+}
+
+PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
+    OData *data = g->data;
+    int i;
+
+    OUTPUTSAMPLE *in;
+    SAMPLETIME offset = gen_get_sampletime() - jack_timestamp;
+
+
+    in = jack_port_get_buffer( data->port, buflen );
+
+
+    for (i = 0; i < buflen; i++)
+	buf[i] = in[i+offset];
+
+    return TRUE;
+}
 PRIVATE InputSignalDescriptor input_sigs[] = {
   { "Left Channel", SIG_FLAG_REALTIME },
   { "Right Channel", SIG_FLAG_REALTIME },
@@ -352,6 +417,11 @@ PRIVATE InputSignalDescriptor input_sigs[] = {
 
 PRIVATE InputSignalDescriptor playport_input_sigs[] = {
   { "Output", SIG_FLAG_REALTIME },
+  { NULL, }
+};
+
+PRIVATE OutputSignalDescriptor output_sigs[] = {
+  { "Input", SIG_FLAG_REALTIME, { output_generator, } },
   { NULL, }
 };
 
@@ -368,12 +438,21 @@ PRIVATE void setup_class(void) {
 				  PIXMAPDIRIFY("oss_output.xpm"),
 				  NULL);
 
-  k = gen_new_generatorclass("jack_port", FALSE, 0, 0,
+  k = gen_new_generatorclass("jack_outport", FALSE, 0, 0,
 			     playport_input_sigs, NULL, NULL,
 			     playport_init_instance, playport_destroy_instance,
 			     (AGenerator_pickle_t) playport_init_instance, NULL);
 
   gencomp_register_generatorclass(k, FALSE, "Outputs/Jack Out Port",
+				  NULL,
+				  NULL);
+
+  k = gen_new_generatorclass("jack_inport", FALSE, 0, 0,
+			     NULL, output_sigs, NULL,
+			     recport_init_instance, recport_destroy_instance,
+			     (AGenerator_pickle_t) recport_init_instance, NULL);
+
+  gencomp_register_generatorclass(k, FALSE, "Outputs/Jack In Port",
 				  NULL,
 				  NULL);
 }

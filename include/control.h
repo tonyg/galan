@@ -40,9 +40,17 @@ enum ControlKind {
   CONTROL_KIND_TOGGLE,
   CONTROL_KIND_BUTTON,
   CONTROL_KIND_USERDEF,
+  CONTROL_KIND_PANEL,
 
   CONTROL_MAX_KIND
 };
+
+typedef struct ControlPanel {
+    GtkWidget *scrollwin, *fixedwidget;
+    char *name;
+    gboolean visible;
+    struct sheet *sheet;
+} ControlPanel;
 
 struct ControlDescriptor {
   ControlKind kind;			/* kind of control */
@@ -64,6 +72,7 @@ struct ControlDescriptor {
 
 struct Control {
   ControlDescriptor *desc;
+  ControlPanel *panel;
   char *name;				/* overriding name. Set to NULL to use default. */
   gdouble min, max, step, page;		/* overrides desc's values */
   gboolean folded;
@@ -77,12 +86,13 @@ struct Control {
   GtkWidget *title_frame;		/* the frame displaying the whole control */
   GtkWidget *title_label;		/* the label displaying the name */
 
+  ControlPanel *this_panel;
   Generator *g;				/* source for output events; owner of control _OR_
 					   target of output events; also owner of control?? */
   void *data;				/* user data (mostly for userdef'd controls) */
 };
 
-extern Control *control_new_control(ControlDescriptor *desc, Generator *g);
+extern Control *control_new_control(ControlDescriptor *desc, Generator *g, ControlPanel *panel );
 extern void control_kill_control(Control *c);
 
 extern Control *control_unpickle(ObjectStoreItem *item);
@@ -99,7 +109,12 @@ extern void show_control_panel(void);
 extern void hide_control_panel(void);
 extern void reset_control_panel(void);
 
+extern ControlPanel *control_panel_new( char *name, gboolean visible, struct sheet *sheet );
 extern void control_set_value(Control *c, gfloat value);
+extern void control_panel_register_panel( ControlPanel *panel, char *name, gboolean add_fixed );
+extern void control_panel_unregister_panel( ControlPanel *panel );
+extern ControlPanel *control_panel_unpickle(ObjectStoreItem *item);
+extern ObjectStoreItem *control_panel_pickle(ControlPanel *cp, ObjectStore *db);
 
 /* these functions can go into ControlDescriptor.refresh (with a suitable refresh_data) */
 extern void control_int32_updater(Control *c);

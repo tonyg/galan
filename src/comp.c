@@ -199,7 +199,7 @@ PUBLIC Component *comp_unpickle(ObjectStoreItem *item) {
     if( shitem == NULL )
 	shitem = objectstore_get_root( item->db );
 
-    comp->sheet = sheet_unpickle( shitem, NULL );
+    comp->sheet = sheet_unpickle( shitem );
     comp->x = objectstore_item_get_integer(item, "x_coord", 0);
     comp->y = objectstore_item_get_integer(item, "y_coord", 0);
     comp->width = objectstore_item_get_integer(item, "width", 70);

@@ -277,6 +277,9 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
   Generator *g = objectstore_get_object(item);
   GeneratorClass *k;
 
+  if( item == NULL )
+      return NULL;
+
   if (g == NULL) {
     g = safe_malloc(sizeof(Generator));
     objectstore_set_object(item, g);

@@ -232,7 +232,7 @@ PRIVATE void emupatchcomp_unpickle(Component *c, ObjectStoreItem *item, ObjectSt
   //for( i=0; i<d->anzinputevents; i++ )
   //    gen_configure_event_input( d->gc, i, d->id->gprnames[i], emupatch_gen_event_handler ); 
 
-  g_print( "g: %x, gc:%x\n", d->g, d->id->gc );
+  //g_print( "g: %x, gc:%x\n", d->g, d->id->gc );
 
   
   //validate_connectors(c);

@@ -173,6 +173,7 @@ PRIVATE LADSPA_Data get_default( ControlDescriptor *control, LADSPA_PortRangeHin
 	    return 440.0;
 
 	printf( "plugins says it has default... but i cant find out.\n" );
+	return 0.0;
 
     } else 
 	return 0.0;

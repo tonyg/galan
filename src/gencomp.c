@@ -462,7 +462,7 @@ PRIVATE void kill_popup(GtkWidget *popup, GtkItemFactory *ifact) {
 PRIVATE void new_control_callback(Component *c, guint control_index, GtkWidget *menuitem) {
   GenCompData *d = c->data;
 
-  control_new_control(&d->g->klass->controls[control_index], d->g);
+  control_new_control(&d->g->klass->controls[control_index], d->g, c->sheet->control_panel );
 }
 
 PRIVATE void all_controls_callback(Component *c, guint control_index, GtkWidget *menuitem) {
@@ -471,7 +471,7 @@ PRIVATE void all_controls_callback(Component *c, guint control_index, GtkWidget 
   GenCompData *d = c->data;
 
   for (i = 0; i < d->g->klass->numcontrols; i++)
-      control_new_control(&d->g->klass->controls[i], d->g);
+      control_new_control(&d->g->klass->controls[i], d->g, c->sheet->control_panel);
 }
 
 #define NEW_CONTROL_PREFIX "/New Control/"
@@ -486,7 +486,7 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
   ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<gencomp-popup>", NULL);
   gtk_item_factory_create_items(ifact, nitems, popup_items, c);
 
-  if(d->g->klass->numcontrols > 5) {
+  if(d->g->klass->numcontrols > 3) {
       GtkItemFactoryEntry ent = { NEW_CONTROL_PREFIX "ALL", NULL, all_controls_callback, 0, NULL };
       gtk_item_factory_create_item(ifact, &ent, c, 1);
   }

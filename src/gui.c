@@ -65,7 +65,16 @@ PUBLIC GList *get_sheet_list( void ) {
 PUBLIC void gui_register_sheet( struct sheet *sheet ) {
 
     gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, gtk_label_new( sheet->name ) );
-    g_list_append( sheets, sheet );
+    sheets = g_list_append( sheets, sheet );
+}
+
+PUBLIC void gui_unregister_sheet( struct sheet *sheet ) {
+
+    int pagenum;
+
+    sheets = g_list_remove( sheets, sheet );
+    pagenum = gtk_notebook_page_num( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin );
+    gtk_notebook_remove_page( GTK_NOTEBOOK( mainnotebook ), pagenum );
 }
 
 PUBLIC void update_sheet_name( struct sheet *sheet ) {
@@ -101,12 +110,30 @@ PRIVATE void about_callback(void) {
 	       );
 }
 
-PRIVATE void file_new_callback(gpointer userdata, guint action, GtkWidget *widget) {
-  if (current_filename != NULL) {
-    free(current_filename);
-    current_filename = NULL;
-  }
+PRIVATE void clear_sheet(gpointer userdata, guint action, GtkWidget *widget) {
   sheet_clear( gui_get_active_sheet() );
+}
+
+PRIVATE void unconnect_sheet(gpointer userdata, guint action, GtkWidget *widget) {
+  sheet_kill_refs( gui_get_active_sheet() );
+}
+
+PRIVATE void file_new_callback(gpointer userdata, guint action, GtkWidget *widget) {
+
+    GList *sheetX = get_sheet_list();
+    Sheet *s1;
+
+    while( sheetX != NULL ) {
+	GList *temp = g_list_next( sheetX );
+	Sheet *s = sheetX->data;
+
+	sheet_remove( s );
+	sheetX = temp;
+    }
+
+    s1 = create_sheet( );
+    s1->control_panel = control_panel_new( s1->name, TRUE, s1 );
+    gui_register_sheet( s1 );
 }
 
 PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
@@ -146,12 +173,14 @@ PRIVATE void open_file(gpointer userdata, guint action, GtkWidget *widget) {
   gtk_widget_show(fs);
 }
 
+PRIVATE gboolean sheet_only = FALSE;
+
 PRIVATE void save_file_to(char *filename) {
   FILE *f = fopen(filename, "wb");
   if (f == NULL)
     return;
 
-  sheet_saveto( gui_get_active_sheet() , f);
+  sheet_saveto( gui_get_active_sheet() , f, sheet_only);
   fclose(f);
 }
 
@@ -168,6 +197,18 @@ PRIVATE void save_sheet_callback(GtkWidget *widget, GtkWidget *fs) {
 
 PRIVATE void save_file(gpointer userdata, guint action, GtkWidget *widget) {
   gboolean reuse_filename = (action == 0);
+
+  if( (sheet_only = (action == 2 )) ){
+      Sheet *sheet = gui_get_active_sheet();
+
+      if( sheet->referring_sheets ) {
+	  popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		  "Sheet %s is connected to other sheets.\n"
+		  "I cant save it like this. Please unconnect first.", sheet->name );
+	  return;
+      }
+
+  }
 
   if (!reuse_filename || current_filename == NULL) {
     GtkWidget *fs = gtk_file_selection_new("Save Sheet");
@@ -190,22 +231,25 @@ PRIVATE void new_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
 
     Sheet *sheet = create_sheet();
     gui_register_sheet( sheet );
+    sheet->control_panel = control_panel_new( sheet->name, TRUE, sheet );
 }
 
-PRIVATE void open_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
-}
+//PRIVATE void open_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
+//}
 
 PRIVATE void del_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
 
-    int pagenum;
     Sheet *sheet = gui_get_active_sheet();
 
-    sheet_clear( sheet );
-    g_list_remove( sheets, sheet );
-    pagenum = gtk_notebook_get_current_page( GTK_NOTEBOOK( mainnotebook ) );
-    gtk_notebook_remove_page( GTK_NOTEBOOK( mainnotebook ), pagenum );
+    sheet_remove( sheet );
 }
 
+PRIVATE void ren_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
+
+    Sheet *sheet = gui_get_active_sheet();
+
+    sheet_rename( sheet );
+}
 
 PRIVATE void reg_sheet2( gpointer userdata, guint action, GtkWidget *widget ) {
 
@@ -266,9 +310,14 @@ PRIVATE GtkItemFactoryEntry mainmenu_items[] = {
   { "/_Sheet",			NULL,		NULL, 0,		"<Branch>" },
   { "/Sheet/_New",		NULL,		new_sheet, 0,		NULL },
 //  { "/Sheet/_Open",		NULL,		open_sheet, 0,		NULL },
+  { "/Sheet/_Save",		NULL,		save_file, 2,		NULL },
+  { "/Sheet/Re_name",		NULL,		ren_sheet, 0,		NULL },
+  { "/Sheet/sep1",		NULL,		NULL, 0,		"<Separator>" },
+  { "/Sheet/_Clear",		NULL,		clear_sheet, 0,		NULL },
   { "/Sheet/_Remove",		NULL,		del_sheet, 0,		NULL },
+  { "/Sheet/_Unconnect",	NULL,		unconnect_sheet, 0,	NULL },
+  { "/Sheet/sep2",		NULL,		NULL, 0,		"<Separator>" },
   { "/Sheet/R_egister",		NULL,		reg_sheet2, 0,		NULL },
-//  { "/Sheet/Re_name",		NULL,		ren_sheet, 0,		NULL },
   { "/_Edit",			NULL,		NULL, 0,		"<Branch>" },
   { "/Edit/_Preferences...",	"<control>P",	prefs_edit_prefs, 0,	NULL },
   { "/_Window",			NULL,		NULL, 0,		"<Branch>" },
@@ -325,11 +374,14 @@ PRIVATE void create_mainwin(void) {
   gtk_container_add(GTK_CONTAINER(hb), mainmenu);
 
   s1 = create_sheet();
+  s1->control_panel = control_panel_new( s1->name, TRUE, s1 );
 
   mainnotebook = gtk_notebook_new();
   gtk_box_pack_start(GTK_BOX(vb), mainnotebook, TRUE, TRUE, 0);
   gtk_widget_show( mainnotebook );
-  gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), s1->scrollwin, NULL );
+  //gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), s1->scrollwin, NULL );
+
+  gui_register_sheet( s1 );
 }
 
 PRIVATE gint timeout_handler(gpointer data) {

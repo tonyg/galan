@@ -12,7 +12,7 @@ endif
 
 LDFLAGS = "-module" @GTK_LIBS@ @GTKGL_LIBS@
 
-INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ @GTKGL_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\" # $(gnome-cflags)
+INCLUDES = -I.. -I$(srcdir)/../../include @GTK_CFLAGS@ @GTKGL_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\" # $(gnome-cflags)
 CLEANFILES=*.la.c
 
 

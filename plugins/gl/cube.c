@@ -31,7 +31,7 @@
 #include "gencomp.h"
 
 PRIVATE gboolean render_function(Generator *g ) {
-  int i;
+  //int i;
 
   glColor3f(1,0,0);
   glBegin(GL_QUAD_STRIP);

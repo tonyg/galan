@@ -31,7 +31,7 @@
 #include "gencomp.h"
 
 PRIVATE gboolean render_function(Generator *g ) {
-  int i;
+  //int i;
 
   glColor3f(1,1,0);
   glNormal3f( 0,0,1 );

@@ -126,6 +126,7 @@ PRIVATE gboolean open_alsa_seq( void ) {
   
     /* set up our clients queue */
     seq_queue = snd_seq_alloc_queue( seq_client );
+    printf( "queue: %d\n", seq_queue );
     return TRUE;
 
 }
@@ -282,7 +283,7 @@ PRIVATE void input_callback( Generator *g, gint source, GdkInputCondition condit
     
     snd_seq_event_input(seq_client, &ev);
 
-    g_print( "event type: %d\n", ev->type );
+    g_print( "event type: %d timestamp %d:%d\n", ev->type, ev->time.time.tv_sec, ev->time.time.tv_nsec );
 
     execute_event( ev );
 

@@ -47,12 +47,27 @@ typedef struct Connector Connector;
 typedef struct ComponentClass ComponentClass;
 typedef struct Component Component;
 
+/**
+ * \brief This is a reference to a Connector
+ *
+ * This is a reference to a connector. This uniquely identifies the connector.
+ * Every connector consists of a ConnectorReference for itself and a List of ConnectorReferences
+ * it is connected to.
+ */
+
 struct ConnectorReference {
-  Component *c;
+  Component *c;  /**< The Component */
   ConnectorKind kind;
   gboolean is_output;
   gint queue_number;
 };
+
+/**
+ * \brief The connector.
+ *
+ * The connector contains a reference on itself, a list of ConnectorReferences it is connected to, and
+ * the x,y position relative to the component it is part of.
+ */
 
 struct Connector {
   ConnectorReference ref;	/* this connector */
@@ -92,6 +107,7 @@ struct Component {
 
   struct sheet *sheet; 
   gint x, y, width, height;
+  gint saved_x, saved_y;
   GList *connectors;
 
   void *data;

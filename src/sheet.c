@@ -42,6 +42,7 @@ enum SheetModes {
   SHEET_MODE_PRESSING,
   SHEET_MODE_DRAGGING_COMP,
   SHEET_MODE_DRAGGING_LINK,
+  SHEET_MODE_DRAGGING_SEL_COMPS,
 
   SHEET_MAX_MODE
 };
@@ -63,6 +64,15 @@ PRIVATE GdkColor comp_colors[COMP_NUM_COLORS] = {
   { 0, 65535, 0, 65535 }
 };
 
+PRIVATE GdkColor comp_sel_colors[COMP_NUM_COLORS] = {
+  { 0, 0, 0, 0 },
+  { 0, 32767, 32767, 32767 },
+  { 0, 0, 65535, 0},
+  { 0, 0, 0, 65535 },
+  { 0, 65535, 0, 0 },
+  { 0, 0, 65535, 65535 },
+  { 0, 65535, 65535, 0 }
+};
 
 PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
   GdkDrawable *drawable = widget->window;
@@ -101,8 +111,12 @@ PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
     r_gen.width = c->width;
     r_gen.height = c->height;
 
-    if (gdk_rectangle_intersect(&r_gen, &area, &r))
-      comp_paint(c, &area, drawable, style, comp_colors);
+    if (gdk_rectangle_intersect(&r_gen, &area, &r)) {
+	if( g_list_find( sheet->selected_comps, c ) != NULL )
+	    comp_paint(c, &area, drawable, style, comp_sel_colors);
+	else
+	    comp_paint(c, &area, drawable, style, comp_colors);
+    }
   }
 
   return TRUE;
@@ -161,9 +175,17 @@ PRIVATE void process_click(GtkWidget *w, GdkEventButton *be) {
     
 
     if (!found_conn) {
-      sheet->components = g_list_remove(sheet->components, c);
-      sheet->components = g_list_prepend(sheet->components, c);
-      sheet->saved_ref.c = c;
+	GList *selcomp;
+	sheet->components = g_list_remove(sheet->components, c);
+	sheet->components = g_list_prepend(sheet->components, c);
+
+	for( selcomp = sheet->selected_comps; selcomp != NULL; selcomp = g_list_next( selcomp ) ) {
+	    Component *selcompX = selcomp->data;
+	    selcompX->saved_x = selcompX->x - be->x_root;
+	    selcompX->saved_y = selcompX->y - be->y_root;
+	}
+
+	sheet->saved_ref.c = c;
     }
     else
     {
@@ -338,6 +360,7 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	  break;
 
 	case SHEET_MODE_DRAGGING_COMP:
+	case SHEET_MODE_DRAGGING_SEL_COMPS:
 	  gtk_widget_queue_draw(sheet->drawingwidget);
 	  break;
 
@@ -355,6 +378,19 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	  gtk_widget_queue_draw(sheet->drawingwidget);
 
 	  break;
+	}
+	case SHEET_MODE_PRESSING: {
+	    Component *c = find_component_at( sheet, be->x, be->y );
+	    if( c != NULL ) {
+		if( g_list_find( sheet->selected_comps, c ) != NULL )
+		    sheet->selected_comps = g_list_remove( sheet->selected_comps, c );
+		else
+		    sheet->selected_comps = g_list_append( sheet->selected_comps, c );
+
+		sheet_queue_redraw_component( sheet, c );
+	    }
+	
+	    break;
 	}
 
 	default:
@@ -378,21 +414,63 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	    sheet->sheetmode = SHEET_MODE_DRAGGING_LINK;
 	    break;
 	  } else {
-	    sheet->sheetmode = SHEET_MODE_DRAGGING_COMP;
+	    if( g_list_find( sheet->selected_comps, sheet->saved_ref.c ) == NULL ) {
+		sheet->sheetmode = SHEET_MODE_DRAGGING_COMP;
+	    } else {
+		sheet->sheetmode = SHEET_MODE_DRAGGING_SEL_COMPS;
+
+		//g_list_free( sheet->selected_comps );
+		//sheet->selected_comps = NULL;
+		//sheet->selected_comps = g_list_append( sheet->selected_comps, sheet->saved_ref.c );
+		//sheet->saved_ref.c->saved_x = sheet->saved_x;
+		//sheet->saved_ref.c->saved_y = sheet->saved_y;
+		//gtk_widget_queue_draw( sheet->drawingwidget );
+	    }
+		
 	  }
 
-	  /* FALL THROUGH */
+	  break;
+
+	case SHEET_MODE_DRAGGING_SEL_COMPS:
+	  {
+	      GList *selcomp;
+
+	      for( selcomp = sheet->selected_comps; selcomp != NULL; selcomp = g_list_next( selcomp ) ) {
+		  Component *selcompX = selcomp->data;
+		  gtk_widget_queue_draw_area(sheet->drawingwidget,
+			  selcompX->x, selcompX->y,
+			  selcompX->width, selcompX->height);
+
+		  selcompX->x = MIN(MAX(selcompX->saved_x + me->x_root, 0),
+			  GEN_AREA_LENGTH - selcompX->width);
+
+		  selcompX->y = MIN(MAX(selcompX->saved_y + me->y_root, 0),
+			  GEN_AREA_LENGTH - selcompX->height);
+
+		  gtk_widget_queue_draw_area(sheet->drawingwidget,
+			  selcompX->x, selcompX->y,
+			  selcompX->width, selcompX->height);
+	      }
+	      break;
+	  }
 
 	case SHEET_MODE_DRAGGING_COMP:
-	  gtk_widget_queue_draw_area(sheet->drawingwidget,
-				     sheet->saved_ref.c->x, sheet->saved_ref.c->y,
-				     sheet->saved_ref.c->width, sheet->saved_ref.c->height);
-	  sheet->saved_ref.c->x = MIN(MAX(sheet->saved_x + me->x_root, 0),GEN_AREA_LENGTH - sheet->saved_ref.c->width);
-	  sheet->saved_ref.c->y = MIN(MAX(sheet->saved_y + me->y_root, 0),GEN_AREA_LENGTH - sheet->saved_ref.c->height);
-	  gtk_widget_queue_draw_area(sheet->drawingwidget,
-				     sheet->saved_ref.c->x, sheet->saved_ref.c->y,
-				     sheet->saved_ref.c->width, sheet->saved_ref.c->height);
-	  break;
+	  {
+	      gtk_widget_queue_draw_area(sheet->drawingwidget,
+		      sheet->saved_ref.c->x, sheet->saved_ref.c->y,
+		      sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+
+	      sheet->saved_ref.c->x = MIN(MAX(sheet->saved_x + me->x_root, 0),
+		      GEN_AREA_LENGTH - sheet->saved_ref.c->width);
+
+	      sheet->saved_ref.c->y = MIN(MAX(sheet->saved_y + me->y_root, 0),
+		      GEN_AREA_LENGTH - sheet->saved_ref.c->height);
+
+	      gtk_widget_queue_draw_area(sheet->drawingwidget,
+		      sheet->saved_ref.c->x, sheet->saved_ref.c->y,
+		      sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+	      break;
+	  }
 
 	default:
 	  break;
@@ -481,6 +559,7 @@ PUBLIC Sheet *create_sheet( void ) {
   Sheet *sheet = safe_malloc( sizeof( Sheet ) );
   
   sheet->components = NULL;
+  sheet->selected_comps = NULL;
   sheet->sheetmode  = SHEET_MODE_NORMAL;
   sheet->sheetklass = NULL;
   sheet->panel_control_active = FALSE;
@@ -522,8 +601,10 @@ PUBLIC Sheet *create_sheet( void ) {
 
   colormap = gtk_widget_get_colormap(sheet->drawingwidget);
 
-  for (i = 0; i < COMP_NUM_COLORS; i++)
+  for (i = 0; i < COMP_NUM_COLORS; i++) {
     gdk_colormap_alloc_color(colormap, &comp_colors[i], FALSE, TRUE);
+    gdk_colormap_alloc_color(colormap, &comp_sel_colors[i], FALSE, TRUE);
+  }
   
   //gui_register_sheet( sheet );
 
@@ -544,8 +625,11 @@ PUBLIC void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer 
 
 PUBLIC void sheet_delete_component(Sheet *sheet, Component *c) {
 
-  if( comp_kill_component(c) )
+  if( comp_kill_component(c) ) {
       sheet->components = g_list_remove(sheet->components, c);
+      if( g_list_find( sheet->selected_comps, c ) )
+	  sheet->selected_comps = g_list_remove( sheet->selected_comps, c );
+  }
 
   gtk_widget_queue_draw(sheet->drawingwidget);
 }

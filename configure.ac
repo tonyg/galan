@@ -16,6 +16,9 @@ dnl AM_PROG_LIBTOOL
 dnl AM_DISABLE_STATIC
 dnl AC_SUBST(LIBTOOL_DEPS)
 
+AC_LIBTOOL_DLOPEN
+AM_PROG_LIBTOOL
+
 
 dnl Header-file checks
 AC_HEADER_STDC
@@ -26,9 +29,9 @@ dnl ===========================================================================
 AC_SUBST(OPTIONAL_PLUGINS)
 OPTIONAL_PLUGINS=
 
-AC_CHECK_HEADER(esd.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.so")
-AC_CHECK_HEADER(vorbis/vorbisfile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.so")
-AC_CHECK_HEADERS(audiofile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.so")
+AC_CHECK_HEADER(esd.h, [OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.la"])
+AC_CHECK_HEADER(vorbis/vorbisfile.h, [OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.la"])
+AC_CHECK_HEADERS(audiofile.h, [OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.la voice.la"])
 
 dnl Feature tests
 dnl ===========================================================================
@@ -41,20 +44,19 @@ AC_ARG_ENABLE(fixed-point,
 	AC_DEFINE(WANT_FLOATING_POINT_SAMPLES, 1))
 AC_ARG_ENABLE(emu10k1,
 [  --enable-emu10k1        Compile emu10k1 support],
-	OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} emu10k1.so" )
+	OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} emu10k1.la" )
 
-AM_PATH_GTK(1.2.0, ,
-	    AC_MSG_ERROR(Cannot find GTK: is gtk-config in path?))
+AM_PATH_GTK(1.2.0, ,[AC_MSG_ERROR([Cannot find GTK: is gtk-config in path?])])
 
 AM_PATH_GDK_PIXBUF()
 
-AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.so alsa_midi.so", AC_MSG_RESULT(Alsa not found))
+AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.la alsa_midi.la", AC_MSG_RESULT(Alsa not found))
 
 CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"
 LIBS="$alsa_save_LIBS"
 
-AM_PATH_GTKGL(, AC_MSG_RESULT(GtkGL not found))
+AM_PATH_GTKGL(, [AC_MSG_RESULT([GtkGL not found])])
 
 AM_CONDITIONAL(compileGL, test x$have_gtkgl = xyes )
 
@@ -65,7 +67,7 @@ if test "x$GCC" = "xyes"; then
   fi
 fi
 
-PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.so sndfile_out.so", AC_MSG_RESULT(sndfile not found) )
+PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.la sndfile_out.la", AC_MSG_RESULT(sndfile not found) )
 
 
 AC_OUTPUT(Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile galan.spec)

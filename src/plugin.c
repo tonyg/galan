@@ -85,6 +85,9 @@ PRIVATE void load_all_plugins(char *dir);	/* forward decl */
 PRIVATE int check_plugin_validity(char *name) {
   struct stat sb;
 
+  if( strcmp(name+(strlen(name)-3), ".so" ) )
+    return 0;
+
   if (stat(name, &sb) == -1)
     return 0;
 

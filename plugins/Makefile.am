@@ -10,47 +10,46 @@ plugindir = $(pkglibdir)/plugins
 # empty) whitespace-separated list of names from the list just
 # below. (The optional plugins HAVE to be defined in EXTRA_PROGRAMS -
 # see the infopages for automake.)
-EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so alsa_out.so alsa_midi.so sndfile_in.so sndfile_out.so
+EXTRA_LTLIBRARIES = esd_output.la pcm_out.la ogg_ra.la emu10k1.la alsa_out.la alsa_midi.la sndfile_in.la sndfile_out.la voice.la
 
-plugin_PROGRAMS = \
-	osc.so oss_output.so random.so rart.so voice.so ctrl.so gain.so \
-	clock.so vca.so delay.so patsel.so trigseq.so vcf.so sig2evt.so dcbias.so \
-	resample.so xfade.so atan.so evtadd.so evtmul.so seqnum.so adsr.so seqnote.so \
-	reverse.so patloop.so vco.so sigctrl.so oss_input.so polyrart.so smooth.so scope.so joyport.so \
-	evtcomp.so evtgate.so evttimer.so evtsum.so evtpower.so evtnotetofreq.so evtabs.so evtinteger.so\
-	evtsgn.so strcombo.so filerequester.so midi_seq_clock.so  midiclock.so sqrt.so \
-	evtdelay.so evtsettings.so vcd.so ladspa.so sampler.so balance.so lights.so iir_generic.so lowpass.so\
-	integrate.so diff.so\
+plugin_LTLIBRARIES = \
+	osc.la oss_output.la random.la rart.la ctrl.la gain.la \
+	clock.la vca.la delay.la patsel.la trigseq.la vcf.la sig2evt.la dcbias.la \
+	resample.la xfade.la atan.la evtadd.la evtmul.la seqnum.la adsr.la seqnote.la \
+	reverse.la patloop.la vco.la sigctrl.la oss_input.la polyrart.la smooth.la scope.la joyport.la \
+	evtcomp.la evtgate.la evttimer.la evtsum.la evtpower.la evtnotetofreq.la evtabs.la evtinteger.la\
+	evtsgn.la strcombo.la filerequester.la midi_seq_clock.la  midiclock.la sqrt.la \
+	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
+	integrate.la diff.la\
 	@OPTIONAL_PLUGINS@
 
-LDFLAGS = -shared
-LDADD = @GTK_LIBS@
+LDFLAGS = "-module" @GTK_LIBS@
 INCLUDES = -I.. -I$(srcdir)/../include @GDK_PIXBUF_CFLAGS@ @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DPIC -fPIC
-CLEANFILES=*.so.c
+CLEANFILES=*.la.c
 
-esd_output_so_INCLUDES=`esd-config --cflags`
-esd_output_so_LDFLAGS=`esd-config --libs`
+esd_output_la_INCLUDES=`esd-config --cflags`
+esd_output_la_LDFLAGS=`esd-config --libs` -rpath $(pkglibdir)
 
-alsa_out_so_INCLUDES= @ALSA_CFLAGS@
-alsa_out_so_LDFLAGS= @ALSA_LIBS@
-alsa_midi_so_INCLUDES= @ALSA_CFLAGS@
-alsa_midi_so_LDFLAGS= @ALSA_LIBS@
+alsa_out_la_INCLUDES= @ALSA_CFLAGS@
+alsa_out_la_LDFLAGS= @ALSA_LIBS@ -rpath $(pkglibdir)
+alsa_midi_la_INCLUDES= @ALSA_CFLAGS@
+alsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(pkglibdir)
 
 
-sndfile_in_so_INCLUDES= @SNDFILE_CFLAGS@
-sndfile_in_so_LDFLAGS= @SNDFILE_LIBS@
-sndfile_out_so_INCLUDES= @SNDFILE_CFLAGS@
-sndfile_out_so_LDFLAGS= @SNDFILE_LIBS@
+sndfile_in_la_INCLUDES= @SNDFILE_CFLAGS@
+sndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(pkglibdir)
+sndfile_out_la_INCLUDES= @SNDFILE_CFLAGS@
+sndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(pkglibdir)
 
-voice_so_LDFLAGS=-laudiofile
-pcm_out_so_LDFLAGS=-laudiofile
-ogg_ra_so_LDFLAGS=-lvorbis -lvorbisfile
-emu10k1_so_LDFLAGS= emu10k1-lib/libdsp.o
+voice_la_LDFLAGS=-laudiofile -rpath $(pkglibdir)
+pcm_out_la_LDFLAGS=-laudiofile -rpath $(pkglibdir)
+ogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile -rpath $(pkglibdir)
+emu10k1_la_LDFLAGS= emu10k1-lib/libdsp.o
 
-emu10k1_so_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
-ladspa_so_SOURCES = ladspa.c ladspa-load.c
+emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
+ladspa_la_SOURCES = ladspa.c ladspa-load.c
 
-SUFFIXES= .so.c
-%.so.c: %.c
+SUFFIXES= .la.c
+%.la.c: %.c
 	ln -s $< $@
 

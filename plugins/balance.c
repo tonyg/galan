@@ -47,6 +47,8 @@
 
 typedef struct Data {
   gdouble amount;
+  SAMPLETIME last_timestamp;
+  SAMPLE buf[MAXIMUM_REALTIME_STEP];
 } Data;
 
 PRIVATE gboolean init_instance(Generator *g) {
@@ -54,6 +56,7 @@ PRIVATE gboolean init_instance(Generator *g) {
   g->data = data;
 
   data->amount = 0;
+  data->last_timestamp = 0;
 
   return TRUE;
 }
@@ -67,6 +70,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   g->data = data;
 
   data->amount = objectstore_item_get_double(item, "xfade_amount", 0);
+  data->last_timestamp = 0;
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
@@ -75,59 +79,57 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 }
 
 PRIVATE gboolean output_generator_left(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  SAMPLE bufl[MAXIMUM_REALTIME_STEP];
-  gdouble lfact, rfact;
-  int i;
-  gboolean resl;
+    Data *data = g->data;
+    //SAMPLE bufl[MAXIMUM_REALTIME_STEP];
+    gdouble lfact, rfact;
+    int i;
 
-  resl = gen_read_realtime_input(g, SIG_LEFT, -1, bufl, buflen);
+    if( data->last_timestamp != gen_get_sampletime() ) {
 
-  if (!resl)
-    return FALSE;
+	data->last_timestamp = gen_get_sampletime();
+	if( ! gen_read_realtime_input(g, SIG_LEFT, -1, data->buf, buflen) )
+	    memset(data->buf, 0, sizeof(SAMPLE) * buflen);
+    }
 
-  if (!resl)
-    memset(bufl, 0, sizeof(SAMPLE) * buflen);
+    if (data->amount > 0) {
+	rfact = 1;
+	lfact = 1 - data->amount;
+    } else {
+	lfact = 1;
+	rfact = 1 + data->amount;
+    }
 
-  if (data->amount > 0) {
-    rfact = 1;
-    lfact = 1 - data->amount;
-  } else {
-    lfact = 1;
-    rfact = 1 + data->amount;
-  }
+    for (i = 0; i < buflen; i++)
+	buf[i] = data->buf[i] * lfact;
 
-  for (i = 0; i < buflen; i++)
-    buf[i] = bufl[i] * lfact;
-  return TRUE;
+    return TRUE;
 }
 
 PRIVATE gboolean output_generator_right(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  SAMPLE bufl[MAXIMUM_REALTIME_STEP];
-  gdouble lfact, rfact;
-  int i;
-  gboolean resl;
+    Data *data = g->data;
+    //SAMPLE bufl[MAXIMUM_REALTIME_STEP];
+    gdouble lfact, rfact;
+    int i;
 
-  resl = gen_read_realtime_input(g, SIG_LEFT, -1, bufl, buflen);
+    if( data->last_timestamp != gen_get_sampletime() ) {
 
-  if (!resl)
-    return FALSE;
+	data->last_timestamp = gen_get_sampletime();
+	if( ! gen_read_realtime_input(g, SIG_LEFT, -1, data->buf, buflen) )
+	    memset(data->buf, 0, sizeof(SAMPLE) * buflen);
+    }
 
-  if (!resl)
-    memset(bufl, 0, sizeof(SAMPLE) * buflen);
+    if (data->amount > 0) {
+	rfact = 1;
+	lfact = 1 - data->amount;
+    } else {
+	lfact = 1;
+	rfact = 1 + data->amount;
+    }
 
-  if (data->amount > 0) {
-    rfact = 1;
-    lfact = 1 - data->amount;
-  } else {
-    lfact = 1;
-    rfact = 1 + data->amount;
-  }
+    for (i = 0; i < buflen; i++)
+	buf[i] = data->buf[i] * rfact;
 
-  for (i = 0; i < buflen; i++)
-    buf[i] = bufl[i] * rfact;
-  return TRUE;
+    return TRUE;
 }
 
 PRIVATE void evt_amount_handler(Generator *g, AEvent *event) {

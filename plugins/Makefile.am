@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = Makefile.w32 TEMPLATE.c dllinit.c win_output.c
+EXTRA_DIST = Makefile.w32 TEMPLATE.c dllinit.c win_output.c *.c
 
 plugindir = $(pkglibdir)/plugins
 
@@ -39,6 +39,7 @@ emu10k1_so_LDFLAGS= emu10k1-lib/libdsp.o
 emu10k1_so_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
 ladspa_so_SOURCES = ladspa.c ladspa-load.c
 
+SUFFIXES= .so.c
 %.so.c: %.c
 	ln -s $< $@
 

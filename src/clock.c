@@ -133,7 +133,7 @@ PUBLIC void gen_clock_mainloop_have_remaining( gint remaining ) {
   while (remaining > 0) {
     AEvent e;
 
-    delta = MIN(remaining, gen_mainloop_once());
+    delta = MIN(MIN( MAXIMUM_REALTIME_STEP, remaining ), gen_mainloop_once());
     remaining -= delta;
 
     e.kind = AE_REALTIME;

@@ -178,7 +178,7 @@ static int set_hwparams(snd_pcm_t *handle,
 		printf("Unable to set hw params for playback: %s\n", snd_strerror(err));
 		return err;
 	}
-	g_print( "bs=%d, ps=%d\n", buffer_size, period_size );
+	//g_print( "bs=%d, ps=%d\n", buffer_size, period_size );
 	return 0;
 }
 
@@ -319,18 +319,18 @@ PRIVATE int init_instance(Generator *g) {
   data->count = snd_pcm_poll_descriptors_count (data->handle);
   if (data->count <= 0) {
       printf("Invalid poll descriptors count\n");
-      return data->count;
+      return 0;
   }
   g_print( "poll count = %d\n", data->count );
 
   data->ufds = malloc(sizeof(struct pollfd) * data->count);
   if (data->ufds == NULL) {
       printf("No enough memory\n");
-      return err;
+      return 0;
   }
-  if ((err = snd_pcm_poll_descriptors(data->handle, data->ufds, data->count)) < 0) {
+  if ((err=snd_pcm_poll_descriptors(data->handle, data->ufds, data->count)) < 0) {
       printf("Unable to obtain poll descriptors for playback: %s\n", snd_strerror(err));
-      return err;
+      return 0;
   }
 
   data->input_tag = -1;

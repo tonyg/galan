@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = *.c
+EXTRA_DIST = *.c lw.h
 
 plugindir = $(pkglibdir)/plugins
 

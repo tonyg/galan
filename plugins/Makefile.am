@@ -17,7 +17,7 @@ plugin_PROGRAMS = \
 	reverse.so patloop.so vco.so sigctrl.so oss_input.so polyrart.so smooth.so scope.so joyport.so \
 	evtcomp.so evtgate.so evttimer.so evtsum.so evtpower.so evtnotetofreq.so evtabs.so evtinteger.so\
 	evtsgn.so strcombo.so filerequester.so midi_seq_clock.so  midiclock.so\
-	evtdelay.so evtsettings.so vcd.so ladspa.so sampler.so balance.so\
+	evtdelay.so evtsettings.so vcd.so ladspa.so sampler.so balance.so lights.so\
 	@OPTIONAL_PLUGINS@
 
 LDFLAGS = -shared

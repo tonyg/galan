@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
 pixmapdir = $(pkglibdir)/pixmaps
-pixmap_DATA = appicon.xpm osc.xpm oss_output.xpm slider.xpm knob.gif
+pixmap_DATA = appicon.xpm osc.xpm oss_output.xpm slider.xpm knob.gif diode.gif
 EXTRA_DIST = $(pixmap_DATA)

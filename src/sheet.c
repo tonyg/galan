@@ -407,131 +407,9 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
   return FALSE;
 }
 
-typedef struct SheetGeneratorData {
-    int bla;
-} SheetGeneratorData;
-
-PRIVATE int sheet_init_instance(Generator *g) {
-  SheetGeneratorData *data = safe_malloc(sizeof(SheetGeneratorData));
-  g->data = data;
-
-  return 1;
-}
-
-PRIVATE void sheet_destroy_instance(Generator *g) {
-  //SheetGeneratorData *data = g->data;
-
-  free(g->data);
-}
-
-PRIVATE void sheet_unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-  SheetGeneratorData *data = safe_malloc(sizeof(SheetGeneratorData));
-  g->data = data;
-}
-
-PRIVATE void sheet_pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-  //SheetGeneratorData *data = g->data;
-}
-
-PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
-
-    GList *lst = sheet->components;
-    InterSheetLinks *isl = safe_malloc( sizeof(InterSheetLinks) );
-    isl->inputevents   = NULL;
-    isl->outputevents  = NULL;
-    isl->inputsignals  = NULL;
-    isl->outputsignals = NULL;
-
-    isl->anzinputevents   = 0;
-    isl->anzoutputevents  = 0;
-    isl->anzinputsignals  = 0;
-    isl->anzoutputsignals = 0;
-
-    while (lst != NULL) {
-	Component *c = lst->data;
-
-	if ( ! strcmp( c->klass->class_tag, "iscomp" ) ) {
-	    switch( ((ISCompData *) c->data)->reftype ) {
-		case SIGIN:
-		    isl->outputsignals =  g_list_append(isl->outputsignals, c );
-		    isl->anzoutputsignals++;
-		    break;
-		case SIGOUT:
-		    isl->inputsignals =  g_list_append(isl->inputsignals, c );
-		    isl->anzinputsignals++;
-		    break;
-		case EVTIN:
-		    isl->outputevents =  g_list_append(isl->outputevents, c );
-		    isl->anzoutputevents++;
-		    break;
-		case EVTOUT:
-		    isl->inputevents =  g_list_append(isl->inputevents, c );
-		    isl->anzinputevents++;
-		    break;
-	    }
-	}
-	lst = g_list_next(lst);
-    }
-    return isl;
-}
-
-
-PRIVATE void sheet_eventhandler( Generator *g, AEvent *ev ) {
-}
-
-PUBLIC void sheet_register_component_class( Sheet *sheet ) {
-
-    /*
-     * if i cant deregister a GeneratorComponentClass i may not
-     * kill the generatorClass.
-     *
-     * i have some options:
-     *
-     *  - i can only use sheets which are in my Document.
-     *    (i have to implement loading and saving of ALL sheets)
-     *
-     *  - i have a component sheets library. this requires versioning of
-     *    the sheets....
-     */
-
-    int i;
-    GList *tmp;
-    InterSheetLinks *isl = find_intersheet_links( sheet );
-    
-    
-
-    if( sheet->sheetklass != NULL )
-	gen_kill_generatorclass( sheet->sheetklass );
-
-    sheet->sheetklass = gen_new_generatorclass( "sheet", FALSE, isl->anzinputevents,isl->anzoutputevents,
-						NULL, NULL, NULL,
-						sheet_init_instance, sheet_destroy_instance,
-						sheet_unpickle_instance, sheet_pickle_instance );
-
-
-    tmp = isl->inputevents;
-    for( i=0; i < isl->anzinputevents; i++ )
-    {
-	ISCompData *data = ((Component *)tmp->data)->data;
-	gen_configure_event_input( sheet->sheetklass, i, data->name, sheet_eventhandler ); 
-	tmp = g_list_next( tmp );
-    }
-
-    tmp = isl->outputevents;
-    for( i=0; i < isl->anzoutputevents; i++ )
-    {
-	ISCompData *data = ((Component *)tmp->data)->data;
-	gen_configure_event_output( sheet->sheetklass, i, data->name ); 
-	tmp = g_list_next( tmp );
-    }
-
-    gencomp_register_generatorclass(sheet->sheetklass, FALSE, "Sheet", NULL, NULL);
-
-    free(isl);
-}
 
 PUBLIC void sheet_register_ref( Sheet *s, Component *comp ) {
-    //g_print( "adding %s..\n", s->name );
+
     s->referring_sheets = g_list_append( s->referring_sheets, comp );
 }
 
@@ -557,7 +435,7 @@ PUBLIC void sheet_kill_refs( Sheet *s ) {
 }
 
 /*! handle mouse motion events to display port names */
-static gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
+PRIVATE gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
 		gpointer func_data)
 {
   int x, y;

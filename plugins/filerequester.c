@@ -44,27 +44,10 @@
 
 typedef struct Data {
   char *filename;
+
+  GThread *thread;
+  GAsyncQueue *req;
 } Data;
-
-
-
-
-PRIVATE int init_instance(Generator *g) {
-  Data *data = safe_malloc(sizeof(Data));
-  g->data = data;
-
-  data->filename = NULL;
-  return 1;
-}
-
-PRIVATE void destroy_instance(Generator *g) {
-  Data *data = g->data;
-
-  if (data->filename != NULL)
-    free(data->filename);
-
-  free(g->data);
-}
 
 PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
     
@@ -84,22 +67,68 @@ PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
     gen_send_events(g, EVT_FILENAME, -1, &event);
 }
 
+PRIVATE gpointer req_thread( Generator *g ) {
+
+    Data *data = g->data;
+
+    while( 1 ) {
+	gpointer ptr = g_async_queue_pop( data->req );
+	if( ptr == NULL )
+	    break;
+	else {
+
+	    gdk_threads_enter();
+	    
+	    GtkWidget *fs = gtk_file_selection_new("Select File");
+
+	    gtk_object_set_data(GTK_OBJECT(fs), "Generator", g);
+	    gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
+		    GTK_SIGNAL_FUNC(access_output_file), fs);
+	    gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
+		    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
+
+	    if (data->filename != NULL)
+		gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), data->filename);
+
+	    gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
+	    gtk_widget_show(fs);
+
+	    gdk_threads_leave();
+	}
+	
+    }
+}
+
+
+
+PRIVATE int init_instance(Generator *g) {
+  Data *data = safe_malloc(sizeof(Data));
+  g->data = data;
+
+  data->filename = NULL;
+
+  data->req = g_async_queue_new();
+  data->thread = g_thread_create( (GThreadFunc) req_thread, (gpointer) g, TRUE, NULL );
+
+  return 1;
+}
+
+PRIVATE void destroy_instance(Generator *g) {
+  Data *data = g->data;
+
+  if (data->filename != NULL)
+    free(data->filename);
+
+  g_async_queue_push( data->req, NULL );
+
+  free(g->data);
+}
+
+
 PRIVATE void evt_request_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
 
-    GtkWidget *fs = gtk_file_selection_new("Select File");
-
-    gtk_object_set_data(GTK_OBJECT(fs), "Generator", g);
-    gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
-		       GTK_SIGNAL_FUNC(access_output_file), fs);
-    gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
-
-    if (data->filename != NULL)
-      gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), data->filename);
-
-    gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
-    gtk_widget_show(fs);
+  g_async_queue_push( data->req, 1 );
 }
 
 PRIVATE InputSignalDescriptor input_sigs[] = {

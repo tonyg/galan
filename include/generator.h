@@ -21,7 +21,7 @@
 
 #include <math.h>
 
-#define SAMPLE_RATE		44100
+#define SAMPLE_RATE		48000
 
 #if WANT_FLOATING_POINT_SAMPLES
 #define SAMPLE double

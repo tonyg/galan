@@ -253,7 +253,7 @@ PRIVATE void add_entry(GtkWidget *widget, GtkEntry *entry) {
   if (sscanf(text, "%d", &num) != 1)
     return;
 
-  gtk_entry_set_text(entry, "");
+  //gtk_entry_set_text(entry, "");
 
   data->sequence[data->edit] = g_list_append(data->sequence[data->edit], (gpointer) num);
   data->list_refresh_needed = TRUE;

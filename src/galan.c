@@ -82,6 +82,14 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   init_objectstore();
   init_plugins();
 
+  if( argc > 1 )
+      load_sheet_from_name( argv[1] );
+  else {
+      Sheet *s = create_sheet();
+      s->control_panel = control_panel_new( s->name, TRUE, s );
+      gui_register_sheet( s );
+  }
+
   gtk_main();
 
   done_objectstore();

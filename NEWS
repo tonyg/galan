@@ -1,0 +1,30 @@
+1 August 1999: Project started.
+
+19 August 1999: Almost ready for first release...
+	* playback works fine
+	* simple sequencing etc works fine
+	* save/load seems to work
+	* still need to document system
+
+30 August 1999: Some problems have come to light with treatment of time in
+	the program - still thinking about how best to resolve them.
+
+3 September 1999: First port to Win32! It runs, plugins load, but I haven't
+	implemented sound output yet.
+
+14 September 1999: Finished switching file formats to the (much
+	better) text-based one. Next job is to move to Steve Hoek's
+	suggestion for dealing with realtime in a more flexible
+	manner...
+
+16 September 1999: Finished the new master-clock code. This should allow
+	various kinds of plugin that weren't possible/easy before.
+	Getting close to release.
+
+18 September 1999: Sound works on Win32. It's patchy, there are major
+	problems, the latency it enormous... but it works.
+	Today is release day.
+
+22 October 1999: After about a day of fighting libtool/automake I've come to
+	the conclusion that that particular combination bites hard.
+	<sigh>. Oh well, at least I tried...

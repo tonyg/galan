@@ -35,6 +35,7 @@
 #define GENERATOR_CLASS_PATH	"Controls/Control"
 
 #define EVT_VALUE 0
+#define EVT_DISP 1
 #define EVT_OUTPUT 0
 
 typedef struct Data {
@@ -94,6 +95,13 @@ PRIVATE void evt_value_handler(Generator *g, AEvent *event) {
   gen_send_events(g, EVT_OUTPUT, -1, event);
 }
 
+PRIVATE void evt_disp_handler(Generator *g, AEvent *event) {
+  Data *data = g->data;
+
+  data->value = event->d.number;
+  gen_update_controls(g, -1);
+}
+
 PRIVATE ControlDescriptor controls[] = {
   { CONTROL_KIND_KNOB, "knob", 0,0,0,0,0,TRUE, 1,EVT_VALUE,
     ctrl_setrange,NULL, control_double_updater, (gpointer) offsetof(Data, value) },
@@ -149,12 +157,13 @@ PRIVATE void props(Component *c, Generator *g) {
 }
 
 PRIVATE void setup_class(void) {
-  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE, 1, 1,
+  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE, 2, 1,
 					     NULL, NULL, controls,
 					     init_instance, destroy_instance,
 					     unpickle_instance, pickle_instance);
 
   gen_configure_event_input(k, EVT_VALUE, "Value", evt_value_handler);
+  gen_configure_event_input(k, EVT_DISP, "Display", evt_disp_handler);
   gen_configure_event_output(k, EVT_OUTPUT, "Output");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, props);

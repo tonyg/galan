@@ -94,7 +94,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
     Data *data = safe_malloc(sizeof(Data));
     g->data = data;
 
-    data->filename = objectstore_item_get_string(item, "filename", NULL);
+    data->filename = safe_string_dup( objectstore_item_get_string(item, "filename", NULL) );
     data->obj = NULL;
     if( data->filename != NULL )
 	try_load(g, data->filename, FALSE);

@@ -64,24 +64,24 @@ PRIVATE void aevent_copy( AEvent *src, AEvent *dst ) {
 	
 }
 
-PRIVATE void aevent_free( AEvent *e ) {
-
-    if( e ) {
-	switch( e->kind ) {
-	    case AE_STRING:
-		if( e->d.string != NULL )
-		    safe_free( e->d.string );
-		break;
-	    case AE_NUMARRAY:
-		if( e->d.array.numbers != NULL )
-		    safe_free( e->d.array.numbers );
-		break;
-	    default:
-	    	break;
-	}
-	safe_free( e );
-    }
-}
+//PRIVATE void aevent_free( AEvent *e ) {
+//
+//    if( e ) {
+//	switch( e->kind ) {
+//	    case AE_STRING:
+//		if( e->d.string != NULL )
+//		    safe_free( e->d.string );
+//		break;
+//	    case AE_NUMARRAY:
+//		if( e->d.array.numbers != NULL )
+//		    safe_free( e->d.array.numbers );
+//		break;
+//	    default:
+//	    	break;
+//	}
+//	safe_free( e );
+//    }
+//}
 
 PRIVATE void eventq_free( EventQ *evq ) {
 
@@ -239,14 +239,14 @@ PUBLIC void gen_purge_inputevent_queue_refs(Generator *g) {
  * i need a Mutex for the rtfuncs struct.
  */
 
-PRIVATE void insert_fn(GList **lst, Generator *g, AEvent_handler_t func) {
-  event_callback *ec = safe_malloc(sizeof(event_callback));
-
-  ec->g = g;
-  ec->fn = func;
-  
-  *lst = g_list_prepend(*lst, ec);
-}
+//PRIVATE void insert_fn(GList **lst, Generator *g, AEvent_handler_t func) {
+//  event_callback *ec = safe_malloc(sizeof(event_callback));
+//
+//  ec->g = g;
+//  ec->fn = func;
+//  
+//  *lst = g_list_prepend(*lst, ec);
+//}
 
 /**
  * \brief insert an event_callback into \a list

@@ -139,8 +139,8 @@ PRIVATE void gencomp_resize(Component *c) {
   resize_connectors(c, k->out_count, 1, 0, body_horiz, body_vert);
   resize_connectors(c, k->out_sig_count, 1, 1, body_horiz, body_vert);
 
-  c->width = body_horiz + 2 * GENCOMP_BORDER_WIDTH;
-  c->height = body_vert + 2 * GENCOMP_BORDER_WIDTH;
+  c->width = body_horiz + 2 * GENCOMP_BORDER_WIDTH + 1;
+  c->height = body_vert + 2 * GENCOMP_BORDER_WIDTH + 1;
 }
 
 /**
@@ -162,8 +162,8 @@ PRIVATE int gencomp_initialize(Component *c, gpointer init_data) {
   d->g = gen_new_generator(id->k, name);
 
   if (d->g == NULL) {
-    free(name);
-    free(d);
+    safe_free(name);
+    safe_free(d);
     return 0;
   }
 
@@ -186,7 +186,7 @@ PRIVATE int gencomp_initialize(Component *c, gpointer init_data) {
   c->width = c->height = 0;
   c->data = d;
 
-  free(name);
+  safe_free(name);
 
   gencomp_resize(c);
 
@@ -206,7 +206,7 @@ PRIVATE void gencomp_destroy(Component *c) {
   if (d->icon != NULL)
     gdk_pixmap_unref(d->icon);
 
-  free(d);
+  safe_free(d);
 }
 
 /**
@@ -372,7 +372,10 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
 		     c->width - 2 * GENCOMP_BORDER_WIDTH - 1,
 		     c->height - 2 * GENCOMP_BORDER_WIDTH - 1);
 
-  gdk_draw_text(drawable, style->font, gc,
+// XXX: There is only style->font_desc
+//      Get some pango layout and render it here...
+//
+  gdk_draw_text(drawable, gtk_style_get_font(style), gc,
 		c->x + GENCOMP_BORDER_WIDTH + (GENCOMP_CONNECTOR_WIDTH>>1),
 		c->y + GENCOMP_BORDER_WIDTH + GENCOMP_TITLEHEIGHT - 3,
 		d->g->name, strlen(d->g->name));

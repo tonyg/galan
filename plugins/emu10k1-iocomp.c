@@ -304,7 +304,7 @@ PRIVATE void emuiocomp_paint(Component *c, GdkRectangle *area,
 		     c->height - 2 * EMUIOCOMP_BORDER_WIDTH - 1);
   gdk_gc_set_foreground(gc, &style->black);
 
-  gdk_draw_text(drawable, style->font, style->white_gc,
+  gdk_draw_text(drawable, gtk_style_get_font(style), style->white_gc,
 		c->x + EMUIOCOMP_BORDER_WIDTH + (EMUIOCOMP_CONNECTOR_WIDTH>>1),
 		c->y + EMUIOCOMP_BORDER_WIDTH + EMUIOCOMP_TITLEHEIGHT - 3,
 		d->name, strlen(d->name));

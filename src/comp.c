@@ -533,3 +533,4 @@ PUBLIC void done_comp(void) {
   g_hash_table_destroy(componentclasses);
   componentclasses = NULL;
 }
+

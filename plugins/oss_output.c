@@ -62,8 +62,7 @@ PRIVATE void audio_play_fragment(int audiofd, SAMPLE *left, SAMPLE *right, int l
   if (length <= 0)
     return;
 
-  outbuf = malloc(buflen);
-  RETURN_UNLESS(outbuf != NULL);
+  outbuf = g_alloca(buflen);
 
   for (i = 0; i < length; i++) {
     outbuf[i<<1]	= (OUTPUTSAMPLE) MIN(MAX(left[i] * 32767, -32768), 32767);
@@ -71,7 +70,6 @@ PRIVATE void audio_play_fragment(int audiofd, SAMPLE *left, SAMPLE *right, int l
   }
 
   write(audiofd, outbuf, buflen);
-  free(outbuf);
 }
 
 PRIVATE int open_audiofd(void) {
@@ -125,8 +123,8 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
       SAMPLE *l_buf, *r_buf;
       int bufbytes = event->d.integer * sizeof(SAMPLE);
 
-      l_buf = safe_malloc(bufbytes);
-      r_buf = safe_malloc(bufbytes);
+      l_buf = g_alloca(bufbytes);
+      r_buf = g_alloca(bufbytes);
 
       if (!gen_read_realtime_input(g, SIG_LEFT_CHANNEL, -1, l_buf, event->d.integer))
 	memset(l_buf, 0, bufbytes);
@@ -135,8 +133,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 	memset(r_buf, 0, bufbytes);
 
       audio_play_fragment(data->audiofd, l_buf, r_buf, event->d.integer);
-      free(l_buf);
-      free(r_buf);
 
       break;
     }

@@ -41,6 +41,15 @@
 #include "iscomp.h"
 #include "gui.h"
 
+/* %%% Win32: dirent.h seems to conflict with glib-1.3, so ignore dirent.h */
+#ifndef NATIVE_WIN32
+#include <dirent.h>
+#endif
+
+/* On Win32, these headers seem to need to follow glib.h */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #define SHCOMP_ICONLENGTH	48
 #define SHCOMP_TITLEHEIGHT	15
 #define SHCOMP_CONNECTOR_SPACE	5
@@ -166,6 +175,28 @@ PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
     return isl;
 }
 
+
+/**
+ * 
+ * There must be a different init_data for the load from file
+ * library components... 
+ *
+ * ansonsten ist das aber das selbe hier mit dem ganzen Kram...
+ * ich habe dann zwei component klassen, die sich nur durch
+ * den konstruktor unterscheiden... sp"ater aber auch durch
+ * das pickle unpickle geraffel... obwohl
+ * das probleme gibt, wegen den generator links :(
+ *
+ * erster Versuch ist 
+ *
+ * konstruktor mit load file, register sheet, aufruf von shcomp_init
+ *
+ * ansonsten das selbe...
+ *
+ * TODO: shared component code in eigenes Teil packen...
+ *
+ */
+
 PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
   ShCompData *d = safe_malloc(sizeof(ShCompData));
   ShCompInitData *id = (ShCompInitData *) init_data;
@@ -195,6 +226,19 @@ PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
   return 1;
 }
 
+PRIVATE int fileshcomp_initialize(Component *c, gpointer init_data) {
+  FileShCompInitData *id = (FileShCompInitData *) init_data;
+
+  ShCompInitData *shcid = g_alloca( sizeof( ShCompInitData ) );
+  //printf( "hi %s\n", id->filename );
+  FILE *f = fopen( id->filename, "rb" );
+
+  shcid->sheet = sheet_loadfrom( NULL, f );
+  fclose( f );
+  return shcomp_initialize( c, shcid );
+}
+
+
 PRIVATE void shcomp_destroy(Component *c) {
   ShCompData *d = c->data;
 
@@ -210,7 +254,7 @@ PRIVATE void shcomp_destroy(Component *c) {
   //g_list_free( d->isl.outputsignals );
 
 
-  free(d);
+  safe_free(d);
 }
 
 PRIVATE void shcomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *db) {
@@ -364,7 +408,7 @@ PRIVATE void shcomp_paint(Component *c, GdkRectangle *area,
 		     c->height - 2 * SHCOMP_BORDER_WIDTH - 1);
 
   gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
-  gdk_draw_text(drawable, style->font, gc,
+  gdk_draw_text(drawable, gtk_style_get_font(style), gc,
 		c->x + SHCOMP_BORDER_WIDTH + (SHCOMP_CONNECTOR_WIDTH>>1),
 		c->y + SHCOMP_BORDER_WIDTH + SHCOMP_TITLEHEIGHT - 3,
 		d->sheet->name, strlen(d->sheet->name));
@@ -618,30 +662,104 @@ PRIVATE ComponentClass SheetComponentClass = {
   shcomp_build_popup
 };
 
-//PUBLIC void shcomp_register_class(GeneratorClass *k, gboolean prefer,
-//					    char *menupath, char *iconpath,
-//					    PropertiesCallback propgen) {
-//  ShCompInitData *id = safe_malloc(sizeof(ShCompInitData));
-//
-//  id->k = k;
-//  id->iconpath = safe_string_dup(iconpath);
-//  id->propgen = propgen;
-//
-//  comp_add_newmenu_item(menupath, &GeneratorComponentClass, id);
-//
-//  /* Only insert into hash table if this name is not already taken, or if we are preferred. */
-//  {
-//    ShCompInitData *oldid = g_hash_table_lookup(generatorclasses, k->name);
-//
-//    if (oldid == NULL)
-//      g_hash_table_insert(generatorclasses, k->name, id);
-//    else if (prefer) {
-//      g_hash_table_remove(generatorclasses, k->name);
-//      g_hash_table_insert(generatorclasses, k->name, id);
-//    }
-//  }
-//}
-ShCompInitData initdata =  { NULL };
+PRIVATE ComponentClass FileSheetComponentClass = {
+  "shcomp",
+
+  fileshcomp_initialize,
+  shcomp_destroy,
+
+  shcomp_unpickle,
+  shcomp_pickle,
+
+  shcomp_paint,
+
+  shcomp_find_connector_at,
+  shcomp_contains_point,
+
+  shcomp_accept_outbound,
+  shcomp_accept_inbound,
+  shcomp_unlink_outbound,
+  shcomp_unlink_inbound,
+
+  shcomp_get_title,
+  shcomp_get_connector_name,
+
+  shcomp_build_popup
+};
+
+
+PRIVATE void add_gsheet(char *plugin, char *leafname) {
+
+  FileShCompInitData *id = safe_malloc( sizeof( FileShCompInitData ) );
+  char *menuname = safe_malloc(strlen( "Lib/" ) + strlen( leafname ) + 1 );
+  
+
+  id->filename = safe_malloc( strlen(plugin) + 1);
+  strcpy(id->filename, plugin);
+
+  strcpy(menuname, "Lib/" );
+  strcat(menuname, leafname );
+
+  comp_add_newmenu_item( menuname, &FileSheetComponentClass, id );
+}
+
+PRIVATE void load_all_gsheets(char *dir);	/* forward decl */
+
+PRIVATE int check_gsheet_validity(char *name) {
+  struct stat sb;
+
+  if( strlen(name) < 8 || strcmp(name+(strlen(name)-7), ".gsheet" ) )
+    return 0;
+
+  if (stat(name, &sb) == -1)
+    return 0;
+
+  if (S_ISDIR(sb.st_mode))
+    load_all_gsheets(name);
+
+  return S_ISREG(sb.st_mode);
+}
+
+
+PRIVATE void load_all_gsheets(char *dir) {
+  DIR *d = opendir(dir);
+  struct dirent *de;
+
+  if (d == NULL)
+    /* the plugin directory cannot be read */
+    return;
+
+  while ((de = readdir(d)) != NULL) {
+    char *fullname;
+
+    if (de->d_name[0] == '.')
+      /* Don't load 'hidden' files or directories */
+      continue;
+
+    fullname = safe_malloc(strlen(dir) + strlen(de->d_name) + 2);	/* "/" and the NUL byte */
+
+    strcpy(fullname, dir);
+    strcat(fullname, G_DIR_SEPARATOR_S);
+    strcat(fullname, de->d_name);
+
+    if (check_gsheet_validity(fullname))
+      add_gsheet(fullname, de->d_name);
+
+    free(fullname);
+  }
+
+  closedir(d);
+}
+
+PRIVATE void scan_library_dir( void ) {
+	char *sheetdir = getenv("GALAN_SHEET_DIR");
+
+	if( sheetdir )
+		load_all_gsheets( sheetdir );
+	
+	load_all_gsheets(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "sheets");
+}
+
 
 PUBLIC void shcomp_register_sheet( Sheet *sheet ) {
 
@@ -655,6 +773,9 @@ PUBLIC void shcomp_register_sheet( Sheet *sheet ) {
 
 PUBLIC void init_shcomp(void) {
   comp_register_componentclass(&SheetComponentClass);
+  comp_register_componentclass(&FileSheetComponentClass);
+
+  scan_library_dir();
 }
 
 PUBLIC void done_shcomp(void) {

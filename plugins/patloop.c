@@ -64,7 +64,7 @@ typedef struct Data {
 
 typedef struct PanelData {
   GtkCList *list;
-  GtkLabel *stepindicator;
+  GtkEntry *stepindicator;
   GtkAdjustment *lengthadj;
 } PanelData;
 
@@ -314,7 +314,7 @@ PRIVATE void init_panel(Control *control) {
   GtkWidget *bhb = gtk_hbox_new(TRUE, 5);
   GtkWidget *ihb = gtk_hbox_new(FALSE, 5);
   GtkWidget *label = gtk_label_new("Sequence Length:");
-  GtkWidget *stepindicator = gtk_label_new("00:00");
+  GtkWidget *stepindicator = gtk_entry_new();
   GtkWidget *spin;
   GtkWidget *sw = gtk_scrolled_window_new(NULL, NULL);
   GtkWidget *list = gtk_clist_new(1);
@@ -344,6 +344,9 @@ PRIVATE void init_panel(Control *control) {
   gtk_widget_show(label);
   gtk_box_pack_start(GTK_BOX(thb), spin, FALSE, FALSE, 0);
   gtk_widget_show(spin);
+  gtk_widget_set_usize( stepindicator, 50, 20 );
+  gtk_entry_set_text( GTK_ENTRY( stepindicator ), "00:00" );
+  gtk_entry_set_editable( GTK_ENTRY( stepindicator ), FALSE );
   gtk_box_pack_start(GTK_BOX(thb), stepindicator, FALSE, FALSE, 0);
   gtk_widget_show(stepindicator);
 
@@ -401,7 +404,7 @@ PRIVATE void init_panel(Control *control) {
   update_list(GTK_CLIST(list));
 
   pdata->list = GTK_CLIST(list);
-  pdata->stepindicator = GTK_LABEL(stepindicator);
+  pdata->stepindicator = GTK_ENTRY(stepindicator);
   pdata->lengthadj = adj;
 
   control->widget = ovb;
@@ -421,7 +424,7 @@ PRIVATE void refresh_panel(Control *control) {
   update_list(pdata->list);
 
   sprintf(text, "%02d:%02d", data->step, data->seq_step);
-  gtk_label_set_text(pdata->stepindicator, text);
+  gtk_entry_set_text(pdata->stepindicator, text);
   gtk_adjustment_set_value(pdata->lengthadj, data->length);
 }
 

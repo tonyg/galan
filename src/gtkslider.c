@@ -177,8 +177,8 @@ guint gtk_slider_get_type(void) {
       sizeof (GtkSliderClass),
       (GtkClassInitFunc) gtk_slider_class_init,
       (GtkObjectInitFunc) gtk_slider_init,
-      (GtkArgSetFunc) NULL,
-      (GtkArgGetFunc) NULL,
+      NULL,
+      NULL,
     };
 
     slider_type = gtk_type_unique(gtk_widget_get_type(), &slider_info);
@@ -228,6 +228,7 @@ GtkWidget *gtk_slider_new(GtkAdjustment *adjustment, gint size) {
   if (!adjustment)
     adjustment = (GtkAdjustment*) gtk_adjustment_new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
+
   if (size == 0)
     size = DEFAULT_SLIDER_SIZE;
 
@@ -246,11 +247,15 @@ static void gtk_slider_destroy(GtkObject *object) {
 
   slider = GTK_SLIDER(object);
 
-  if (slider->adjustment)
+  if (slider->adjustment) {
     gtk_object_unref(GTK_OBJECT(slider->adjustment));
+    slider->adjustment = NULL;
+  }
 
-  if (slider->pixmap)
+  if (slider->pixmap) {
     gdk_pixmap_unref(slider->pixmap);
+    slider->pixmap = NULL;
+  }
 
   if (GTK_OBJECT_CLASS(parent_class)->destroy)
     (*GTK_OBJECT_CLASS(parent_class)->destroy)(object);
@@ -281,6 +286,7 @@ void gtk_slider_set_adjustment(GtkSlider *slider, GtkAdjustment *adjustment) {
 
   slider->adjustment = adjustment;
   gtk_object_ref(GTK_OBJECT(slider->adjustment));
+  gtk_object_sink(GTK_OBJECT( slider-> adjustment ) );
 
   gtk_signal_connect(GTK_OBJECT(adjustment), "changed",
 		     GTK_SIGNAL_FUNC(gtk_slider_adjustment_changed), (gpointer) slider);

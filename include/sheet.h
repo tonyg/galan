@@ -28,20 +28,20 @@ typedef struct sheet {
     ConnectorReference saved_ref;
     ConnectorReference highlight_ref;
 
-    GtkWidget *scrollwin;
-    ControlPanel *control_panel;
-    Control *panel_control;
-    gboolean panel_control_active;
-    GtkWidget *drawingwidget;
-    GList *components;
-    GList *selected_comps;
-    GList *referring_sheets;
+    GtkWidget *scrollwin;	    //*< Add this widget to your gui 
+    ControlPanel *control_panel;    //*< A field for the ControlPanel fill in yourself
+    Control *panel_control;	    //*< The Control for this sheet on another ControlPanel
+    gboolean panel_control_active;  //*< TRUE if the panel is a Control at the Moment
+    GtkWidget *drawingwidget;	    //*< The widget on which we draw the whole stuff
+    GList *components;		    //*< The list of Component s on this sheet
+    GList *selected_comps;	    //*< The list of Component s which are selected.
+    GList *referring_sheets;	    //*< List of Sheet s which have a reference of this Sheet
 
-    GdkRectangle sel_rect;
-    gboolean sel_valid;
+    GdkRectangle sel_rect;	    //*< The current selection rectangle
+    gboolean sel_valid;		    //*< TRUE is the selection Rectangle should be drawn.
 
-    GeneratorClass *sheetklass;
-    gchar *name;
+    GeneratorClass *sheetklass;	    //*< This can be removed
+    gchar *name;		    //*< the name of this sheet.
 } Sheet;
 
 extern Sheet *create_sheet();

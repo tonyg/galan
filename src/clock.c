@@ -126,8 +126,7 @@ PUBLIC void gen_stop_clock(void) {
   gen_select_clock(NULL);
 }
 
-PUBLIC void gen_clock_mainloop(void) {
-  gint remaining = MAXIMUM_REALTIME_STEP;
+PUBLIC void gen_clock_mainloop_have_remaining( gint remaining ) {
   gint delta;
 
   while (remaining > 0) {
@@ -142,6 +141,10 @@ PUBLIC void gen_clock_mainloop(void) {
 
     gen_advance_clock(delta);
   }
+}
+
+PUBLIC void gen_clock_mainloop(void) {
+  gen_clock_mainloop_have_remaining( MAXIMUM_REALTIME_STEP );
 }
 
 PUBLIC void init_clock(void) {

@@ -314,7 +314,7 @@ PRIVATE void iscomp_paint(Component *c, GdkRectangle *area,
 		     c->height - 2 * ISCOMP_BORDER_WIDTH - 1);
 
     gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
-  gdk_draw_text(drawable, style->font, gc,
+  gdk_draw_text(drawable, gtk_style_get_font(style), gc,
 		c->x + ISCOMP_BORDER_WIDTH + (ISCOMP_CONNECTOR_WIDTH>>1),
 		c->y + ISCOMP_BORDER_WIDTH + ISCOMP_TITLEHEIGHT - 3,
 		d->name, strlen(d->name));

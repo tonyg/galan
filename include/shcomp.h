@@ -25,6 +25,7 @@
 
 typedef struct ShCompData ShCompData;
 typedef struct ShCompInitData ShCompInitData;
+typedef struct FileShCompInitData FileShCompInitData;
 
 typedef struct InterSheetLinks {
     GList *inputevents, *outputevents, *inputsignals, *outputsignals;
@@ -42,6 +43,10 @@ struct ShCompData {
 
 struct ShCompInitData {
     Sheet *sheet;
+};
+
+struct FileShCompInitData {
+    char *filename;
 };
 
 extern void shcomp_register_sheet( Sheet *sheet );

@@ -96,51 +96,43 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 
 	switch (event->kind)
 	{
-		case AE_REALTIME:
-			{
-				gint32 oldphase;
-				GList *l;
-				SAMPLE *buf, *bufX;
+	    case AE_REALTIME:
+		{
+		    gint32 oldphase;
+		    SAMPLE buf[MAXIMUM_REALTIME_STEP], *bufX;
 
-				int bufbytes    = event->d.integer * sizeof(SAMPLE);
-				int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->ysize);
+		    int bufbytes    = event->d.integer * sizeof(SAMPLE);
+		    int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->ysize);
 
-				buf    = safe_malloc(bufbytes);
+		    if (!gen_read_realtime_input(g, 0, -1, buf, event->d.integer))
+			memset(buf, 0, bufbytes);
 
-				if (!gen_read_realtime_input(g, 0, -1, buf, event->d.integer))
-					memset(buf, 0, bufbytes);
 
-				
-				for( bufX=buf,oldphase = data->phase; (data->phase-oldphase)<event->d.integer && (data->phase < intbufbytes); (data->phase)++,bufX++ )
-				{
-					data->intbuf[data->phase]=CLIP_SAMPLE(*bufX * data->xsize)*127;
-				}
+		    for( bufX=buf,oldphase = data->phase;
+			    (data->phase-oldphase)<event->d.integer && (data->phase < intbufbytes);
+			    (data->phase)++,bufX++ ) {
 
-				if( data->phase >= intbufbytes )
-				{	
-					for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
-					{
-						Control *controlx = l->data;
-						g_assert( controlx->widget != NULL );
-						sample_display_set_data_8( (SampleDisplay *)controlx->widget,
-								data->intbuf, intbufbytes, TRUE );
-					}
-					data->phase = 0;
-				}
-				free(buf);
+			data->intbuf[data->phase]=CLIP_SAMPLE(*bufX * data->xsize)*127;
+		    }
 
-				break;
-			}
+		    if( data->phase >= intbufbytes )
+		    {	
+			gen_update_controls( g, 0 );
+			data->phase = 0;
+		    }
 
-		default:
-			g_warning("scope module doesn't care for events of kind %d.", event->kind);
-			break;
+		    break;
+		}
+
+	    default:
+		g_warning("scope module doesn't care for events of kind %d.", event->kind);
+		break;
 	}
 }
 
 
 PRIVATE gboolean init_instance(Generator *g) {
-	/* TODO: need to allocate the intbuf of size yscale */
+
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
 
@@ -162,8 +154,6 @@ PRIVATE void destroy_instance(Generator *g) {
 
 
 PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-	/* TODO: now the scope has state scope_phase, scope_yscale, scope_xscale
-	 */
 	
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
@@ -176,8 +166,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-	/* TODO: now the scope has state scope_phase, scope_yscale, scope_xscale
-	 */
+
   Data *data = g->data;
   objectstore_item_set_integer(item, "scope_phase", data->phase);
   objectstore_item_set_double(item, "scope_ysize", data->ysize);
@@ -198,6 +187,10 @@ PRIVATE void done_scope(Control *control) {
 }
 
 PRIVATE void refresh_scope(Control *control) {
+    Data *data = control->g->data;
+    int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->ysize);
+    sample_display_set_data_8( (SampleDisplay *)control->widget,
+	    data->intbuf, intbufbytes, TRUE );
 }
 
 

@@ -42,80 +42,16 @@ PRIVATE ControlPanel *global_panel = NULL;
 PRIVATE GtkWidget *control_notebook = NULL;
 //PRIVATE GtkWidget *fixed_widget = NULL;
 PRIVATE GList *control_panels = NULL;
-PRIVATE GThread *update_thread;
-PRIVATE GAsyncQueue *update_queue;
-
-
-PRIVATE void mylayout_sizerequest( GtkContainer *container, GtkRequisition *requisition ) {
-    //GtkWidget *widget = GTK_WIDGET (container);
-//    GtkRequisition requisition;
-//
-//    gtk_widget_size_request (widget, &requisition);
-//
-//    if (requisition.width > widget->allocation.width ||
-//	    requisition.height > widget->allocation.height)
-//    { 
-//	if (GTK_IS_RESIZE_CONTAINER (container))
-//	    gtk_widget_size_allocate (GTK_WIDGET (container),
-//		    &GTK_WIDGET (container)->allocation);
-//	else
-//	    gtk_widget_queue_resize (widget);
-//    }
-
-    GList *list = gtk_container_get_children( container );
-    GList *listX = list;
-
-    requisition->width = 0;
-    requisition->height = 0;
-    
-    //g_print( "check_resize called: -----------------------------\n" );
-
-    for( listX=list; listX != NULL; listX = g_list_next( listX ) ) {
-
-	GtkWidget *widget = listX->data;
-	gint x,y,w,h;
-
-	gtk_container_child_get( container, widget, "x", &x, NULL ); 
-	gtk_container_child_get( container, widget, "y", &y, NULL ); 
-
-	//gtk_widget_get_size_request( widget, &w, &h );
-	w=widget->allocation.width;
-	h=widget->allocation.height;
-
-	//g_print( "(x,y) = %d,%d  (w,h) = (%d,%d) \n", x,y,w,h );
-	
-	if( x+w > requisition->width ) requisition->width = x+w;
-	if( y+h > requisition->height ) requisition->height = y+h;
-
-    }
-    gtk_layout_set_size( GTK_LAYOUT( container ), requisition->width, requisition->height );
-    //gtk_widget_set_usize( GTK_WIDGET( container ), maxw, maxh );
-
-    //return TRUE;
-
-    //g_signal_stop_emission_by_name( G_OBJECT(container), "check_resize" );
-}
-
-
 
 PUBLIC void control_panel_register_panel( ControlPanel *panel, char *name, gboolean add_fixed) {
 
     panel->scrollwin = gtk_scrolled_window_new( NULL, NULL );
-    if( add_fixed ) {
-	//gtk_scrolled_window_add_with_viewport( GTK_SCROLLED_WINDOW( panel->scrollwin ), panel->fixedwidget );
-	gtk_container_add( GTK_CONTAINER( panel->scrollwin ), panel->fixedwidget );
-	//gtk_layout_set_size( GTK_LAYOUT( panel->fixedwidget ), 1024, 2048 );
-	gtk_layout_set_vadjustment( GTK_LAYOUT( panel->fixedwidget ),
-		gtk_scrolled_window_get_vadjustment( GTK_SCROLLED_WINDOW( panel->scrollwin ) ) );
-	gtk_layout_set_hadjustment( GTK_LAYOUT( panel->fixedwidget ),
-		gtk_scrolled_window_get_hadjustment( GTK_SCROLLED_WINDOW( panel->scrollwin ) ) );
-
-    }
+    if( add_fixed )
+	gtk_scrolled_window_add_with_viewport( GTK_SCROLLED_WINDOW( panel->scrollwin ), panel->fixedwidget );
 
     gtk_widget_show(panel->scrollwin);
 
     gtk_notebook_append_page( GTK_NOTEBOOK( control_notebook ), panel->scrollwin, gtk_label_new( name ) );
-    gtk_container_check_resize( GTK_CONTAINER( panel->fixedwidget ) );
     control_panels = g_list_append( control_panels, panel );
     panel->visible = TRUE;
 }
@@ -143,17 +79,10 @@ PRIVATE void control_moveto(Control *c, int x, int y) {
   y = floor((y + (GRANULARITY>>1)) / ((gdouble) GRANULARITY)) * GRANULARITY;
 
   if (x != c->x || y != c->y) {
-    ControlPanel *panel = c->panel == NULL ? global_panel : c->panel;
-    //gint w = c->whole->allocation.width;
-    //gint h = c->whole->allocation.height;
-
     x = MAX(x, 0);
     y = MAX(y, 0);
-    gtk_layout_move(GTK_LAYOUT(panel->fixedwidget),
+    gtk_fixed_move(GTK_FIXED(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget),
 		c->whole, x, y);
-    //gtk_widget_get_size_request( c->whole, &w, &h );
-    //g_print( "bla %d,%d\n", w, h);
-    //gtk_container_check_resize( GTK_CONTAINER(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget) );
     c->x = x;
     c->y = y;
   }
@@ -193,7 +122,7 @@ PRIVATE void delete_ctrl_handler(GtkWidget *widget, Control *c) {
 PRIVATE GtkWidget *ctrl_rename_text_widget = NULL;
 PRIVATE void ctrl_rename_handler(MsgBoxResponse action_taken, Control *c) {
   if (action_taken == MSGBOX_OK) {
-    const char *newname = gtk_entry_get_text(GTK_ENTRY(ctrl_rename_text_widget));
+    char *newname = gtk_entry_get_text(GTK_ENTRY(ctrl_rename_text_widget));
 
     if (c->name != NULL) {
       free(c->name);
@@ -236,6 +165,41 @@ PRIVATE void fold_ctrl_handler(GtkWidget *widget, Control *c) {
     gtk_widget_queue_resize( c->whole );
 }
 
+PRIVATE void discreet_ctrl_handler(GtkWidget *widget, Control *c) {
+    c->discreet = !(c->discreet);
+
+    if( c->discreet ){
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_NONE);
+        gtk_frame_set_label (GTK_FRAME (c->title_frame) , NULL);
+        //gtk_adjustment_set_draw_value(c->widget,FALSE);
+	
+	
+	if( c->entry )
+		gtk_widget_hide( c->entry );
+
+        /* In order for this to work, you need the pixmap to bring up the menu...
+         * gtk_widget_hide( c->title_label );
+         * the following is a temp hack.
+         */
+        gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
+
+    }else{
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_ETCHED_IN);
+        gtk_label_set_text(GTK_LABEL(c->title_label),c->desc->name);
+        //gtk_adjustment_set_draw_value(c->widget,TRUE);
+	
+	if( c->entry )
+		gtk_widget_show( c->entry );
+        
+        /* In order for this to work, you need the pixmap to bring up the menu...
+         * gtk_widget_show( c->title_label );
+         * the following is a temp hack
+         */
+        control_update_names(c);
+    }
+    gtk_widget_queue_resize( c->whole );
+}
+
 PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   static GtkWidget *old_popup_menu = NULL;
   GtkWidget *menu;
@@ -264,15 +228,23 @@ PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(fold_ctrl_handler), c);
 
+  item = gtk_check_menu_item_new_with_label( "Discreet" );
+  gtk_check_menu_item_set_state( GTK_CHECK_MENU_ITEM( item ), c->discreet );
+  gtk_widget_show(item);
+  gtk_menu_append(GTK_MENU(menu), item);
+  gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(discreet_ctrl_handler), c);
 
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
 		 be->button, be->time);
 
-  g_object_ref( menu );
   old_popup_menu = menu;
 }
 
 PRIVATE gboolean eventbox_handler(GtkWidget *eventbox, GdkEvent *event, Control *c) {
+  /* There's something fucked wrt event catching going on here. Lots of weird
+     behaviour :-( it's pretty simple, how can it be broken?? */
+  /* I might have fixed this by moving to an x_root/y_root solution a la sheet.c */
+  /* It seems not. SIGH!!! */
 
   switch (event->type) {
     case GDK_BUTTON_PRESS: {
@@ -333,6 +305,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   c->page = desc->page;
 
   c->folded = FALSE;
+  c->discreet = FALSE;
 
   if( panel == NULL && global_panel == NULL )
       global_panel = control_panel_new( "Global", TRUE, NULL );
@@ -432,35 +405,31 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
     gtk_widget_show(c->widget);
 
     if (adj != NULL && c->desc->allow_direct_edit) {
-      GtkWidget *entry = gtk_entry_new();
-      gtk_widget_set_usize(entry, GAUGE_SIZE, 0);
-      gtk_widget_show(entry);
-      gtk_box_pack_start(GTK_BOX(vbox), entry, FALSE, FALSE, 0);
+      c->entry = gtk_entry_new();
+      gtk_widget_set_usize(c->entry, GAUGE_SIZE, 0);
+      if( ! c->discreet )
+	      gtk_widget_show(c->entry);
 
-      gtk_signal_connect(GTK_OBJECT(entry), "activate",
+      gtk_box_pack_start(GTK_BOX(vbox), c->entry, FALSE, FALSE, 0);
+
+      gtk_signal_connect(GTK_OBJECT(c->entry), "activate",
 			 GTK_SIGNAL_FUNC(entry_changed), adj);
       gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
-			 GTK_SIGNAL_FUNC(update_entry), entry);
+			 GTK_SIGNAL_FUNC(update_entry), c->entry);
+    } else {
+    	c->entry = NULL;
     }
+    
 
-    c->whole = gtk_event_box_new();
-    g_object_ref( G_OBJECT(c->whole) );
-    gtk_container_add(GTK_CONTAINER(c->whole), c->title_frame );
-    gtk_widget_show( c->whole );
-
-    gtk_layout_put(GTK_LAYOUT(panel == NULL ? global_panel->fixedwidget : panel->fixedwidget),
+    c->whole = c->title_frame;
+    gtk_fixed_put(GTK_FIXED(panel == NULL ? global_panel->fixedwidget : panel->fixedwidget),
 	    c->whole, c->x, c->y);
-
-    g_object_ref( G_OBJECT( panel == NULL ? global_panel->fixedwidget : panel->fixedwidget ) );
-    //gtk_container_check_resize( GTK_CONTAINER(panel == NULL ? global_panel->fixedwidget : panel->fixedwidget) );
 
     if (!GTK_WIDGET_REALIZED(eventbox))
       gtk_widget_realize(eventbox);
     if (!GTK_WIDGET_REALIZED(c->widget))
       gtk_widget_realize(c->widget);
 
-    gtk_widget_queue_resize( (panel == NULL ? global_panel->fixedwidget : panel->fixedwidget) );
-    
     gdk_window_set_events(eventbox->window, 
 	    GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK  );
   }
@@ -474,39 +443,21 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   return c;
 }
 
-/**
- * \brief Kill a Control
- *
- * \param c The Control to be removed
- *
- * with the gdk_threads_enter/leave pair i need to assure this is a different thread.
- * it could be safe to call check for kill Control from the update processor.
- *
- * i will put gdk_threads enter leave outside of this function.
- * So make sure you hold the gdk-lock when you call this function.
- */
-
 PUBLIC void control_kill_control(Control *c) {
   g_return_if_fail(c != NULL);
 
-  //gdk_threads_enter();
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );
-  //gtk_widget_hide(c->whole);
+  gtk_widget_hide(c->whole);
   gtk_container_remove(GTK_CONTAINER(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget), c->whole);
-  g_object_unref( G_OBJECT(c->whole) );
-  g_object_unref( G_OBJECT(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget) );
 
   if (c->name != NULL)
-    safe_free(c->name);
+    free(c->name);
 
   if (c->g != NULL)
     gen_deregister_control(c->g, c);
-  //gdk_threads_leave();
-  //
 
-
-  safe_free(c);
+  free(c);
 }
 
 PRIVATE int find_control_index(Control *c) {
@@ -528,22 +479,18 @@ PRIVATE void init_panel( Control *control ) {
 
 PRIVATE void done_panel( Control *control ) {
 
+    GtkWidget *viewport; 
+
+
     control->this_panel->sheet->panel_control_active = FALSE;
     control->this_panel->sheet->panel_control = NULL;
 
     control_panel_register_panel( control->this_panel, control->this_panel->name, FALSE );
-
-    g_object_ref( G_OBJECT(control->this_panel->fixedwidget) );
-    gtk_widget_reparent( control->this_panel->fixedwidget, control->this_panel->scrollwin );
-    g_object_unref( G_OBJECT(control->this_panel->fixedwidget) );
-
-    gtk_layout_set_vadjustment( GTK_LAYOUT( control->this_panel->fixedwidget ),
-	    gtk_scrolled_window_get_vadjustment( GTK_SCROLLED_WINDOW( control->this_panel->scrollwin ) ) );
-    gtk_layout_set_hadjustment( GTK_LAYOUT( control->this_panel->fixedwidget ),
-	    gtk_scrolled_window_get_hadjustment( GTK_SCROLLED_WINDOW( control->this_panel->scrollwin ) ) );
-
-    gtk_widget_show( control->this_panel->fixedwidget );
-    gtk_widget_queue_resize( control->this_panel->fixedwidget );
+    viewport = gtk_viewport_new (gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW(control->this_panel->scrollwin)),
+	    gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW(control->this_panel->scrollwin)));
+    gtk_container_add (GTK_CONTAINER (control->this_panel->scrollwin), viewport);
+    gtk_widget_reparent( control->this_panel->fixedwidget, viewport );
+    gtk_widget_show( viewport );
 }
 
 PRIVATE  ControlDescriptor desc = 
@@ -581,7 +528,11 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   c->page = objectstore_item_get_double(item, "page", 1);
 
   if( (c->folded = objectstore_item_get_integer(item, "folded", 0)) )
-      gtk_widget_hide( c->widget );
+      // XXX: Why is that ?
+      // hmm...
+      if( (c->discreet = objectstore_item_get_integer(item, "discreet", 0)) )
+        gtk_widget_hide( c->widget );
+ 
 
   x = objectstore_item_get_integer(item, "x_coord", 0);
   y = objectstore_item_get_integer(item, "y_coord", 0);
@@ -612,6 +563,7 @@ PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
   objectstore_item_set_integer(item, "x_coord", c->x);
   objectstore_item_set_integer(item, "y_coord", c->y);
   objectstore_item_set_integer(item, "folded", c->folded);
+  objectstore_item_set_integer(item, "discreet", c->discreet);
   /* don't save c->data in any form, Controls are MVC views, not models. */
   return item;
 }
@@ -634,12 +586,15 @@ PUBLIC void control_emit(Control *c, gdouble number) {
 PUBLIC void control_update_names(Control *c) {
   g_return_if_fail(c != NULL);
 
-  if( c->g != NULL )
-      gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
-  else
-      gtk_frame_set_label(GTK_FRAME(c->title_frame), c->this_panel->name );
+  if( !c->discreet ) {
 
-  gtk_label_set_text(GTK_LABEL(c->title_label), c->name ? c->name : c->desc->name);
+      if( c->g != NULL )
+          gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
+      else
+          gtk_frame_set_label(GTK_FRAME(c->title_frame), c->this_panel->name );
+
+      gtk_label_set_text(GTK_LABEL(c->title_label), c->name ? c->name : c->desc->name);
+  }
 }
 
 PUBLIC void control_update_range(Control *c) {
@@ -663,16 +618,8 @@ PUBLIC void control_update_range(Control *c) {
 }
 
 PUBLIC void control_update_value(Control *c) {
-    g_async_queue_push( update_queue, c );
-}
-
-PRIVATE  void control_update_value_real(Control *c) {
-    c->events_flow = FALSE;	/* as already stated... not very elegant. */
-    
-    if (c->desc->refresh != NULL)
-	c->desc->refresh(c);
-
-    c->events_flow = TRUE;
+  if (c->desc->refresh != NULL)
+    c->desc->refresh(c);
 }
 
 PRIVATE gboolean control_panel_delete_handler(GtkWidget *cp, GdkEvent *event) {
@@ -686,16 +633,7 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
   panel->scrollwin = NULL; //gtk_scrolled_window_new(NULL, NULL);
   panel->name = safe_string_dup(name);
 
-  panel->fixedwidget = gtk_layout_new(NULL,NULL);
-
-  //g_object_ref( G_OBJECT(panel->fixedwidget) );
-  panel->w = 0;
-  panel->w = 0;
-
-  g_signal_connect( G_OBJECT( panel->fixedwidget ), "size_request", G_CALLBACK(mylayout_sizerequest), NULL );
-  
-  //gtk_layout_set_size( GTK_LAYOUT(panel->fixedwidget), 200, 200 );
-  //gtk_fixed_set_has_window( panel->fixedwidget, TRUE );
+  panel->fixedwidget = gtk_fixed_new();
   //gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(panel->scrollwin), panel->fixedwidget);
 
 
@@ -710,7 +648,6 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
   gtk_widget_show(panel->fixedwidget);
   if (!GTK_WIDGET_REALIZED(panel->fixedwidget))
     gtk_widget_realize(panel->fixedwidget);
-  gtk_container_check_resize( GTK_CONTAINER(panel->fixedwidget) );
   update_panel_name( panel );
   return panel;
 }
@@ -750,23 +687,8 @@ PUBLIC ObjectStoreItem *control_panel_pickle(ControlPanel *cp, ObjectStore *db) 
   return item;
 }
 
-PRIVATE gpointer update_processor( gpointer data ) {
-    while( 1 ) {
-	Control *c = g_async_queue_pop( update_queue );
-	gdk_threads_enter();
-	control_update_value_real( c );
-	gdk_threads_leave();
-	//g_print( "update name=%s\n", c->name );
-    }
-    return NULL;
-}
-
 PUBLIC void init_control(void) {
 
-  GError *err;
-  update_queue = g_async_queue_new();
-  update_thread = g_thread_create( update_processor, NULL, TRUE, &err );
-  
   control_panel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(control_panel), "gAlan Control Panel");
   gtk_window_position(GTK_WINDOW(control_panel), GTK_WIN_POS_CENTER);

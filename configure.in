@@ -65,5 +65,7 @@ if test "x$GCC" = "xyes"; then
   fi
 fi
 
+PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.so sndfile_out.so", AC_MSG_RESULT(sndfile not found) )
+
 
 AC_OUTPUT(Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile galan.spec)

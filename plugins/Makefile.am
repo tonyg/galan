@@ -10,7 +10,7 @@ plugindir = $(pkglibdir)/plugins
 # empty) whitespace-separated list of names from the list just
 # below. (The optional plugins HAVE to be defined in EXTRA_PROGRAMS -
 # see the infopages for automake.)
-EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so alsa_out.so alsa_midi.so
+EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so alsa_out.so alsa_midi.so sndfile_in.so sndfile_out.so
 
 plugin_PROGRAMS = \
 	osc.so oss_output.so random.so rart.so voice.so ctrl.so gain.so \
@@ -18,8 +18,9 @@ plugin_PROGRAMS = \
 	resample.so xfade.so atan.so evtadd.so evtmul.so seqnum.so adsr.so seqnote.so \
 	reverse.so patloop.so vco.so sigctrl.so oss_input.so polyrart.so smooth.so scope.so joyport.so \
 	evtcomp.so evtgate.so evttimer.so evtsum.so evtpower.so evtnotetofreq.so evtabs.so evtinteger.so\
-	evtsgn.so strcombo.so filerequester.so midi_seq_clock.so  midiclock.so\
-	evtdelay.so evtsettings.so vcd.so ladspa.so sampler.so balance.so lights.so\
+	evtsgn.so strcombo.so filerequester.so midi_seq_clock.so  midiclock.so sqrt.so \
+	evtdelay.so evtsettings.so vcd.so ladspa.so sampler.so balance.so lights.so iir_generic.so lowpass.so\
+	integrate.so diff.so\
 	@OPTIONAL_PLUGINS@
 
 LDFLAGS = -shared
@@ -34,6 +35,12 @@ alsa_out_so_INCLUDES= @ALSA_CFLAGS@
 alsa_out_so_LDFLAGS= @ALSA_LIBS@
 alsa_midi_so_INCLUDES= @ALSA_CFLAGS@
 alsa_midi_so_LDFLAGS= @ALSA_LIBS@
+
+
+sndfile_in_so_INCLUDES= @SNDFILE_CFLAGS@
+sndfile_in_so_LDFLAGS= @SNDFILE_LIBS@
+sndfile_out_so_INCLUDES= @SNDFILE_CFLAGS@
+sndfile_out_so_LDFLAGS= @SNDFILE_LIBS@
 
 voice_so_LDFLAGS=-laudiofile
 pcm_out_so_LDFLAGS=-laudiofile

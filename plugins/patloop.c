@@ -344,6 +344,7 @@ PRIVATE void init_panel(Control *control) {
   gtk_widget_show(label);
   gtk_box_pack_start(GTK_BOX(thb), spin, FALSE, FALSE, 0);
   gtk_widget_show(spin);
+
   gtk_widget_set_usize( stepindicator, 50, 20 );
   gtk_entry_set_text( GTK_ENTRY( stepindicator ), "00:00" );
   gtk_entry_set_editable( GTK_ENTRY( stepindicator ), FALSE );

@@ -50,6 +50,10 @@ PRIVATE void aevent_copy( AEvent *src, AEvent *dst ) {
 	    case AE_STRING:
 		dst->d.string = safe_string_dup( src->d.string );
 		break;
+	    case AE_NUMARRAY:
+		dst->d.array.numbers = safe_malloc( sizeof(gdouble) * dst->d.array.len );
+		memcpy( dst->d.array.numbers, src->d.array.numbers, src->d.array.len * sizeof(gdouble) );
+		break;
 	    default:
 	}
     }
@@ -64,6 +68,10 @@ PRIVATE void aevent_free( AEvent *e ) {
 		if( e->d.string != NULL )
 		    free( e->d.string );
 		break;
+	    case AE_NUMARRAY:
+		if( e->d.array.numbers != NULL )
+		    free( e->d.array.numbers );
+		break;
 	    default:
 	}
 	free( e );
@@ -77,6 +85,10 @@ PRIVATE void eventq_free( EventQ *evq ) {
 	    case AE_STRING:
 		if( evq->e.d.string != NULL )
 		    free( evq->e.d.string );
+		break;
+	    case AE_NUMARRAY:
+		if( evq->e.d.array.numbers != NULL )
+		    free( evq->e.d.array.numbers );
 		break;
 	    default:
 	}

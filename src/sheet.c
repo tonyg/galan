@@ -37,13 +37,16 @@
 #define GEN_AREA_LENGTH		2048
 
 enum SheetModes {
-  SHEET_MODE_NORMAL = 0,
-  SHEET_MODE_SCROLLING,
-  SHEET_MODE_PRESSING,
-  SHEET_MODE_DRAGGING_COMP,
-  SHEET_MODE_DRAGGING_LINK,
-  SHEET_MODE_DRAGGING_SEL_COMPS,
-
+  SHEET_MODE_NORMAL = 0,	    /**< nothing happening */
+  SHEET_MODE_SCROLLING,		    /**< middle button was pressed and we follow mouse movement with the scrollwin */
+  SHEET_MODE_PRESSING,		    /**< left button was pressed on a connector or component. Lets see if the user
+				     *   moves the mouse. */
+  SHEET_MODE_DRAGGING_COMP,	    /**< we were on a component and the user moved the mouse. */
+  SHEET_MODE_DRAGGING_LINK,	    /**< we were on a connector and the user moved the mouse. */
+  SHEET_MODE_DRAGGING_SEL_COMPS,    /**< we are moving the selected components from sheet->selected_comps */
+  SHEET_MODE_PRESSING_NOWHERE,	    /**< The user pressed left mouse button on an empty area. If user now releases the button
+				     *	 we will unselect the selection, if the user moves the mouse we will draw a selection box */
+  SHEET_MODE_DRAGGING_SEL_BOX,	    /**< the user is dragging the selection box. */
   SHEET_MAX_MODE
 };
 
@@ -52,7 +55,10 @@ GeneratorClass *is_evtout_klass;
 GeneratorClass *is_sigin_klass; 
 GeneratorClass *is_sigout_klass; 
 
-PRIVATE int next_sheet_number = 1;
+PRIVATE int next_sheet_number = 1;  /**< This is a counter for sheet numbers.
+				     *   \note It should be adjusted when we load a new sheet. But normally sheets should be
+				     *         named correctly after instantiantion so this will be done later.
+				     */
 
 PRIVATE GdkColor comp_colors[COMP_NUM_COLORS] = {
   { 0, 0, 0, 0 },
@@ -120,6 +126,11 @@ PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
 	    comp_paint(c, &area, drawable, style, comp_colors);
     }
   }
+
+  if( sheet->sel_valid )
+      gdk_draw_rectangle(drawable, style->white_gc, FALSE,
+	      sheet->sel_rect.x, sheet->sel_rect.y, 
+	      sheet->sel_rect.width, sheet->sel_rect.height);
 
   return TRUE;
 }
@@ -198,6 +209,15 @@ PRIVATE void process_click(GtkWidget *w, GdkEventButton *be) {
     sheet->saved_x = c->x - be->x_root;
     sheet->saved_y = c->y - be->y_root;
     sheet->sheetmode = SHEET_MODE_PRESSING;
+  } else {
+      sheet->saved_x = be->x;
+      sheet->saved_y = be->y;
+
+      sheet->sel_rect.x = be->x;
+      sheet->sel_rect.y = be->y;
+      sheet->sel_rect.width = sheet->sel_rect.height = 0;
+
+      sheet->sheetmode = SHEET_MODE_PRESSING_NOWHERE;
   }
 }
 
@@ -381,6 +401,7 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 
 	  break;
 	}
+
 	case SHEET_MODE_PRESSING: {
 	    Component *c = find_component_at( sheet, be->x, be->y );
 	    if( c != NULL ) {
@@ -393,6 +414,39 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	    }
 	
 	    break;
+	}
+
+	case SHEET_MODE_PRESSING_NOWHERE: {
+	    if( sheet->selected_comps != NULL ) {
+
+		g_list_free( sheet->selected_comps );
+		sheet->selected_comps = NULL;
+		gtk_widget_queue_draw( sheet->scrollwin );
+	    }
+
+	    break;
+	}
+
+	case SHEET_MODE_DRAGGING_SEL_BOX: {
+
+	    GList *l;
+	    
+	    for (l = g_list_last(sheet->components); l != NULL; l = g_list_previous(l)) {
+		Component *c = l->data;
+		GdkRectangle r_gen, r;
+
+		r_gen.x = c->x;
+		r_gen.y = c->y;
+		r_gen.width = c->width;
+		r_gen.height = c->height;
+
+		if (gdk_rectangle_intersect(&r_gen, &sheet->sel_rect, &r)) {
+		    if( g_list_find( sheet->selected_comps, c ) == NULL )
+			sheet->selected_comps = g_list_append( sheet->selected_comps, c );
+		}
+	    }
+	    gtk_widget_queue_draw( sheet->drawingwidget );
+	    sheet->sel_valid = FALSE;
 	}
 
 	default:
@@ -430,6 +484,12 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	    }
 		
 	  }
+
+	  // XXX: The fallthrough should be reestablished.
+	  //      will have to use goto here :)
+	  //      select statement is goto too so this is not so bad.
+	  //      or should i do bla=TRUE; while( bla ) { bla=FALSE; select( ... ) { case SHEET_MODE_PRESSING: ....;  bla=TRUE;
+	  //      break; } }
 
 	  break;
 
@@ -471,6 +531,37 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	      gtk_widget_queue_draw_area(sheet->drawingwidget,
 		      sheet->saved_ref.c->x, sheet->saved_ref.c->y,
 		      sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+	      break;
+	  }
+
+	case SHEET_MODE_PRESSING_NOWHERE:
+	  {
+	      // Where do i get the gdk context stuff for the scroll widget ?
+	      // or should i already add the layering mechanism for the sheet ?
+	      //
+	      // ok... first have a GdkRectangle in the sheet struct. 
+
+	      sheet->sheetmode = SHEET_MODE_DRAGGING_SEL_BOX;
+	      
+	      // fallthrough.
+	  }
+	case SHEET_MODE_DRAGGING_SEL_BOX:
+	  {
+	      GdkRectangle newsel_rect, union_rect;
+
+	      newsel_rect.x = MIN( sheet->saved_x, me->x );
+	      newsel_rect.y = MIN( sheet->saved_y, me->y );
+	      newsel_rect.width = MAX( sheet->saved_x, me->x ) - newsel_rect.x; 
+	      newsel_rect.height = MAX( sheet->saved_y, me->y ) - newsel_rect.y; 
+	      
+	      gdk_rectangle_union( &newsel_rect, &sheet->sel_rect, &union_rect );
+	      
+	      sheet->sel_rect = newsel_rect;
+	      sheet->sel_valid = TRUE;
+
+	      gtk_widget_queue_draw_area( sheet->drawingwidget,
+		      union_rect.x, union_rect.y, union_rect.width, union_rect.height );
+	      
 	      break;
 	  }
 
@@ -562,6 +653,7 @@ PUBLIC Sheet *create_sheet( void ) {
   
   sheet->components = NULL;
   sheet->selected_comps = NULL;
+  sheet->sel_valid = FALSE;
   sheet->sheetmode  = SHEET_MODE_NORMAL;
   sheet->sheetklass = NULL;
   sheet->panel_control_active = FALSE;

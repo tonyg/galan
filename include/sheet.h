@@ -37,6 +37,9 @@ typedef struct sheet {
     GList *selected_comps;
     GList *referring_sheets;
 
+    GdkRectangle sel_rect;
+    gboolean sel_valid;
+
     GeneratorClass *sheetklass;
     gchar *name;
 } Sheet;

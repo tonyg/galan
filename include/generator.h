@@ -50,10 +50,10 @@ typedef struct Control Control;
 typedef struct AClock AClock;
 
 typedef enum AClockReason {
-  CLOCK_DISABLE = 0,	/* sent to clock when it's deselected as master clock */
-  CLOCK_ENABLE,		/* sent to clock when it's selected as master clock */
+  CLOCK_DISABLE = 0,	/**< sent to clock when it's deselected as master clock */
+  CLOCK_ENABLE,		/**< sent to clock when it's selected as master clock */
 
-  CLOCK_MAX_REASON	/* end-of-enum marker */
+  CLOCK_MAX_REASON	/**< end-of-enum marker */
 } AClockReason;
 
 typedef void (*AEvent_handler_t)(Generator *recip, AEvent *event);
@@ -62,35 +62,42 @@ typedef gboolean (*AGenerator_t)(Generator *source, SAMPLE *buffer, int buflen);
 typedef void (*AGenerator_pickle_t)(Generator *gen, ObjectStoreItem *item, ObjectStore *db);
 
 typedef enum AEventKind {
-  AE_ANY = -1,		/* wildcard, for matching all incoming evts */
-  AE_NONE = 0,		/* 'null event' kind */
-  AE_NUMBER,		/* a numeric message */
-  AE_REALTIME,		/* a realtime-has-elapsed message */
-  AE_STRING,		/* a string message  */
+  AE_ANY = -1,		/**< wildcard, for matching all incoming evts */
+  AE_NONE = 0,		/**< 'null event' kind */
+  AE_NUMBER,		/**< a numeric message */
+  AE_REALTIME,		/**< a realtime-has-elapsed message */
+  AE_STRING,		/**< a string message  */
+  AE_NUMARRAY,		/**< an array message  */
 
-  AE_LAST_EVENT_KIND	/* end-of-enum marker */
+  AE_LAST_EVENT_KIND	/**< end-of-enum marker */
 } AEventKind;
 
 struct EventLink {
-  int is_signal;		/* true for signal link, false for event link */
+  int is_signal;		/**< true for signal link, false for event link */
   Generator *src;
   gint src_q;
   Generator *dst;
   gint dst_q;
 };
 
-struct AEvent {		/* audio event */
-  AEventKind kind;		/* what kind of event? */
+typedef struct arr {
+	int len;
+	gdouble *numbers;
+} Array;
+
+struct AEvent {		/**< audio event */
+  AEventKind kind;		/**< what kind of event? */
   Generator *src, *dst;
   int src_q, dst_q;
-  SAMPLETIME time;		/* sample number - note at 32-bits allows for only ~27
-				   hours of (continuous) play! */
+  SAMPLETIME time;		/**< sample number - note at 32-bits allows for only ~27
+				     hours of (continuous) play! */
 
-  /* message body */
+  /** message body */
   union {
-    gdouble number;		/* AE_NUMBER */
-    gint32 integer;		/* AE_REALTIME and AE_MASTER_PLAY */
-    gchar *string;		/* AE_STRING */
+    gdouble number;		/**< AE_NUMBER */
+    gint32 integer;		/**< AE_REALTIME and AE_MASTER_PLAY */
+    gchar *string;		/**< AE_STRING */
+    Array array;		/**< AE_NUMARRAY */
   } d;
 };
 

@@ -101,7 +101,8 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
     switch( event->kind ) {
 	case AE_NUMARRAY:
 	    if( event->d.array.len != data->len )
-		g_warning( "arrmul dimension mismatch" );
+		
+		g_printf( "arrmul dimension mismatch (data->len, event->len ) = ( %d, %d )\n", data->len, event->d.array.len );
 	    else{
 
 		for( i=0; i<data->len; i++ )

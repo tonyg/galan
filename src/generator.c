@@ -626,6 +626,30 @@ PUBLIC gboolean gen_read_randomaccess_input(Generator *g, gint index, int attach
   return desc->d.randomaccess.get_samples(el->src, desc, offset, buffer, buflen);
 }
 
+PUBLIC gboolean gen_render_gl(Generator *g, gint index, int attachment_number ) {
+
+  GList *input_list;
+  EventLink *el;
+  OutputSignalDescriptor *desc;
+
+  /* Sanity checks */
+  g_return_val_if_fail(index < g->klass->in_sig_count && index >= 0, FALSE);
+  g_return_val_if_fail((g->klass->in_sigs[index].flags & SIG_FLAG_OPENGL) != 0, FALSE);
+
+  if (g->in_signals[index] == NULL) {
+    /*memset(buffer, 0, buflen * sizeof(SAMPLE));*/
+    return FALSE;
+  }
+
+  for( input_list = g->in_signals[index]; input_list != NULL; input_list = g_list_next( input_list ) ) {
+
+      el = (EventLink *) input_list->data;
+      desc = &el->src->klass->out_sigs[el->src_q];
+      desc->d.render_gl(el->src);
+  }
+  return TRUE;
+}
+
 PRIVATE void send_one_event(EventLink *el, AEvent *e) {
   e->dst = el->dst;
   e->dst_q = el->dst_q;

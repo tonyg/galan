@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(galan, 0.3.0_beta2, torbenh@users.sourceforge.net)
+AC_INIT(galan, 0.3.0_beta4, torbenh@users.sourceforge.net)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE
 
@@ -35,17 +35,19 @@ AC_CHECK_HEADER(esd.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.la")
 AC_CHECK_HEADER(vorbis/vorbisfile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.la")
 AC_CHECK_HEADERS(audiofile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.la voice.la")
 AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} oss_output.la oss_input.la")
-AC_CHECK_HEADERS(drfftw.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
-		           FFTW_WITH_PREFIX="yes" )
-AC_CHECK_HEADERS(rfftw.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
-		           FFTW_WITH_PREFIX="no" )
 
-if test "x$FFTW_WITH_PREFIX" = "xyes"; then
-	AC_DEFINE( FFTW_PREFIX, 1, "include drfftw.h" )
-else
-	AC_DEFINE( FFTW_PREFIX, 0, "include rfftw.h" )
-fi
-	
+AC_CHECK_HEADERS(drfftw.h, [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+			       FFTW_WITH_PREFIX="yes"
+			       FFTW_LIBS="-ldrfftw -ldfftw"
+                               AC_SUBST(FFTW_LIBS)
+                               AC_DEFINE( FFTW_PREFIX, 1, "include drfftw.h" ) ])
+
+AC_CHECK_HEADERS(rfftw.h,  [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+			       FFTW_WITH_PREFIX="no" 
+			       FFTW_LIBS="-lfftw -lrfftw"
+			       AC_SUBST(FFTW_LIBS)
+			       AC_DEFINE( FFTW_PREFIX, 0, "include rfftw.h" ) ] )
+
 dnl Feature tests
 dnl ===========================================================================
 
@@ -88,6 +90,9 @@ fi
 PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.la sndfile_out.la", AC_MSG_RESULT(sndfile not found) )
 PKG_CHECK_MODULES( JACK, jack >= 0.34.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} jack.la", AC_MSG_RESULT(jack not found) )
 
+AC_CHECK_HEADER(jack/miditypes.h,
+		AC_DEFINE(HAVE_JACKMIDI_H, 1, "whether there is jack_midi support")
+		)
 AC_CHECK_HEADER(lrdf.h,
 		AC_CHECK_LIB(lrdf, lrdf_init, LRDF_FOUND="yes", LRDF_FOUND="no"),
 		LRDF_FOUND="no")

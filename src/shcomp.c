@@ -577,6 +577,31 @@ PRIVATE void do_control(Component *c, guint action, GtkWidget *widget) {
 //    d->propgen(c, d->g);
 //}
 
+
+
+PRIVATE void do_visible(Component *c, guint action, GtkWidget *widget) {
+
+    ShCompData *d = c->data;
+    GtkCheckMenuItem *check = GTK_CHECK_MENU_ITEM( widget );
+    gboolean visible = gtk_check_menu_item_get_active( check );
+
+    if( d->sheet->visible == visible )
+	return;
+
+    if( visible )
+    {
+	d->sheet->visible = TRUE;
+	gui_register_sheet( d->sheet );
+    }
+    else
+    {
+	d->sheet->visible = TRUE;
+	gui_unregister_sheet( d->sheet );
+	d->sheet->visible = FALSE;
+    }
+
+}
+
 PRIVATE void do_delete(Component *c, guint action, GtkWidget *widget) {
   sheet_delete_component(c->sheet, c);
 }
@@ -584,6 +609,7 @@ PRIVATE void do_delete(Component *c, guint action, GtkWidget *widget) {
 PRIVATE GtkItemFactoryEntry popup_items[] = {
   { "/_Rename...",	NULL,	do_rename, 0,		NULL },
   { "/Add _Control",	NULL,	do_control, 0,		NULL },
+  { "/Sheet visible",	NULL,	do_visible, 0,		"<ToggleItem>" },
 //  { "/_Properties...",	NULL,	do_props, 0,		NULL },
   { "/sep1",		NULL,	NULL, 0,		"<Separator>" },
   { "/_Delete",		NULL,	do_delete, 0,		NULL },
@@ -607,6 +633,11 @@ PRIVATE GtkWidget *shcomp_build_popup(Component *c) {
   if( d->sheet->panel_control_active )
       gtk_widget_set_state(gtk_item_factory_get_item(ifact, "<shcomp-popup>/Add Control"),
 	      GTK_STATE_INSENSITIVE);
+
+  gtk_check_menu_item_set_active( 
+	  GTK_CHECK_MENU_ITEM(gtk_item_factory_get_item( ifact, "<shcomp-popup>/Sheet visible" )),
+	  d->sheet->visible );
+
 
   gtk_signal_connect(GTK_OBJECT(result), "destroy", GTK_SIGNAL_FUNC(kill_popup), ifact);
 

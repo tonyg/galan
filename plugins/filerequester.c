@@ -54,7 +54,7 @@ PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
     AEvent event;
     Generator *g = gtk_object_get_data(GTK_OBJECT(fs), "Generator");
     Data *data = g->data;
-    char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+    const char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
 
     if (data->filename != NULL)
 	free(data->filename);
@@ -70,6 +70,7 @@ PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
 PRIVATE gpointer req_thread( Generator *g ) {
 
     Data *data = g->data;
+    GtkWidget *fs;
 
     while( 1 ) {
 	gpointer ptr = g_async_queue_pop( data->req );
@@ -79,7 +80,7 @@ PRIVATE gpointer req_thread( Generator *g ) {
 
 	    gdk_threads_enter();
 	    
-	    GtkWidget *fs = gtk_file_selection_new("Select File");
+	    fs = gtk_file_selection_new("Select File");
 
 	    gtk_object_set_data(GTK_OBJECT(fs), "Generator", g);
 	    gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
@@ -97,6 +98,7 @@ PRIVATE gpointer req_thread( Generator *g ) {
 	}
 	
     }
+    return NULL;
 }
 
 
@@ -128,7 +130,7 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE void evt_request_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
 
-  g_async_queue_push( data->req, 1 );
+  g_async_queue_push( data->req, (gpointer) 1 );
 }
 
 PRIVATE InputSignalDescriptor input_sigs[] = {

@@ -5,9 +5,10 @@
 
 bin_PROGRAMS = galan
 plugindir = $(pkglibdir)/plugins
+libodir = $(pkglibdir)
 EXTRA_DIST = Makefile.w32 dllinit.c
 
-plugin_LTLIBRARIES = libgalan.la
+libo_LTLIBRARIES = libgalan.la
 
 libgalan_la_LIBADD = @GTK_LIBS@ @GTHREAD_LIBS@ 
 libgalan_la_SOURCES = buffer.c clock.c comp.c control.c event.c galan.c gencomp.c \

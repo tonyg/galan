@@ -435,11 +435,12 @@ PRIVATE ObjectStoreDatum *pickle_eventlink_list_array(ObjectStore *db, GList **a
 }
 
 /**
- * \brief Pickle the Generator \a g into ObjectStore \a db
+ * \brief Pickle the Generator \a g into ObjectStore \a db.
  *
  * \param g The Generator to be pickled.
  * \param db The ObjectStore into which the Generator will be inserted.
  */
+
 
 PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
   ObjectStoreItem *item = objectstore_get_item(db, g);
@@ -465,6 +466,50 @@ PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
 }
 
 /**
+ * \brief Pickle the Generator \a g into ObjectStore \a db without EventLink s.
+ *
+ * \param g The Generator to be pickled.
+ * \param db The ObjectStore into which the Generator will be inserted.
+ *
+ * \return The ObjectStoreItem for this Generator. If it does not exist
+ *         It will be created by this function. If it already exists 
+ *         only the pointer will be returned.
+ *
+ * This function pickles a Generator into an ObjectStore, like gen_pickle(),
+ * but it does not pickle the event links.
+ *
+ * This is for copy paste. I only modify the core.
+ * The interface, the plugins speak to, is not changed.
+ * i can now write a copy function for a gencomp.
+ * I must still determine the wanted connecttions and pickle them as well.
+ * i will see how this will work....
+ */
+
+PUBLIC ObjectStoreItem *gen_pickle_without_el(Generator *g, ObjectStore *db) {
+  ObjectStoreItem *item = objectstore_get_item(db, g);
+
+  if (item == NULL) {
+    item = objectstore_new_item(db, "Generator", g);
+    objectstore_item_set_string(item, "class_name", g->klass->name);
+    objectstore_item_set_string(item, "name", g->name);
+
+    if (g->klass->pickle_instance != NULL)
+      g->klass->pickle_instance(g, item, db);
+
+    // XXX: Controls should also be copied but they have a reference to
+    //      the sheet so i would need a different unpickler.
+    //      I wont do that now.
+
+    //objectstore_item_set(item, "controls",
+    //		 objectstore_create_list_of_items(g->controls, db,
+    //						  (objectstore_pickler_t) control_pickle));
+  }
+
+  return item;
+}
+
+
+/**
  * \brief Setup a Link between 2 Genrators.
  *
  * \param is_signal TRUE if a Signal Link is to be established, FALSE for an event Link.
@@ -473,7 +518,7 @@ PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
  * \param dst The Destination Genrator.
  * \param dst_q The Connector number at the Destination.
  *
- * \return The EventLink representing this Connection.
+ * \return The EventLink representing this Connection or NULL on failure.
  */
 
 PUBLIC EventLink *gen_link(int is_signal, Generator *src, gint32 src_q, Generator *dst, gint32 dst_q) {
@@ -774,6 +819,16 @@ PUBLIC SAMPLETIME gen_get_randomaccess_output_range(Generator *g, gint index) {
   }
 }
 
+/**
+ * \brief Get the randomaccess input range
+ *
+ * \param g This Generator
+ * \param index Which input connector
+ * \param attachment_number which connection or -1 for all connections
+ *
+ * \return the length of the given RandomAccess Input.
+ */
+
 PUBLIC SAMPLETIME gen_get_randomaccess_input_range(Generator *g, gint index,
 						   int attachment_number) {
   GList *input_list;
@@ -796,6 +851,19 @@ PUBLIC SAMPLETIME gen_get_randomaccess_input_range(Generator *g, gint index,
   return desc->d.randomaccess.get_range(el->src, desc);
 }
 
+/**
+ * \brief Get the randomaccess input
+ *
+ * \param g This Generator
+ * \param index Which input connector
+ * \param attachment_number which connection or -1 for all connections
+ * \param offset Get input from which offset.
+ * \param buflen How many SAMPLE s.
+ *
+ * \retval buffer Where to put the data.
+ * \return TRUE if the data has been put into the buffer.
+ */
+
 PUBLIC gboolean gen_read_randomaccess_input(Generator *g, gint index, int attachment_number,
 					    SAMPLETIME offset, SAMPLE *buffer, int buflen) {
   GList *input_list;
@@ -817,6 +885,35 @@ PUBLIC gboolean gen_read_randomaccess_input(Generator *g, gint index, int attach
   desc = &el->src->klass->out_sigs[el->src_q];
   return desc->d.randomaccess.get_samples(el->src, desc, offset, buffer, buflen);
 }
+
+
+/**
+ * \brief render gl inputs
+ *
+ * \param g This Generator
+ * \param index Which input connector
+ * \param attachment_number which connection or -1 for all connections
+ *
+ * \return TRUE if something was rendered.
+ *
+ * This function calls the render gl method of the connected generators.
+ * See the renderfunction of gltranslate.
+ *
+ * \code
+ * PRIVATE gboolean render_function(Generator *g ) {
+ * 
+ *     Data *data = g->data;
+ * 
+ *     glPushMatrix();
+ *     glTranslatef( data->tx, data->ty, data->tz );
+ *     gen_render_gl( g, 0, -1 );
+ *     glPopMatrix();
+ * 
+ *     return TRUE;
+ * }
+ *
+ * \endcode
+ */
 
 PUBLIC gboolean gen_render_gl(Generator *g, gint index, int attachment_number ) {
 
@@ -848,6 +945,37 @@ PRIVATE void send_one_event(EventLink *el, AEvent *e) {
   gen_post_aevent(e);
 }
 
+/**
+ * \brief send an event to an output connector
+ *
+ * \param g The Generator we are sending from
+ * \param index The number of the Connector we send the event from.
+ * \param attachment_number number of eventlink to send the event to. (-1 for all)
+ * \param e Pointer to event we want to send. This is copied and can be freed after the call.
+ *
+ * It is general practise to use a received event as \a e here. See the event processing function of
+ * plugins/evtadd.c
+ *
+ * \code
+ * PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
+ * 
+ *   Data *data = g->data;
+ *
+ *   event->d.number += data->addend;
+ *   gen_send_events(g, EVT_OUTPUT, -1, event);
+ * }
+ * \endcode
+ *
+ * With this method we dont have to bother with the timestamp of the event.
+ * But after being passed to the evt_input_handler() the AEvent is freed
+ * by gen_mainloop_once(). if you changed the type of the event to AE_STRING
+ * or AE_NUMARRAY the memory at event->d.string or event->d.array.number 
+ * would be freed also. If this memory is already freed galan will segfault.
+ *
+ * So be careful. Set event->kind back to AE_NUMBER if you received an AE_NUMBER AEvent.
+ * I see no way to prevent you from making this error except forbidding this practise.
+ * But its efficient so i dont forbid this.
+ */
 PUBLIC void gen_send_events(Generator *g, gint index, int attachment_number, AEvent *e) {
   e->src = g;
   e->src_q = index;

@@ -83,7 +83,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
 
-  Data *data = g->data;
+  //Data *data = g->data;
 }
 
 PRIVATE gint init(GtkWidget *widget)
@@ -139,14 +139,18 @@ PRIVATE gint init(GtkWidget *widget)
 PRIVATE gint draw(GtkWidget *widget, GdkEventExpose *event)
 {
   /* Draw only last expose. */
+
+  printf( "Hallo ?\n" );
   if (event->count > 0)
     return TRUE;
 
+  printf( "Hallo !\n" );
   /* OpenGL functions can be called only if make_current returns true */
   if (gtk_gl_area_make_current(GTK_GL_AREA(widget))) {
 
-      Control *control = gtk_object_get_data( GTK_OBJECT(widget), "Control" );
+      Control *control = g_object_get_data( G_OBJECT(widget), "Control" );
       
+      printf( "super sache : %s\n", control->name );
       glClearColor(0,0,0,1);
       glClearDepth( 1 );
       glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -155,9 +159,12 @@ PRIVATE gint draw(GtkWidget *widget, GdkEventExpose *event)
       gen_render_gl( control->g, 0, -1 );
 
       /* Swap backbuffer to front */
-      gtk_gl_area_swapbuffers(GTK_GL_AREA(widget));
+      glFlush();
+      gtk_gl_area_swap_buffers(GTK_GL_AREA(widget));
 
   }
+  else
+      printf( "fuckoff \n" );
 
   return TRUE;
 }
@@ -203,18 +210,18 @@ PRIVATE void init_scope( Control *control, int w, int h ) {
 
   /* Connect signal handlers */
   /* Redraw image when exposed. */
-  gtk_signal_connect(GTK_OBJECT(glarea), "expose_event",
+  g_signal_connect(G_OBJECT(glarea), "expose_event",
 		     GTK_SIGNAL_FUNC(draw), NULL);
   /* When window is resized viewport needs to be resized also. */
-  gtk_signal_connect(GTK_OBJECT(glarea), "configure_event",
+  g_signal_connect(G_OBJECT(glarea), "configure_event",
 		     GTK_SIGNAL_FUNC(reshape), NULL);
   /* Do initialization when widget has been realized. */
-  gtk_signal_connect(GTK_OBJECT(glarea), "realize",
+  g_signal_connect(G_OBJECT(glarea), "realize",
 		     GTK_SIGNAL_FUNC(init), NULL);
 
   /* set minimum size */
   gtk_widget_set_usize(GTK_WIDGET(glarea), w,h);
-  gtk_object_set_data( GTK_OBJECT(glarea), "Control", control );
+  g_object_set_data( G_OBJECT(glarea), "Control", control );
 
   control->widget = glarea;
 }
@@ -239,7 +246,7 @@ PRIVATE void evt_trigger_handler(Generator *g, AEvent *event) {
   /* handle incoming events on queue EVT_TRIGGER
    * set phase=0;
    */
-  Data *data = g->data;
+  //Data *data = g->data;
   gen_update_controls( g, -1 );
 }
 

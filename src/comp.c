@@ -38,7 +38,9 @@ typedef struct MenuEntry {
 } MenuEntry;
 
 PRIVATE GList *menuentries = NULL;
+PRIVATE gboolean menuentries_dirty = TRUE;
 PRIVATE GHashTable *componentclasses = NULL;
+PRIVATE GtkItemFactory *menufact = NULL;
 
 PRIVATE void newmenu_callback(MenuEntry *p, guint callback_action, GtkWidget *widget) {
 
@@ -48,6 +50,7 @@ PRIVATE void newmenu_callback(MenuEntry *p, guint callback_action, GtkWidget *wi
 }
 
 PUBLIC void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer init_data) {
+
   MenuEntry *m = safe_malloc(sizeof(MenuEntry));
 
   if (k->initialize_instance == NULL ||
@@ -66,15 +69,16 @@ PUBLIC void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer in
   m->init_data = init_data;
 
   menuentries = g_list_append(menuentries, m);
+  menuentries_dirty = TRUE;
 }
 
 PRIVATE void kill_newmenu(GtkWidget *menu, GtkItemFactory *ifact) {
   gtk_object_unref(GTK_OBJECT(ifact));
 }
 
-PUBLIC GtkWidget *comp_get_newmenu(Sheet *sheet) {
+PRIVATE GtkItemFactory *get_new_ifact( void ) {
+
   GtkItemFactory *ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<new>", NULL);
-  GtkWidget *menu;
   GList *lst = menuentries;
 
   while (lst != NULL) {
@@ -85,13 +89,36 @@ PUBLIC GtkWidget *comp_get_newmenu(Sheet *sheet) {
 
     lst = g_list_next(lst);
   }
+  menuentries_dirty = FALSE;
 
-  gtk_object_set_user_data( GTK_OBJECT( ifact ), sheet );
-  menu = gtk_item_factory_get_widget(ifact, "<new>");
 
-  gtk_signal_connect(GTK_OBJECT(menu), "destroy", GTK_SIGNAL_FUNC(kill_newmenu), ifact);
 
-  return menu;
+
+  return ifact;
+}
+
+PUBLIC GtkWidget *comp_get_newmenu(Sheet *sheet) {
+
+    GtkWidget *menu;
+
+    if( menufact == NULL ) {
+	menufact = get_new_ifact();
+	g_object_ref( G_OBJECT(menufact) );
+    }
+
+    if( menuentries_dirty ) {
+	if( menufact != NULL ) {
+	    g_object_unref( G_OBJECT(menufact) );
+	}
+	menufact = get_new_ifact();
+    }
+
+    gtk_object_set_user_data( GTK_OBJECT( menufact ), sheet );
+    //gtk_signal_connect(GTK_OBJECT(menu), "destroy", GTK_SIGNAL_FUNC(kill_newmenu), ifact);
+
+    menu = gtk_item_factory_get_widget(menufact, "<new>");
+
+    return menu;
 }
 
 PUBLIC void comp_register_componentclass(ComponentClass *k) {

@@ -475,9 +475,6 @@ PUBLIC void comp_kill_connector(Connector *con) {
     ConnectorReference *ref = con->refs->data;
 
     comp_unlink(ref, &(con->ref) ); 
-
-    // FIXME: this leaks i think...
-    //free(ref);
   }
 
   free(con);

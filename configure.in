@@ -46,6 +46,12 @@ AM_PATH_GTK(1.2.0, ,
 
 AM_PATH_GDK_PIXBUF()
 
+AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.so")
+
+CFLAGS="$alsa_save_CFLAGS"
+LDFLAGS="$alsa_save_LDFLAGS"
+LIBS="$alsa_save_LIBS"
+
 dnl Only use -Wall if we have gcc
 if test "x$GCC" = "xyes"; then
   if test -z "`echo "$CFLAGS" | grep "\-Wall" 2> /dev/null`" ; then
@@ -53,4 +59,5 @@ if test "x$GCC" = "xyes"; then
   fi
 fi
 
-AC_OUTPUT(Makefile src/Makefile plugins/Makefile pixmaps/Makefile galan.spec)
+
+AC_OUTPUT(Makefile src/Makefile plugins/Makefile pixmaps/Makefile)

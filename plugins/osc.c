@@ -52,6 +52,10 @@ typedef struct OscData {
   gdouble frequency;
 } OscData;
 
+typedef struct WavFormData {
+	GtkWidget *sin_button, *sqr_button, *saw_button, *tri_button;
+} WavFormData;
+
 PRIVATE SAMPLE sample_table[OSC_NUM_KINDS][SAMPLE_RATE];
 
 PRIVATE void setup_tables(void) {
@@ -144,6 +148,101 @@ PRIVATE void evt_kind_handler(Generator *g, AEvent *event) {
   gen_update_controls(g, 0);
 }
 
+PRIVATE void wav_emit(Control *c, gdouble number) {
+  AEvent e;
+
+  if (!c->events_flow)
+    return;
+
+  gen_init_aevent(&e, AE_NUMBER, NULL, 0, c->g, 2, gen_get_sampletime());
+  e.d.number = number;
+
+  if (c->desc->is_dst_gen)
+    gen_post_aevent(&e);	/* send to c->g as dest */
+  else
+    gen_send_events(c->g, 2, -1, &e);	/* send *from* c->g */
+}
+
+PRIVATE gboolean wav_sin_pressed( GtkWidget *w, Control *c ) {
+
+    wav_emit( c, OSC_KIND_SIN );
+    return FALSE;
+}
+PRIVATE gboolean wav_sqr_pressed( GtkWidget *w, Control *c ) {
+
+    wav_emit( c, OSC_KIND_SQR );
+    return FALSE;
+}
+PRIVATE gboolean wav_saw_pressed( GtkWidget *w, Control *c ) {
+
+    wav_emit( c, OSC_KIND_SAW );
+    return FALSE;
+}
+PRIVATE gboolean wav_tri_pressed( GtkWidget *w, Control *c ) {
+
+    wav_emit( c, OSC_KIND_TRI );
+    return FALSE;
+}
+
+PRIVATE void init_wavform( Control *control ) {
+
+  GtkWidget *vbox;
+
+  WavFormData *wdata = safe_malloc( sizeof( WavFormData ) );
+  control->data = wdata;
+
+  vbox = gtk_vbox_new(FALSE, 0);
+  gtk_widget_show(vbox);
+
+  wdata->sin_button = gtk_radio_button_new_with_label(NULL, "sin");
+  gtk_signal_connect( GTK_OBJECT(wdata->sin_button), "pressed", GTK_SIGNAL_FUNC(wav_sin_pressed), (gpointer) control );
+
+  wdata->sqr_button = gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(wdata->sin_button)), "sqr");
+  gtk_signal_connect( GTK_OBJECT(wdata->sqr_button), "pressed", GTK_SIGNAL_FUNC(wav_sqr_pressed), (gpointer) control );
+  
+  wdata->saw_button = gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(wdata->sqr_button)), "saw");
+  gtk_signal_connect( GTK_OBJECT(wdata->saw_button), "pressed", GTK_SIGNAL_FUNC(wav_saw_pressed), (gpointer) control );
+  
+  wdata->tri_button = gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(wdata->saw_button)), "tri");
+  gtk_signal_connect( GTK_OBJECT(wdata->tri_button), "pressed", GTK_SIGNAL_FUNC(wav_tri_pressed), (gpointer) control );
+
+  gtk_box_pack_start(GTK_BOX(vbox), wdata->sin_button, TRUE, TRUE, 0);
+  gtk_widget_show(wdata->sin_button);
+  gtk_box_pack_start(GTK_BOX(vbox), wdata->sqr_button, TRUE, TRUE, 0);
+  gtk_widget_show(wdata->sqr_button);
+  gtk_box_pack_start(GTK_BOX(vbox), wdata->saw_button, TRUE, TRUE, 0);
+  gtk_widget_show(wdata->saw_button);
+  gtk_box_pack_start(GTK_BOX(vbox), wdata->tri_button, TRUE, TRUE, 0);
+  gtk_widget_show(wdata->tri_button);
+
+  control->widget = vbox;
+
+}
+
+PRIVATE void done_wavform(Control *control) {
+}
+
+PRIVATE void refresh_wavform(Control *control) {
+    OscData *data = control->g->data;
+    WavFormData *wdata = control->data;
+
+    switch( data->kind )
+    {
+	case OSC_KIND_SIN:
+	    gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(wdata->sin_button), TRUE );
+	    break;
+	case OSC_KIND_SQR:
+	    gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(wdata->sqr_button), TRUE );
+	    break;
+	case OSC_KIND_SAW:
+	    gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(wdata->saw_button), TRUE );
+	    break;
+	case OSC_KIND_TRI:
+	    gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON(wdata->tri_button), TRUE );
+	    break;
+    }
+}
+
 PRIVATE OutputSignalDescriptor output_sigs[] = {
   { "Output", SIG_FLAG_REALTIME, { output_generator, } },
   { NULL, }
@@ -152,6 +251,7 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
 PRIVATE ControlDescriptor osc_controls[] = {
   { CONTROL_KIND_KNOB, "Waveform", 0,3,0,1, 0,FALSE, TRUE,EVT_KIND,
     NULL,NULL, control_int32_updater, (gpointer) offsetof(OscData, kind) },
+  { CONTROL_KIND_USERDEF, "Waveform Radio", 0,0,0,0, 0,FALSE, TRUE,0, init_wavform, done_wavform, refresh_wavform, NULL },
   { CONTROL_KIND_SLIDER, "Freq", 20,22049,10,1, 0,TRUE, TRUE,EVT_FREQ,
     NULL,NULL, control_double_updater, (gpointer) offsetof(OscData, frequency) },
   { CONTROL_KIND_NONE, }

@@ -36,28 +36,28 @@ INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglib
 CLEANFILES=*.la.c
 
 esd_output_la_INCLUDES=`esd-config --cflags`
-esd_output_la_LDFLAGS=`esd-config --libs` -rpath $(pkglibdir)
+esd_output_la_LDFLAGS=`esd-config --libs` -rpath $(plugindir)
 
 alsa_out_la_INCLUDES= @ALSA_CFLAGS@
-alsa_out_la_LDFLAGS= @ALSA_LIBS@ -rpath $(pkglibdir)
+alsa_out_la_LDFLAGS= @ALSA_LIBS@ -rpath $(plugindir)
 alsa_out_callback_la_INCLUDES= @ALSA_CFLAGS@
 alsa_out_callback_la_LDFLAGS= @ALSA_LIBS@ -rpath $(pkglibdir)
 alsa_midi_la_INCLUDES= @ALSA_CFLAGS@
-alsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(pkglibdir)
+alsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(plugindir)
 jack_la_INCLUDES= @JACK_CFLAGS@
-jack_la_LDFLAGS= @JACK_LIBS@ -rpath $(pkglibdir)
+jack_la_LDFLAGS= @JACK_LIBS@ -rpath $(plugindir)
 
 
 
 sndfile_in_la_INCLUDES= @SNDFILE_CFLAGS@
-sndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(pkglibdir)
+sndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
 sndfile_out_la_INCLUDES= @SNDFILE_CFLAGS@
-sndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(pkglibdir)
+sndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
 
-voice_la_LDFLAGS=-laudiofile -rpath $(pkglibdir)
-pcm_out_la_LDFLAGS=-laudiofile -rpath $(pkglibdir)
+voice_la_LDFLAGS=-laudiofile -rpath $(plugindir)
+pcm_out_la_LDFLAGS=-laudiofile -rpath $(plugindir)
 
-ogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ -rpath $(pkglibdir)
+ogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ -rpath $(plugindir)
 ogg_ra_la_INCLUDES= @GTHREAD_CFLAGS@
 
 emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c

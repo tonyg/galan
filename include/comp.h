@@ -108,7 +108,7 @@ extern void comp_register_componentclass(ComponentClass *k);
 /* Component creation/deletion */
 extern Component *comp_new_component(ComponentClass *k, gpointer init_data,
 				     struct sheet *sheet, gint x, gint y);
-extern void comp_kill_component(Component *c);
+extern gboolean comp_kill_component(Component *c);
 
 extern Component *comp_unpickle(ObjectStoreItem *item);
 extern ObjectStoreItem *comp_pickle(Component *c, ObjectStore *db);
@@ -128,7 +128,7 @@ extern int comp_find_connector(Component *c, gint x, gint y, ConnectorReference 
 extern int comp_contains_point(Component *c, gint x, gint y);
 
 extern void comp_link(ConnectorReference *a, ConnectorReference *b);
-extern void comp_unlink(ConnectorReference *a, ConnectorReference *b);
+extern gboolean comp_unlink(ConnectorReference *a, ConnectorReference *b);
 
 extern char *comp_get_title(Component *c);
 extern char *comp_get_connector_name(ConnectorReference *ref);

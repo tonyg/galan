@@ -602,7 +602,7 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 	      sheet->sel_valid = TRUE;
 
 	      gtk_widget_queue_draw_area( sheet->drawingwidget,
-		      union_rect.x, union_rect.y, union_rect.width, union_rect.height );
+		      union_rect.x, union_rect.y, union_rect.width+1, union_rect.height+1 );
 	      
 	      break;
 	  }

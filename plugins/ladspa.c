@@ -122,7 +122,7 @@ PRIVATE void run_plugin( Generator *g, int buflen ) {
 	  
 	  gen_send_events(g, i, -1, &event);
 
-	  printf( "sending ev: %f on %d \n", event.d.number, i );
+	  //printf( "sending ev: %f on %d \n", event.d.number, i );
 
 	  // copy new -> old
 
@@ -158,10 +158,8 @@ PRIVATE LADSPA_Data get_default( ControlDescriptor *control, LADSPA_PortRangeHin
 	if( LADSPA_IS_HINT_DEFAULT_LOW( hint ) )
 	    return control->min * 0.75 + control->max * 0.25;
 	if( LADSPA_IS_HINT_DEFAULT_MIDDLE( hint ) )
-	    return control->min;
 	    return control->min * 0.5 + control->max * 0.5;
 	if( LADSPA_IS_HINT_DEFAULT_HIGH( hint ) )
-	    return control->min;
 	    return control->min * 0.25 + control->max * 0.75;
 	if( LADSPA_IS_HINT_DEFAULT_MAXIMUM( hint ) )
 	    return control->max;
@@ -172,10 +170,10 @@ PRIVATE LADSPA_Data get_default( ControlDescriptor *control, LADSPA_PortRangeHin
 	if( LADSPA_IS_HINT_DEFAULT_100( hint ) )
 	    return 100.0;
 	if( LADSPA_IS_HINT_DEFAULT_440( hint ) )
-	    return 440;
+	    return 440.0;
 
+	printf( "plugins says it has default... but i cant find out.\n" );
 
-	return 0.0;
     } else 
 	return 0.0;
 
@@ -213,6 +211,7 @@ PRIVATE gboolean init_instance(Generator *g) {
       ControlDescriptor *control = &(g->klass->controls[i]);
 
       data->inevents[i] = get_default( control, hint );
+      //printf( "default %d = %f\n", i, data->inevents[i] );
       data->ladspa_descriptor->connect_port( 
 	      data->instance_handle, 
 	      (int) g_list_nth_data( data->lpdat->inevent, i ),
@@ -465,71 +464,6 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
 
 /*****************************************************************************/
 
-int mainii(const int iArgc, const char ** ppcArgv) {
-//  
-//  const char * pcPluginName = NULL;
-//  const char * pcPluginLabel = NULL;
-//  int bVerbose = 1;
-//
-//  /* Check for a flag, but only at the start. Cannot get use getopt()
-//     as it gets thoroughly confused when faced with negative numbers
-//     on the command line. */
-//  switch (iArgc) {
-//  case 2:
-//    if (strcmp(ppcArgv[1], "-h") != 0) {
-//      pcPluginName = ppcArgv[1];
-//      pcPluginLabel = NULL;
-//    }
-//    break;
-//  case 3:
-//    if (strcmp(ppcArgv[1], "-l") == 0) {
-//      pcPluginName = ppcArgv[2];
-//      pcPluginLabel = NULL;
-//      bVerbose = 0;
-//    }
-//    else {
-//      pcPluginName = ppcArgv[1];
-//      pcPluginLabel = ppcArgv[2];
-//    }
-//    break;
-//  case 4:
-//    if (strcmp(ppcArgv[1], "-l") == 0) {
-//      pcPluginName = ppcArgv[2];
-//      pcPluginLabel = ppcArgv[3];
-//      bVerbose = 0;
-//    }
-//    break;
-//  }
-//
-//  if (!pcPluginName) {
-//    fprintf(stderr, 
-//	    "Usage:\tanalyseplugin [flags] <LADSPA plugin file name> "
-//	    "[<plugin label>].\n"
-//	    "Flags:"
-//	    "\t-l\tProduce a summary list rather than a verbose report.\n");
-//    return(1);
-//  }
-//
-//  return analysePlugin(pcPluginName, pcPluginLabel, bVerbose);
- return 0;
-}
-/*
-PRIVATE void setup_class(void) {
-  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE,
-					     NUM_EVENT_INPUTS, NUM_EVENT_OUTPUTS,
-					     input_sigs, output_sigs, controls,
-					     init_instance, destroy_instance,
-					     unpickle_instance, pickle_instance);
-
-  gen_configure_event_input(k, EVT_INPUT, "Input", evt_input_handler);
-  gen_configure_event_output(k, EVT_OUTPUT, "Output");
-
-  gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
-				  PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
-				  NULL);
-}
-*/
-
 AGenerator_t output_generators[] = { output_generator0, output_generator1, output_generator2, output_generator3,
 				     output_generator4, output_generator5, output_generator6, output_generator7 };
 PRIVATE int plugin_count=0;
@@ -735,46 +669,6 @@ PRIVATE void init_one_plugin( const char *filename, void *handle, LADSPA_Descrip
   }
 }
 
-//PRIVATE void load_plugin( char *filename ) {
-//
-//  LADSPA_Descriptor_Function pfDescriptorFunction;
-//  const LADSPA_Descriptor * psDescriptor;
-//  unsigned long lPluginIndex;
-//  //unsigned long lPortIndex;
-//  //unsigned long lSpaceIndex;
-//  //unsigned long lSpacePadding1;
-//  //unsigned long lSpacePadding2;
-//  //unsigned long lLength;
-//  void * pvPluginHandle;
-//  //LADSPA_PortRangeHintDescriptor iHintDescriptor;
-//  //LADSPA_Data fBound;
-//
-//  pvPluginHandle = loadLADSPAPluginLibrary( filename );
-//
-//  dlerror();
-//  pfDescriptorFunction 
-//    = (LADSPA_Descriptor_Function)dlsym(pvPluginHandle, "ladspa_descriptor");
-//  if (!pfDescriptorFunction) {
-//    const char * pcError = dlerror();
-//    if (pcError) 
-//      fprintf(stderr,
-//	      "Unable to find ladspa_descriptor() function in plugin file "
-//	      "\"%s\": %s.\n"
-//	      "Are you sure this is a LADSPA plugin file?\n", 
-//	      filename,
-//	      pcError);
-//    return;
-//  }
-//
-//  for (lPluginIndex = 0;; lPluginIndex++) {
-//    psDescriptor = pfDescriptorFunction(lPluginIndex);
-//    if (!psDescriptor)
-//      break;
-//
-//    setup_one_class( psDescriptor );
-//  }
-//}
-
 
 PRIVATE void setup_all( void ) {
     LADSPAPluginSearch(init_one_plugin);
@@ -790,7 +684,6 @@ PRIVATE void setup_globals( void ) {
 PUBLIC void init_plugin_ladspa(void) {
   setup_globals();
   setup_all();
-  //setup_class();
 }
 
 /*****************************************************************************/

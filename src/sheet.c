@@ -862,9 +862,27 @@ PUBLIC GdkColor *sheet_get_transparent_color(Sheet *sheet) {
  */
 
 PUBLIC int sheet_get_textwidth(Sheet *sheet, char *text) {
-  GtkStyle *style = gtk_widget_get_style(sheet->drawingwidget);
+  //GtkStyle *style = gtk_widget_get_style(sheet->drawingwidget);
+  PangoLayout *layout = gtk_widget_create_pango_layout( sheet->drawingwidget, text );
+  int retval;
 
-  return gdk_text_width(gtk_style_get_font(style), text, strlen(text));
+  pango_layout_get_pixel_size(layout, &retval, NULL);
+
+  g_object_unref( G_OBJECT( layout ) );
+
+  return retval;
+}
+
+PUBLIC int sheet_get_textheight(Sheet *sheet, char *text) {
+  //GtkStyle *style = gtk_widget_get_style(sheet->drawingwidget);
+  PangoLayout *layout = gtk_widget_create_pango_layout( sheet->drawingwidget, text );
+  int retval;
+
+  pango_layout_get_pixel_size(layout, NULL, &retval );
+
+  g_object_unref( G_OBJECT( layout ) );
+
+  return retval;
 }
 
 /**
@@ -995,6 +1013,7 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
 
 	s->components = objectstore_extract_list_of_items(objectstore_item_get(item, "components"),
 							 item->db, (objectstore_unpickler_t) comp_unpickle);
+
 	if( sheetlist ) {
 	    objectstore_extract_list_of_items(sheetlist, item->db, 
 		    (objectstore_unpickler_t) sheet_unpickle);

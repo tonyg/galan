@@ -152,6 +152,8 @@ PRIVATE gboolean init_instance(Generator *g) {
   data->ysize = 1;
   data->xsize = 0.1;
 
+  data->loop_start = 0;
+  data->loop_end = data->xsize * SAMPLE_RATE - 1;
   data->intbuf = safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
   data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
 
@@ -182,8 +184,8 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->phase = objectstore_item_get_integer(item, "scope_phase", 0);
   data->ysize = objectstore_item_get_double(item, "scope_ysize", 1);
   data->xsize = objectstore_item_get_double(item, "scope_xsize", 0.1);
-  data->loop_start = objectstore_item_get_integer( item, "loop_start", 0 );
-  data->loop_end = objectstore_item_get_integer( item, "loop_end", data->xsize * SAMPLE_RATE - 1 );
+  data->loop_start = objectstore_item_get_double( item, "loop_start", 0 );
+  data->loop_end = objectstore_item_get_double( item, "loop_end", data->xsize * SAMPLE_RATE - 1 );
 
   data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
   data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
@@ -224,6 +226,7 @@ PRIVATE gboolean output_generator(Generator *g, OutputSignalDescriptor *sig,
 
   if (duration == 0 || offset >= duration)
     return FALSE;
+ 
 
   len = MIN(MAX(duration - offset, 0), buflen);
   if (len > 0)
@@ -246,6 +249,7 @@ PRIVATE void loop_handler( SampleDisplay *s, int start, int end ) {
 	event.d.number = start;
 	gen_send_events( c->g, EVT_LOOP_START_OUT, -1, &event );
     }
+
     if( data->loop_end != end ) {
 	AEvent event;
 	data->loop_end = end;
@@ -324,7 +328,7 @@ PRIVATE void init_scope( Control *control ) {
 	
 	sample_display_set_data_8( SAMPLE_DISPLAY(sc),
 		data->intbuf, intbufbytes, TRUE );
-	sample_display_set_loop( SAMPLE_DISPLAY(sc), 0, intbufbytes-1 );
+	sample_display_set_loop( SAMPLE_DISPLAY(sc), data->loop_start, data->loop_end );
 
 	control->widget = vb;
 	control->data = sc;
@@ -356,13 +360,15 @@ PRIVATE void evt_xscale_handler(Generator *g, AEvent *event) {
 
   Data *data = g->data;
 
-  free( data->intbuf );
-  free( data->samplebuf );
+  if( event->d.number != data->xsize ) {
+      free( data->intbuf );
+      free( data->samplebuf );
 
-  data->xsize = event->d.number;
-  data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
-  data->samplebuf = (SAMPLE *)safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
-  data->phase = 0; 
+      data->xsize = event->d.number;
+      data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
+      data->samplebuf = (SAMPLE *)safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
+      data->phase = 0; 
+  }
 }
    
 

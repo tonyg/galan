@@ -141,6 +141,26 @@ PRIVATE void file_new_callback(gpointer userdata, guint action, GtkWidget *widge
     gui_register_sheet( s1 );
 }
 
+PUBLIC void load_sheet_from_name(char *name) {
+  FILE *f;
+
+  f = fopen(name, "rb");
+
+      
+  if (f == NULL || !(sheet_loadfrom( NULL , f))) {
+    popup_msgbox("Error Loading File", MSGBOX_OK, 120000, MSGBOX_OK,
+		 "File not found, or file format error: %s",
+		 name);
+    return;
+  }
+
+  fclose(f);
+
+  if (current_filename != NULL)
+    free(current_filename);
+  current_filename = safe_string_dup(name);
+}
+
 PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
   FILE *f;
   char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
@@ -351,12 +371,21 @@ PRIVATE GtkWidget *build_mainmenu(void) {
   return gtk_item_factory_get_widget(ifact, "<main>");
 }
 
+/**
+ * \brief Create the Meshwindow
+ *
+ * The main Mesh window is created here.
+ * After that one should load a file with
+ * load_sheet_from_name() or create a new one.
+ */
+
+
 PRIVATE void create_mainwin(void) {
   GtkWidget *vb;
   GtkWidget *hb;
   GtkWidget *frame, *statusbox;
 
-  Sheet *s1;
+  //Sheet *s1;
 
   mainwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_usize(mainwin, 500, 500);
@@ -379,8 +408,8 @@ PRIVATE void create_mainwin(void) {
   gtk_widget_show(mainmenu);
   gtk_container_add(GTK_CONTAINER(hb), mainmenu);
 
-  s1 = create_sheet();
-  s1->control_panel = control_panel_new( s1->name, TRUE, s1 );
+  //s1 = create_sheet();
+  //s1->control_panel = control_panel_new( s1->name, TRUE, s1 );
 
   mainnotebook = gtk_notebook_new();
   gtk_box_pack_start(GTK_BOX(vb), mainnotebook, TRUE, TRUE, 0);
@@ -399,7 +428,7 @@ PRIVATE void create_mainwin(void) {
 
   //gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), s1->scrollwin, NULL );
 
-  gui_register_sheet( s1 );
+  //gui_register_sheet( s1 );
 }
 
 PRIVATE gint timeout_handler(gpointer data) {

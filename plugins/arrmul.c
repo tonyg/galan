@@ -75,7 +75,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->len = objectstore_item_get_double(item, "arrmul_len", 0);
   data->factor = safe_malloc( sizeof( gdouble ) * data->len );
   for(i=0; i<data->len; i++ )
-      data->factor[i] = objectstore_datum_integer_value( 
+      data->factor[i] = objectstore_datum_double_value( 
 	      objectstore_datum_array_get(array, i)      );
 }
 
@@ -102,11 +102,13 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
 	case AE_NUMARRAY:
 	    if( event->d.array.len != data->len )
 		g_warning( "arrmul dimension mismatch" );
+	    else{
 
-	    for( i=0; i<data->len; i++ )
-		event->d.array.numbers[i] *= data->factor[i];
-	    
-	    gen_send_events(g, EVT_OUTPUT, -1, event);
+		for( i=0; i<data->len; i++ )
+		    event->d.array.numbers[i] *= data->factor[i];
+
+		gen_send_events(g, EVT_OUTPUT, -1, event);
+	    }
 	    break;
 	default:
 	    g_warning( "arrmul does not support this eventkind\n" );

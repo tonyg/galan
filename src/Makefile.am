@@ -14,7 +14,7 @@ libgalan_la_LIBADD = @GTK_LIBS@ @GTHREAD_LIBS@
 libgalan_la_SOURCES = buffer.c clock.c comp.c control.c event.c galan.c gencomp.c \
 		generator.c gui.c msgbox.c objectstore.c plugin.c \
 		prefs.c sheet.c gtkknob.c gtkslider.c sample-display.c \
-		iscomp.c shcomp.c
+		iscomp.c shcomp.c cocomp.c
 
 
 galan_LDADD = @GTK_LIBS@ @GTHREAD_LIBS@ libgalan.la

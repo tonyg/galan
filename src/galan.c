@@ -31,6 +31,7 @@
 #include "comp.h"
 #include "gencomp.h"
 #include "iscomp.h"
+#include "cocomp.h"
 #include "sheet.h"
 #include "shcomp.h"
 #include "control.h"
@@ -134,6 +135,7 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   init_comp();
   init_gencomp();
   init_iscomp();
+  init_cocomp();
   init_shcomp();
   init_prefs();
   init_objectstore();
@@ -167,6 +169,7 @@ gdk_threads_leave();
   done_prefs();
   done_shcomp();
   done_iscomp();
+  done_cocomp();
   done_gencomp();
   done_comp();
   done_gui();

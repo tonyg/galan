@@ -1,0 +1,22 @@
+# Handcrafted makefile for gAlan under win32.
+#
+# Note that this makefile relies on variables sent to it by the toplevel makefile.
+
+plugins = osc.dll rart.dll voice.dll ctrl.dll gain.dll clock.dll vca.dll delay.dll \
+	patsel.dll trigseq.dll vcf.dll sig2evt.dll dcbias.dll resample.dll xfade.dll \
+	atan.dll evtadd.dll evtmul.dll win_output.dll seqnum.dll adsr.dll seqnote.dll \
+	pcm_out.dll reverse.dll patloop.dll random.dll vco.dll sigctrl.dll polyrart.dll \
+	smooth.dll
+
+LIBS += -lwinmm -laudiofile
+
+all: $(plugins) dllinit.o
+
+%.dll: %.o dllinit.o
+	dllwrap -s --export-all -o $@ $< ../src/galan.lib $(LIBS) dllinit.o
+
+%.o: %.c
+	gcc $(CFLAGS) $(EXTRA_DEFS) -c $<
+
+clean:
+	deltree /y $(plugins) dllinit.o

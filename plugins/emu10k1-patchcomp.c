@@ -168,9 +168,22 @@ PRIVATE int emupatchcomp_initialize(Component *c, gpointer init_data) {
 
   // Init the generator...
 
-//  d->gc = gen_new_generatorclass( d->name, FALSE, d->anzinputevents, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
-//  for( i=0; i<d->anzinputevents; i++ )
-//      gen_configure_event_input( d->gc, i, d->id->gprnames[i], emupatch_gen_event_handler ); 
+  /**
+   * i think i will need multiple inheritance here in the future.
+   * ich habe hier dann keinen generator mehr, wenn ich die generatoren
+   * aus dem prozess in einen anderen migriere.
+   *
+   * das wird ne voellig neue klasse.
+   * eigentlich sollten ladspa plugins auch ne andere klasse sein, da sie sich anders (besser)
+   * verbinden lassen.
+   *
+   * diese klassen haben dann verschiedene signal typen, die sich miteinander ueber adapter
+   * verbinden lassen. Diese adapter stehen in einer typen matrix und koennen so einfach gefunden
+   * werden.
+   *
+   * ein adapter hat jeweils eine instanz auf beiden typen graphen. die er miteinander verknuepft.
+   * adapter von CPU nach dsp ist eine kombo aus pcm_out und emu_input
+  */
   d->g = gen_new_generator( id->gc, d->name );
   d->g->data = c;
 
@@ -562,6 +575,10 @@ PRIVATE gboolean emupatchcomp_unlink_inbound(Component *c, ConnectorReference *s
 	emupatchcomp_unload_patches( c );
 	free( data->input );
 	data->input = NULL;
+    } else {
+	GenCompData *otherdata = src->c->data;
+	gen_unlink( gen_find_link(FALSE, otherdata->g, src->queue_number, data->g, dst->queue_number) );
+
     }
 
     return TRUE;

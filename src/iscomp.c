@@ -258,7 +258,10 @@ PRIVATE void iscomp_paint(Component *c, GdkRectangle *area,
 //	     : d->g->klass->in_sigs[con->ref.queue_number].flags) & SIG_FLAG_RANDOMACCESS))
 //     colidx = (con->refs == NULL) ? COMP_COLOR_RED : COMP_COLOR_YELLOW;
 //    else
-    colidx = (con->refs == NULL) ? COMP_COLOR_BLUE : COMP_COLOR_GREEN;
+    if( !connectorreference_equal( &(con->ref), &(c->sheet->highlight_ref) ) )
+	colidx = COMP_COLOR_VIOLET;
+    else
+	colidx = (con->refs == NULL) ? COMP_COLOR_BLUE : COMP_COLOR_GREEN;
 
 //    colidx = COMP_COLOR_GREEN;
     

@@ -286,15 +286,17 @@ PRIVATE void shcomp_paint(Component *c, GdkRectangle *area,
     int colidx;
     int x, y;
 
-    if ((tref->kind == COMP_SIGNAL_CONNECTOR)
-	    && ((tref->is_output
-		    ? ((GenCompData *)tref->c->data)->g->klass->out_sigs[tref->queue_number].flags
-		    : ((GenCompData *)tref->c->data)->g->klass->in_sigs[tref->queue_number].flags) & SIG_FLAG_RANDOMACCESS))
-	colidx = (con->refs == NULL) ? COMP_COLOR_RED : COMP_COLOR_YELLOW;
+    if( !connectorreference_equal( &(con->ref), &(c->sheet->highlight_ref) ) )
+	colidx = COMP_COLOR_VIOLET;
     else
-	colidx = (con->refs == NULL) ? COMP_COLOR_BLUE : COMP_COLOR_GREEN;
+	if ((tref->kind == COMP_SIGNAL_CONNECTOR)
+		&& ((tref->is_output
+			? ((GenCompData *)tref->c->data)->g->klass->out_sigs[tref->queue_number].flags
+			: ((GenCompData *)tref->c->data)->g->klass->in_sigs[tref->queue_number].flags) & SIG_FLAG_RANDOMACCESS))
+	    colidx = (con->refs == NULL) ? COMP_COLOR_RED : COMP_COLOR_YELLOW;
+	else
+	    colidx = (con->refs == NULL) ? COMP_COLOR_BLUE : COMP_COLOR_GREEN;
 
-//    colidx = COMP_COLOR_GREEN;
     
     gdk_gc_set_foreground(gc, &colors[colidx]);
     gdk_draw_arc(drawable, gc, TRUE,

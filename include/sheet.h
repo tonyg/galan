@@ -24,6 +24,7 @@ typedef struct sheet {
     int sheetmode;
     gdouble saved_x, saved_y;
     ConnectorReference saved_ref;
+    ConnectorReference highlight_ref;
 
     GtkWidget *scrollwin;
     GtkWidget *drawingwidget;

@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
+SUBDIRS = gl
+
 EXTRA_DIST = Makefile.w32 TEMPLATE.c dllinit.c win_output.c *.c
 
 plugindir = $(pkglibdir)/plugins
@@ -8,7 +10,7 @@ plugindir = $(pkglibdir)/plugins
 # empty) whitespace-separated list of names from the list just
 # below. (The optional plugins HAVE to be defined in EXTRA_PROGRAMS -
 # see the infopages for automake.)
-EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so alsa_out.so
+EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so alsa_out.so 
 
 plugin_PROGRAMS = \
 	osc.so oss_output.so random.so rart.so voice.so ctrl.so gain.so \

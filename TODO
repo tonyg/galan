@@ -44,6 +44,8 @@ Infrastructure-related:
 
 * implement tabs in the control-panel and allow controls to be sent to
   each tab separately.
+  ( do we still need this with control grouping ??? i will not erase this entry
+    because it is still a good idea to have different control panels )
 
 * save, load
 	* make loading more robust across incompatible changes
@@ -52,8 +54,6 @@ Infrastructure-related:
 		* patterns independently
 	* save/load performances...
 
-* fix up that fucking problem with dragging controls around the control panel
-
 * variable output sample-rate/bit-depth/number-of-channels etc. to cope
   with slower machines
 
@@ -61,7 +61,6 @@ Infrastructure-related:
 	* shortcuts for 'important' things?
 	* menu-popup-keys for the less-common things?
 
-* clean up sheet.c etc, and allow multiple sheets (subroutines)
 * make sure off-line processing works nicely
 * rename some of the plugins more sensibly
 
@@ -72,9 +71,39 @@ Infrastructure-related:
 
 * muting of individual components? individual links?
 
+* selection in sheet
+* selection in controls
+
+* set connector to a value from connector menu on sheet
+
+* add dialog box to numeric patterns 
+  ( set pattern to curve, one value, slide )
+
+* property for numeric pattern from control
+
+* change osc radiobutton to be smaller
+
+* make iscomp connect to n connectors
+  ( this could be complicated when loading/saving )
+
+* fix up down buttons in patloop.c
+  
+
 Documentation
 ----------------------------------------
 * glossary of synthesis terms
+* document multiple sheets
+* missing doc for plugins:
+   * ogg_ra
+   * scope
+   * sampler
+   * evt*
+
+
+Controls:
+----------------------------------------
+
+* led-display control.
 
 Sound-related:
 ----------------------------------------
@@ -91,6 +120,7 @@ Sound-related:
 	* FM synth with, say, 5 modulators + vibrato
 	* Bell, Gaussian envelopes
 	* CD input source
+
 
 	done:
 	* RAW/WAV-file output device
@@ -132,7 +162,7 @@ Less important things to do
 
 * add some graphical indication (other than icons) to the user of what
   generator-class a component is a wrapper for an instance of - it can
-  get bloody confusing
+  get bloody confusing (how should this be done ???)
 
 * pretty icons etc. (general prettification of UI)
 

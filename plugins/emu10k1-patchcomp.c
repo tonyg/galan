@@ -546,14 +546,16 @@ PRIVATE gboolean emupatchcomp_accept_inbound(Component *c, ConnectorReference *s
 	return TRUE;
 }
 
-PRIVATE void emupatchcomp_unlink_outbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
+PRIVATE gboolean emupatchcomp_unlink_outbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
   EmuPatchCompData *data = c->data;
   emupatchcomp_unload_patches( c );
   free( data->output );
   data->output = NULL;
+
+  return TRUE;
 }
 
-PRIVATE void emupatchcomp_unlink_inbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
+PRIVATE gboolean emupatchcomp_unlink_inbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
 
     EmuPatchCompData *data = c->data;
     if( dst->kind == COMP_SIGNAL_CONNECTOR ) {
@@ -561,6 +563,8 @@ PRIVATE void emupatchcomp_unlink_inbound(Component *c, ConnectorReference *src, 
 	free( data->input );
 	data->input = NULL;
     }
+
+    return TRUE;
 }
 
 PRIVATE char *emupatchcomp_get_title(Component *c) {

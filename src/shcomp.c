@@ -433,7 +433,7 @@ PRIVATE gboolean shcomp_accept_inbound(Component *c, ConnectorReference *src,
   return src->c->klass->accept_outbound( src->c, src, tref );
 }
 
-PRIVATE void shcomp_unlink_outbound(Component *c, ConnectorReference *src,
+PRIVATE gboolean shcomp_unlink_outbound(Component *c, ConnectorReference *src,
 				     ConnectorReference *dst) {
 
   Component *linked = shcomp_get_linked_componenent( c, src );
@@ -443,7 +443,7 @@ PRIVATE void shcomp_unlink_outbound(Component *c, ConnectorReference *src,
   return tref->c->klass->unlink_outbound( tref->c, tref, dst );
 }
 
-PRIVATE void shcomp_unlink_inbound(Component *c, ConnectorReference *src,
+PRIVATE gboolean shcomp_unlink_inbound(Component *c, ConnectorReference *src,
 				    ConnectorReference *dst) {
   Component *linked = shcomp_get_linked_componenent( c, dst );
   ISCompData *isdata = linked->data;

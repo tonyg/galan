@@ -386,18 +386,37 @@ PRIVATE gboolean iscomp_accept_inbound(Component *c, ConnectorReference *src,
   return TRUE;
 }
 
-PRIVATE void iscomp_unlink_outbound(Component *c, ConnectorReference *src,
-				     ConnectorReference *dst) {
-  ISCompData *data = c->data;
-  free( data->ref );
-  data->ref = NULL;
+PRIVATE gboolean iscomp_unlink_outbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
+
+    if( c->sheet->referring_sheets != NULL ) {
+	popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		"Sheet %s is connected to other sheets.\n"
+		"I cant unconnect this link. Please unconnect first.", c->sheet->name );
+	return FALSE;
+    } else {
+
+	ISCompData *data = c->data;
+	free( data->ref );
+	data->ref = NULL;
+
+	return TRUE;
+    }
 }
 
-PRIVATE void iscomp_unlink_inbound(Component *c, ConnectorReference *src,
-				    ConnectorReference *dst) {
-  ISCompData *data = c->data;
-  free( data->ref );
-  data->ref = NULL;
+PRIVATE gboolean iscomp_unlink_inbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
+
+    if( c->sheet->referring_sheets != NULL ) {
+	popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		"Sheet %s is connected to other sheets.\n"
+		"I cant unconnect this link. Please unconnect first.", c->sheet->name );
+	return FALSE;
+    } else {
+	ISCompData *data = c->data;
+	free( data->ref );
+	data->ref = NULL;
+
+	return TRUE;
+    }
 }
 
 PRIVATE char *iscomp_get_title(Component *c) {

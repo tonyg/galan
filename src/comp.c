@@ -373,10 +373,13 @@ PUBLIC void comp_unlink(ConnectorReference *src, ConnectorReference *dst) {
       dst->kind != COMP_ANY_CONNECTOR)
     return;
 
-  if (src->c->klass->unlink_outbound)
-    src->c->klass->unlink_outbound(src->c, src, dst);
+  if (src->c->klass->unlink_outbound) 
+      if( !src->c->klass->unlink_outbound(src->c, src, dst) )
+	  return;
+
   if (dst->c->klass->unlink_inbound)
-    dst->c->klass->unlink_inbound(dst->c, src, dst);
+      if( !dst->c->klass->unlink_inbound(dst->c, src, dst) )
+	  return;
 
   srccon = comp_get_connector(src);
   dstcon = comp_get_connector(dst);

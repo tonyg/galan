@@ -63,6 +63,13 @@ static void gtk_knob_adjustment_value_changed(GtkAdjustment *adjustment, gpointe
 static GtkWidgetClass *parent_class = NULL;
 static GList *animation = NULL;
 
+struct _MyAnimation {
+    GList *list;
+    int   width, height;
+};
+
+
+
 GdkPixbuf *get_empty_frame( GdkPixbufAnimation *anim ) {
 
     return gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8,
@@ -338,7 +345,7 @@ static gint gtk_knob_expose(GtkWidget *widget, GdkEventExpose *event) {
    //     0, 0, 0, 0, KNOB_SIZE-1, KNOB_SIZE-1, 0,0,0 );
    //
     gdk_pixbuf_render_to_drawable_alpha( pixbuf, widget->window,
-	    0, 0, 0, 0, gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), GDK_PIXBUF_ALPHA_BILEVEL, 100, 0,0,0 );
+	    0, 0, 0, 0, gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), GDK_PIXBUF_ALPHA_BILEVEL, 0, 0,0,0 );
 
     //gdk_draw_line(widget->window, widget->style->white_gc, 16, 16, dx, dy);
   }

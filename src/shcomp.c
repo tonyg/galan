@@ -118,8 +118,8 @@ PUBLIC void shcomp_resize(Component *c) {
   resize_connectors(c, data->isl.anzoutputevents, 1, 0, body_horiz, body_vert);
   resize_connectors(c, data->isl.anzoutputsignals, 1, 1, body_horiz, body_vert);
 
-  c->width = body_horiz + 2 * SHCOMP_BORDER_WIDTH;
-  c->height = body_vert + 2 * SHCOMP_BORDER_WIDTH;
+  c->width = body_horiz + 2 * SHCOMP_BORDER_WIDTH + 1;
+  c->height = body_vert + 2 * SHCOMP_BORDER_WIDTH + 1;
 }
 
 PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {

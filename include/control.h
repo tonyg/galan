@@ -75,6 +75,7 @@ struct Control {
   ControlDescriptor *desc;
   ControlPanel *panel;
   char *name;				/* overriding name. Set to NULL to use default. */
+  char *current_bg;
   gdouble min, max, step, page;		/* overrides desc's values */
   gboolean folded;
   gboolean discreet;

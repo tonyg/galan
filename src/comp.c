@@ -72,9 +72,9 @@ PUBLIC void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer in
   menuentries_dirty = TRUE;
 }
 
-PRIVATE void kill_newmenu(GtkWidget *menu, GtkItemFactory *ifact) {
-  gtk_object_unref(GTK_OBJECT(ifact));
-}
+//PRIVATE void kill_newmenu(GtkWidget *menu, GtkItemFactory *ifact) {
+//  gtk_object_unref(GTK_OBJECT(ifact));
+//}
 
 PRIVATE GtkItemFactory *get_new_ifact( void ) {
 

@@ -35,32 +35,17 @@
 #include "sheet.h"
 
 #define GAUGE_SIZE 32
-#define GRANULARITY 8
+#define GRANULARITY 1
 
 PRIVATE GtkWidget *control_panel = NULL;
 PRIVATE ControlPanel *global_panel = NULL;
 PRIVATE GtkWidget *control_notebook = NULL;
-//PRIVATE GtkWidget *fixed_widget = NULL;
 PRIVATE GList *control_panels = NULL;
 PRIVATE GThread *update_thread;
 PRIVATE GAsyncQueue *update_queue;
 
 
 PRIVATE void mylayout_sizerequest( GtkContainer *container, GtkRequisition *requisition ) {
-    //GtkWidget *widget = GTK_WIDGET (container);
-//    GtkRequisition requisition;
-//
-//    gtk_widget_size_request (widget, &requisition);
-//
-//    if (requisition.width > widget->allocation.width ||
-//	    requisition.height > widget->allocation.height)
-//    { 
-//	if (GTK_IS_RESIZE_CONTAINER (container))
-//	    gtk_widget_size_allocate (GTK_WIDGET (container),
-//		    &GTK_WIDGET (container)->allocation);
-//	else
-//	    gtk_widget_queue_resize (widget);
-//    }
 
     GList *list = gtk_container_get_children( container );
     GList *listX = list;
@@ -68,32 +53,25 @@ PRIVATE void mylayout_sizerequest( GtkContainer *container, GtkRequisition *requ
     requisition->width = 0;
     requisition->height = 0;
     
-    //g_print( "check_resize called: -----------------------------\n" );
 
     for( listX=list; listX != NULL; listX = g_list_next( listX ) ) {
 
 	GtkWidget *widget = listX->data;
 	gint x,y,w,h;
+	GtkRequisition req;
 
 	gtk_container_child_get( container, widget, "x", &x, NULL ); 
 	gtk_container_child_get( container, widget, "y", &y, NULL ); 
 
-	//gtk_widget_get_size_request( widget, &w, &h );
-	w=widget->allocation.width;
-	h=widget->allocation.height;
+	gtk_widget_size_request( widget, &req );
+	w=req.width;
+	h=req.height;
 
-	//g_print( "(x,y) = %d,%d  (w,h) = (%d,%d) \n", x,y,w,h );
-	
 	if( x+w > requisition->width ) requisition->width = x+w;
 	if( y+h > requisition->height ) requisition->height = y+h;
 
     }
     gtk_layout_set_size( GTK_LAYOUT( container ), requisition->width, requisition->height );
-    //gtk_widget_set_usize( GTK_WIDGET( container ), maxw, maxh );
-
-    //return TRUE;
-
-    //g_signal_stop_emission_by_name( G_OBJECT(container), "check_resize" );
 }
 
 
@@ -143,17 +121,15 @@ PRIVATE void control_moveto(Control *c, int x, int y) {
   y = floor((y + (GRANULARITY>>1)) / ((gdouble) GRANULARITY)) * GRANULARITY;
 
   if (x != c->x || y != c->y) {
+
     ControlPanel *panel = c->panel == NULL ? global_panel : c->panel;
-    //gint w = c->whole->allocation.width;
-    //gint h = c->whole->allocation.height;
 
     x = MAX(x, 0);
     y = MAX(y, 0);
+
     gtk_layout_move(GTK_LAYOUT(panel->fixedwidget),
 		c->whole, x, y);
-    //gtk_widget_get_size_request( c->whole, &w, &h );
-    //g_print( "bla %d,%d\n", w, h);
-    //gtk_container_check_resize( GTK_CONTAINER(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget) );
+
     c->x = x;
     c->y = y;
   }
@@ -188,6 +164,60 @@ PRIVATE void update_entry(GtkAdjustment *adj, GtkEntry *entry) {
 
 PRIVATE void delete_ctrl_handler(GtkWidget *widget, Control *c) {
   control_kill_control(c);
+}
+
+PRIVATE void control_update_bg(Control *c) {
+    GError *err = NULL;
+
+    if( c->current_bg ) {
+	GdkPixbuf *pb = gdk_pixbuf_new_from_file( c->current_bg, &err );
+	GdkPixmap *pixmap;
+	GdkBitmap *mask;
+
+	if( ! GTK_WIDGET_MAPPED( c->widget ) )
+	    return;
+
+	if( !pb ) {
+	    popup_msgbox("Error Loading Pixmap", MSGBOX_OK, 120000, MSGBOX_OK,
+		    "File not found, or file format error: %s",
+		    c->current_bg);
+	    return;
+	}
+
+	gdk_pixbuf_render_pixmap_and_mask( pb, &pixmap, &mask, 100 );
+	gdk_window_set_back_pixmap( GTK_LAYOUT(c->widget)->bin_window, pixmap, FALSE );
+    }
+}
+
+PRIVATE void change_bg_callback(GtkWidget *widget, GtkWidget *fs) {
+
+  const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+  Control *c = gtk_object_get_user_data( GTK_OBJECT( fs ));
+
+  if( c->current_bg )
+      free( c->current_bg );
+
+  c->current_bg = safe_string_dup( newname );
+
+  control_update_bg( c ); 
+  
+  gtk_widget_destroy(fs);
+}
+
+PRIVATE void change_bg_handler(GtkWidget *widget, Control *c) {
+  GtkWidget *fs = gtk_file_selection_new("Load Background");
+
+  if (c->current_bg != NULL)
+    gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), c->current_bg);
+
+  gtk_object_set_user_data( GTK_OBJECT(fs), c );
+
+  gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
+		     GTK_SIGNAL_FUNC(change_bg_callback), fs);
+  gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
+			    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
+
+  gtk_widget_show(fs);
 }
 
 PRIVATE GtkWidget *ctrl_rename_text_widget = NULL;
@@ -305,6 +335,13 @@ PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(discreet_ctrl_handler), c);
 
+  if( c->desc->kind == CONTROL_KIND_PANEL ) {
+      item = gtk_menu_item_new_with_label("Set Background");
+      gtk_widget_show(item);
+      gtk_menu_append(GTK_MENU(menu), item);
+      gtk_signal_connect(GTK_OBJECT(item), "activate", GTK_SIGNAL_FUNC(change_bg_handler), c);
+  }
+
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
 		 be->button, be->time);
 
@@ -361,6 +398,15 @@ PRIVATE gboolean eventbox_handler(GtkWidget *eventbox, GdkEvent *event, Control 
   }
 }
 
+PRIVATE gboolean control_map_handler(GtkWidget *eventbox, Control *c) {
+
+    gtk_widget_queue_resize( c->whole );
+    control_update_bg( c );
+
+    return FALSE;
+}
+
+
 PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, ControlPanel *panel) {
   Control *c = safe_malloc(sizeof(Control));
   GtkAdjustment *adj = NULL;
@@ -388,6 +434,8 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   c->whole = NULL;
   c->g = g;
   c->data = NULL;
+
+  c->current_bg = NULL;
 
   switch (desc->kind) {
     case CONTROL_KIND_SLIDER:
@@ -490,9 +538,8 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
     
     c->whole = gtk_event_box_new();
 
-    gtk_widget_show( c->whole );
+    gtk_signal_connect_after(GTK_OBJECT(c->whole), "map", GTK_SIGNAL_FUNC(control_map_handler), c);
 
-    c->whole = gtk_event_box_new();
     g_object_ref( G_OBJECT(c->whole) );
     gtk_container_add(GTK_CONTAINER(c->whole), c->title_frame );
     gtk_widget_show( c->whole );
@@ -505,11 +552,12 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
 
     if (!GTK_WIDGET_REALIZED(eventbox))
       gtk_widget_realize(eventbox);
-    if (!GTK_WIDGET_REALIZED(c->widget))
-      gtk_widget_realize(c->widget);
+//   if (!GTK_WIDGET_REALIZED(c->widget))
+//      gtk_widget_realize(c->widget);
 
-    gtk_widget_queue_resize( (panel == NULL ? global_panel->fixedwidget : panel->fixedwidget) );
+    //gtk_widget_queue_resize( (panel == NULL ? global_panel->fixedwidget : panel->fixedwidget) );
     
+    //gtk_signal_connect_after(GTK_OBJECT(c->whole), "map", GTK_SIGNAL_FUNC(control_map_handler), c);
     gdk_window_set_events(eventbox->window, 
 	    GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK  );
   }
@@ -600,6 +648,7 @@ PRIVATE  ControlDescriptor desc =
 
 
 PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
+
   Generator *g = gen_unpickle(objectstore_item_get_object(item, "generator"));
   int control_index = objectstore_item_get_integer(item, "desc_index", 0);
   ObjectStoreItem *ccp = objectstore_item_get_object( item, "panel" );
@@ -650,6 +699,12 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
         gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
   }
 
+  c->current_bg = objectstore_item_get_string( item, "current_bg", NULL );
+  if( c->current_bg ) {
+      c->current_bg = safe_string_dup( c->current_bg );
+      control_update_bg( c  );
+  }
+
   x = objectstore_item_get_integer(item, "x_coord", 0);
   y = objectstore_item_get_integer(item, "y_coord", 0);
   control_moveto(c, x, y);
@@ -670,8 +725,10 @@ PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
 
   if( c->panel )
       objectstore_item_set_object(item, "panel", control_panel_pickle(c->panel, db));
+
   if (c->name)
     objectstore_item_set_string(item, "name", c->name);
+
   objectstore_item_set_double(item, "min", c->min);
   objectstore_item_set_double(item, "max", c->max);
   objectstore_item_set_double(item, "step", c->step);
@@ -680,6 +737,9 @@ PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
   objectstore_item_set_integer(item, "y_coord", c->y);
   objectstore_item_set_integer(item, "folded", c->folded);
   objectstore_item_set_integer(item, "discreet", c->discreet);
+  if ( c->current_bg )
+      objectstore_item_set_string( item, "current_bg", c->current_bg );
+
   /* don't save c->data in any form, Controls are MVC views, not models. */
   return item;
 }
@@ -764,6 +824,8 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
   panel->w = 0;
 
   g_signal_connect( G_OBJECT( panel->fixedwidget ), "size_request", G_CALLBACK(mylayout_sizerequest), NULL );
+
+//  g_signal_connect( G_OBJECT( panel->fixedwidget ), "size_request", G_CALLBACK(fix_gtklayout_size_request), NULL );
   
   //gtk_layout_set_size( GTK_LAYOUT(panel->fixedwidget), 200, 200 );
   //gtk_fixed_set_has_window( panel->fixedwidget, TRUE );
@@ -844,6 +906,7 @@ PUBLIC void init_control(void) {
   gtk_window_set_policy(GTK_WINDOW(control_panel), TRUE, TRUE, FALSE);
   gtk_window_set_wmclass(GTK_WINDOW(control_panel), "gAlan_controls", "gAlan");
   gtk_widget_set_usize(control_panel, 400, 300);
+  gtk_widget_set_name( control_panel, "control_panel" );
   gtk_signal_connect(GTK_OBJECT(control_panel), "delete_event",
 		     GTK_SIGNAL_FUNC(control_panel_delete_handler), NULL);
 

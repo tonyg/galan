@@ -382,242 +382,247 @@ PRIVATE void do_popup_menu(Sheet *sheet, GdkEventButton *be) {
 
 PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 
-  Sheet *sheet = gtk_object_get_user_data( GTK_OBJECT(w) );
+    Sheet *sheet = gtk_object_get_user_data( GTK_OBJECT(w) );
 
-  switch (e->type) {
-    case GDK_BUTTON_PRESS: {
-      GdkEventButton *be = (GdkEventButton *) e;
+    switch (e->type)
+    {
+	case GDK_BUTTON_PRESS:
+	    {
+		GdkEventButton *be = (GdkEventButton *) e;
 
-      switch (be->button) {
-	case 1:
-	  process_click(w, be);
-	  return TRUE;
+		switch (be->button) {
+		    case 1:
+			process_click(w, be);
+			return TRUE;
 
-	case 2:
-	  if (sheet->sheetmode == SHEET_MODE_NORMAL) {
-	    GtkAdjustment *ha =
-	      gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(sheet->scrollwin));
-	    GtkAdjustment *va =
-	      gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(sheet->scrollwin));
-	    sheet->sheetmode = SHEET_MODE_SCROLLING;
-	    sheet->saved_x = be->x_root + ha->value;
-	    sheet->saved_y = be->y_root + va->value;
-	    return TRUE;
-	  }
-	  break;
+		    case 2:
+			if (sheet->sheetmode == SHEET_MODE_NORMAL) {
+			    GtkAdjustment *ha =
+				gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(sheet->scrollwin));
+			    GtkAdjustment *va =
+				gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(sheet->scrollwin));
+			    sheet->sheetmode = SHEET_MODE_SCROLLING;
+			    sheet->saved_x = be->x_root + ha->value;
+			    sheet->saved_y = be->y_root + va->value;
+			    return TRUE;
+			}
+			break;
 
-	case 3:
-	  do_popup_menu(sheet, be);
-	  return TRUE;
+		    case 3:
+			do_popup_menu(sheet, be);
+			return TRUE;
 
-	default:
-	  break;
-      }
-      break;
-    }
-
-    case GDK_BUTTON_RELEASE: {
-      GdkEventButton *be = (GdkEventButton *) e;
-
-      switch (sheet->sheetmode) {
-	case SHEET_MODE_SCROLLING:
-	  break;
-
-	case SHEET_MODE_DRAGGING_COMP:
-	case SHEET_MODE_DRAGGING_SEL_COMPS:
-	  gtk_widget_queue_draw(sheet->drawingwidget);
-	  break;
-
-	case SHEET_MODE_DRAGGING_LINK: {
-	  Component *c = find_component_at(sheet, be->x, be->y);
-
-	  if (c != NULL) {
-	    ConnectorReference ref;
-
-	    if (comp_find_connector(c, be->x, be->y, &ref)) {
-	      comp_link(&sheet->saved_ref, &ref);
-	    }
-	  }
-	  sheet->highlight_ref.kind = COMP_NO_CONNECTOR;
-	  gtk_widget_queue_draw(sheet->drawingwidget);
-
-	  break;
-	}
-
-	case SHEET_MODE_PRESSING: {
-	    Component *c = find_component_at( sheet, be->x, be->y );
-	    if( c != NULL ) {
-		if( g_list_find( sheet->selected_comps, c ) != NULL )
-		    sheet->selected_comps = g_list_remove( sheet->selected_comps, c );
-		else
-		    sheet->selected_comps = g_list_append( sheet->selected_comps, c );
-
-		sheet_queue_redraw_component( sheet, c );
-	    }
-	
-	    break;
-	}
-
-	case SHEET_MODE_PRESSING_NOWHERE: {
-	    if( sheet->selected_comps != NULL ) {
-
-		g_list_free( sheet->selected_comps );
-		sheet->selected_comps = NULL;
-		gtk_widget_queue_draw( sheet->scrollwin );
-	    }
-
-	    break;
-	}
-
-	case SHEET_MODE_DRAGGING_SEL_BOX: {
-
-	    GList *l;
-	    
-	    for (l = g_list_last(sheet->components); l != NULL; l = g_list_previous(l)) {
-		Component *c = l->data;
-		GdkRectangle r_gen, r;
-
-		r_gen.x = c->x;
-		r_gen.y = c->y;
-		r_gen.width = c->width;
-		r_gen.height = c->height;
-
-		if (gdk_rectangle_intersect(&r_gen, &sheet->sel_rect, &r)) {
-		    if( g_list_find( sheet->selected_comps, c ) == NULL )
-			sheet->selected_comps = g_list_append( sheet->selected_comps, c );
+		    default:
+			break;
 		}
+		break;
 	    }
-	    gtk_widget_queue_draw( sheet->drawingwidget );
-	    sheet->sel_valid = FALSE;
-	}
+
+	case GDK_BUTTON_RELEASE:
+	    {
+		GdkEventButton *be = (GdkEventButton *) e;
+
+		switch (sheet->sheetmode)
+		{
+		    case SHEET_MODE_SCROLLING:
+			break;
+
+		    case SHEET_MODE_DRAGGING_COMP:
+		    case SHEET_MODE_DRAGGING_SEL_COMPS:
+			gtk_widget_queue_draw(sheet->drawingwidget);
+			break;
+
+		    case SHEET_MODE_DRAGGING_LINK:
+			{
+			    Component *c = find_component_at(sheet, be->x, be->y);
+
+			    if (c != NULL) {
+				ConnectorReference ref;
+
+				if (comp_find_connector(c, be->x, be->y, &ref)) {
+				    comp_link(&sheet->saved_ref, &ref);
+				}
+			    }
+			    sheet->highlight_ref.kind = COMP_NO_CONNECTOR;
+			    gtk_widget_queue_draw(sheet->drawingwidget);
+
+			    break;
+			}
+
+		    case SHEET_MODE_PRESSING:
+			{
+			    Component *c = find_component_at( sheet, be->x, be->y );
+			    if( c != NULL ) {
+				if( g_list_find( sheet->selected_comps, c ) != NULL )
+				    sheet->selected_comps = g_list_remove( sheet->selected_comps, c );
+				else
+				    sheet->selected_comps = g_list_append( sheet->selected_comps, c );
+
+				sheet_queue_redraw_component( sheet, c );
+			    }
+
+			    break;
+			}
+
+		    case SHEET_MODE_PRESSING_NOWHERE:
+			{
+			    if( sheet->selected_comps != NULL ) {
+
+				g_list_free( sheet->selected_comps );
+				sheet->selected_comps = NULL;
+				gtk_widget_queue_draw( sheet->scrollwin );
+			    }
+
+			    break;
+			}
+
+		    case SHEET_MODE_DRAGGING_SEL_BOX:
+			{
+			    GList *l;
+
+			    for (l = g_list_last(sheet->components); l != NULL; l = g_list_previous(l)) {
+				Component *c = l->data;
+				GdkRectangle r_gen, r;
+
+				r_gen.x = c->x;
+				r_gen.y = c->y;
+				r_gen.width = c->width;
+				r_gen.height = c->height;
+
+				if (gdk_rectangle_intersect(&r_gen, &sheet->sel_rect, &r)) {
+				    if( g_list_find( sheet->selected_comps, c ) == NULL )
+					sheet->selected_comps = g_list_append( sheet->selected_comps, c );
+				}
+			    }
+			    gtk_widget_queue_draw( sheet->drawingwidget );
+			    sheet->sel_valid = FALSE;
+			}
+
+		    default:
+			break;
+		}
+
+		sheet->sheetmode = SHEET_MODE_NORMAL;
+		return TRUE;
+	    }
+
+	case GDK_MOTION_NOTIFY:
+	    {
+		GdkEventMotion *me = (GdkEventMotion *) e;
+
+		switch (sheet->sheetmode) {
+		    case SHEET_MODE_SCROLLING:
+			scroll_follow_mouse(sheet, me);
+			return TRUE;
+
+		    case SHEET_MODE_PRESSING:
+			if (sheet->saved_ref.kind != COMP_NO_CONNECTOR)
+			    sheet->sheetmode = SHEET_MODE_DRAGGING_LINK;
+			else
+			    if( g_list_find( sheet->selected_comps, sheet->saved_ref.c ) == NULL )
+				sheet->sheetmode = SHEET_MODE_DRAGGING_COMP;
+			    else
+				sheet->sheetmode = SHEET_MODE_DRAGGING_SEL_COMPS;
+
+
+			break;
+
+		    case SHEET_MODE_DRAGGING_LINK:
+			motion_notify_event( w, me, sheet );
+			break;
+
+		    case SHEET_MODE_DRAGGING_SEL_COMPS:
+			{
+			    GList *selcomp;
+
+			    for( selcomp = sheet->selected_comps; selcomp != NULL; selcomp = g_list_next( selcomp ) ) {
+				Component *selcompX = selcomp->data;
+				int x = selcompX->x;
+				int y = selcompX->y;
+
+				//		  gtk_widget_queue_draw_area(sheet->drawingwidget,
+				//			  selcompX->x, selcompX->y,
+				//			  selcompX->width, selcompX->height);
+
+				selcompX->x = MIN(MAX(selcompX->saved_x + me->x_root, 0),
+					GEN_AREA_LENGTH - selcompX->width);
+
+				selcompX->y = MIN(MAX(selcompX->saved_y + me->y_root, 0),
+					GEN_AREA_LENGTH - selcompX->height);
+
+				gtk_widget_queue_draw_area(sheet->drawingwidget,
+					x, y,
+					sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+				gtk_widget_queue_draw_area(sheet->drawingwidget,
+					selcompX->x, selcompX->y,
+					selcompX->width, selcompX->height);
+			    }
+			    break;
+			}
+
+		    case SHEET_MODE_DRAGGING_COMP:
+			{
+			    int x = sheet->saved_ref.c->x;
+			    int y = sheet->saved_ref.c->y;
+
+			    //	      gtk_widget_queue_draw_area(sheet->drawingwidget,
+			    //		      sheet->saved_ref.c->x, sheet->saved_ref.c->y,
+			    //		      sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+
+			    sheet->saved_ref.c->x = MIN(MAX(sheet->saved_x + me->x_root, 0),
+				    GEN_AREA_LENGTH - sheet->saved_ref.c->width);
+
+			    sheet->saved_ref.c->y = MIN(MAX(sheet->saved_y + me->y_root, 0),
+				    GEN_AREA_LENGTH - sheet->saved_ref.c->height);
+
+			    gtk_widget_queue_draw_area(sheet->drawingwidget,
+				    x, y,
+				    sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+
+			    gtk_widget_queue_draw_area(sheet->drawingwidget,
+				    sheet->saved_ref.c->x, sheet->saved_ref.c->y,
+				    sheet->saved_ref.c->width, sheet->saved_ref.c->height);
+
+			    break;
+			}
+
+		    case SHEET_MODE_PRESSING_NOWHERE:
+			{
+			    sheet->sheetmode = SHEET_MODE_DRAGGING_SEL_BOX;
+
+			    // fallthrough.
+			}
+		    case SHEET_MODE_DRAGGING_SEL_BOX:
+			{
+			    GdkRectangle newsel_rect, union_rect;
+
+			    newsel_rect.x = MIN( sheet->saved_x, me->x );
+			    newsel_rect.y = MIN( sheet->saved_y, me->y );
+			    newsel_rect.width = MAX( sheet->saved_x, me->x ) - newsel_rect.x; 
+			    newsel_rect.height = MAX( sheet->saved_y, me->y ) - newsel_rect.y; 
+
+			    gdk_rectangle_union( &newsel_rect, &sheet->sel_rect, &union_rect );
+
+			    sheet->sel_rect = newsel_rect;
+			    sheet->sel_valid = TRUE;
+
+			    gtk_widget_queue_draw_area( sheet->drawingwidget,
+				    union_rect.x, union_rect.y, union_rect.width+1, union_rect.height+1 );
+
+			    break;
+			}
+
+		    default:
+			break;
+		}
+		break;
+	    }
 
 	default:
-	  break;
-      }
-
-      sheet->sheetmode = SHEET_MODE_NORMAL;
-      return TRUE;
-    }
-
-    case GDK_MOTION_NOTIFY: {
-      GdkEventMotion *me = (GdkEventMotion *) e;
-
-      switch (sheet->sheetmode) {
-	case SHEET_MODE_SCROLLING:
-	  scroll_follow_mouse(sheet, me);
-	  return TRUE;
-
-	case SHEET_MODE_PRESSING:
-	  if (sheet->saved_ref.kind != COMP_NO_CONNECTOR) {
-	    sheet->sheetmode = SHEET_MODE_DRAGGING_LINK;
 	    break;
-	  } else {
-	    if( g_list_find( sheet->selected_comps, sheet->saved_ref.c ) == NULL ) {
-		sheet->sheetmode = SHEET_MODE_DRAGGING_COMP;
-	    } else {
-		sheet->sheetmode = SHEET_MODE_DRAGGING_SEL_COMPS;
-
-		//g_list_free( sheet->selected_comps );
-		//sheet->selected_comps = NULL;
-		//sheet->selected_comps = g_list_append( sheet->selected_comps, sheet->saved_ref.c );
-		//sheet->saved_ref.c->saved_x = sheet->saved_x;
-		//sheet->saved_ref.c->saved_y = sheet->saved_y;
-		//gtk_widget_queue_draw( sheet->drawingwidget );
-	    }
-		
-	  }
-
-	  // XXX: The fallthrough should be reestablished.
-	  //      will have to use goto here :)
-	  //      select statement is goto too so this is not so bad.
-	  //      or should i do bla=TRUE; while( bla ) { bla=FALSE; select( ... ) { case SHEET_MODE_PRESSING: ....;  bla=TRUE;
-	  //      break; } }
-
-	  break;
-
-	case SHEET_MODE_DRAGGING_SEL_COMPS:
-	  {
-	      GList *selcomp;
-
-	      for( selcomp = sheet->selected_comps; selcomp != NULL; selcomp = g_list_next( selcomp ) ) {
-		  Component *selcompX = selcomp->data;
-		  gtk_widget_queue_draw_area(sheet->drawingwidget,
-			  selcompX->x, selcompX->y,
-			  selcompX->width, selcompX->height);
-
-		  selcompX->x = MIN(MAX(selcompX->saved_x + me->x_root, 0),
-			  GEN_AREA_LENGTH - selcompX->width);
-
-		  selcompX->y = MIN(MAX(selcompX->saved_y + me->y_root, 0),
-			  GEN_AREA_LENGTH - selcompX->height);
-
-		  gtk_widget_queue_draw_area(sheet->drawingwidget,
-			  selcompX->x, selcompX->y,
-			  selcompX->width, selcompX->height);
-	      }
-	      break;
-	  }
-
-	case SHEET_MODE_DRAGGING_COMP:
-	  {
-	      gtk_widget_queue_draw_area(sheet->drawingwidget,
-		      sheet->saved_ref.c->x, sheet->saved_ref.c->y,
-		      sheet->saved_ref.c->width, sheet->saved_ref.c->height);
-
-	      sheet->saved_ref.c->x = MIN(MAX(sheet->saved_x + me->x_root, 0),
-		      GEN_AREA_LENGTH - sheet->saved_ref.c->width);
-
-	      sheet->saved_ref.c->y = MIN(MAX(sheet->saved_y + me->y_root, 0),
-		      GEN_AREA_LENGTH - sheet->saved_ref.c->height);
-
-	      gtk_widget_queue_draw_area(sheet->drawingwidget,
-		      sheet->saved_ref.c->x, sheet->saved_ref.c->y,
-		      sheet->saved_ref.c->width, sheet->saved_ref.c->height);
-	      break;
-	  }
-
-	case SHEET_MODE_PRESSING_NOWHERE:
-	  {
-	      // Where do i get the gdk context stuff for the scroll widget ?
-	      // or should i already add the layering mechanism for the sheet ?
-	      //
-	      // ok... first have a GdkRectangle in the sheet struct. 
-
-	      sheet->sheetmode = SHEET_MODE_DRAGGING_SEL_BOX;
-	      
-	      // fallthrough.
-	  }
-	case SHEET_MODE_DRAGGING_SEL_BOX:
-	  {
-	      GdkRectangle newsel_rect, union_rect;
-
-	      newsel_rect.x = MIN( sheet->saved_x, me->x );
-	      newsel_rect.y = MIN( sheet->saved_y, me->y );
-	      newsel_rect.width = MAX( sheet->saved_x, me->x ) - newsel_rect.x; 
-	      newsel_rect.height = MAX( sheet->saved_y, me->y ) - newsel_rect.y; 
-	      
-	      gdk_rectangle_union( &newsel_rect, &sheet->sel_rect, &union_rect );
-	      
-	      sheet->sel_rect = newsel_rect;
-	      sheet->sel_valid = TRUE;
-
-	      gtk_widget_queue_draw_area( sheet->drawingwidget,
-		      union_rect.x, union_rect.y, union_rect.width+1, union_rect.height+1 );
-	      
-	      break;
-	  }
-
-	default:
-	  break;
-      }
-      break;
     }
 
-    default:
-      break;
-  }
-
-  return FALSE;
+    return FALSE;
 }
 
 /**

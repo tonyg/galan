@@ -670,102 +670,99 @@ PRIVATE ComponentClass FileSheetComponentClass = {
 };
 
 
+// Code for the Sheet Library
+// nice and compact :)
+
 PRIVATE void add_gsheet(char *plugin, char *leafname) {
 
-  FileShCompInitData *id = safe_malloc( sizeof( FileShCompInitData ) );
-  char *menuname = safe_malloc(strlen( "Lib/" ) + strlen( leafname ) + 1 );
-  
+    FileShCompInitData *id = safe_malloc( sizeof( FileShCompInitData ) );
 
-  id->filename = safe_malloc( strlen(plugin) + 1);
-  strcpy(id->filename, plugin);
+    id->filename = g_strdup_printf( "%s", plugin );
 
-  strcpy(menuname, "Lib/" );
-  strcat(menuname, leafname );
-
-  comp_add_newmenu_item( menuname, &FileSheetComponentClass, id );
+    comp_add_newmenu_item( leafname, &FileSheetComponentClass, id );
 }
 
 PRIVATE void load_all_gsheets(char *dir, char *menupos );	/* forward decl */
 
 PRIVATE int check_gsheet_validity(char *name, char *menupos, char *dirname ) {
-  struct stat sb;
+    struct stat sb;
 
-  if( strlen(name) < 8 || strcmp(name+(strlen(name)-7), ".gsheet" ) )
-    return 0;
+    if (stat(name, &sb) == -1)
+	return 0;
 
-  if (stat(name, &sb) == -1)
-    return 0;
+    if (S_ISDIR(sb.st_mode)) {
+	// XXX: how do i get this name nicely ?
+	//      dont care now works....
 
-  if (S_ISDIR(sb.st_mode)) {
-      // XXX: how do i get this name nicely ?
-      char *newmenupos = g_strdup_printf( "%s/%s", menupos, dirname );
-      load_all_gsheets(name, newmenupos );
-      free( newmenupos );
-  }
+	char *newmenupos = g_strdup_printf( "%s/%s", menupos, dirname );
+	load_all_gsheets(name, newmenupos );
+	free( newmenupos );
+    }
 
-  return S_ISREG(sb.st_mode);
+    if( strlen(name) < 8 || strcmp(name+(strlen(name)-7), ".gsheet" ) )
+	return 0;
+
+    return S_ISREG(sb.st_mode);
 }
 
-
 PRIVATE void load_all_gsheets(char *dir, char *menupos) {
-  DIR *d = opendir(dir);
-  struct dirent *de;
+    DIR *d = opendir(dir);
+    struct dirent *de;
 
-  if (d == NULL)
-    /* the plugin directory cannot be read */
-    return;
+    if (d == NULL)
+	/* the plugin directory cannot be read */
+	return;
 
-  while ((de = readdir(d)) != NULL) {
-    char *fullname;
+    while ((de = readdir(d)) != NULL) {
+	char *fullname;
 
-    if (de->d_name[0] == '.')
-      /* Don't load 'hidden' files or directories */
-      continue;
+	if (de->d_name[0] == '.')
+	    /* Don't load 'hidden' files or directories */
+	    continue;
 
-    //fullname = safe_malloc(strlen(dir) + strlen(de->d_name) + 2);	/* "/" and the NUL byte */
-    fullname = g_strdup_printf( "%s%s%s", dir, G_DIR_SEPARATOR_S, de->d_name ); 
+	fullname = g_strdup_printf( "%s%s%s", dir, G_DIR_SEPARATOR_S, de->d_name ); 
 
-    //strcpy(fullname, dir);
-    //strcat(fullname, G_DIR_SEPARATOR_S);
-    //strcat(fullname, de->d_name);
+	if (check_gsheet_validity(fullname, menupos, de->d_name)) {
+	    char *menuname = g_strdup_printf( "%s/%s", menupos, de->d_name );
+	    add_gsheet(fullname, menuname);
+	    free( menuname );
+	}
 
-    if (check_gsheet_validity(fullname, menupos, de->d_name))
-      add_gsheet(fullname, menupos);
+	free(fullname);
+    }
 
-    free(fullname);
-  }
-
-  closedir(d);
+    closedir(d);
 }
 
 PRIVATE void scan_library_dir( void ) {
-	char *sheetdir = getenv("GALAN_SHEET_DIR");
+    char *sheetdir = getenv("GALAN_SHEET_DIR");
 
-	if( sheetdir )
-		load_all_gsheets( sheetdir );
-	
-	load_all_gsheets(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "sheets");
+    if( sheetdir )
+	load_all_gsheets( sheetdir, "Lib" );
+
+    load_all_gsheets(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "sheets", "Lib" );
 }
 
 
 PUBLIC void shcomp_register_sheet( Sheet *sheet ) {
 
     ShCompInitData *initdata = safe_malloc( sizeof( ShCompInitData ) );
-    gchar *str = safe_malloc( sizeof("Sheets/") + strlen( sheet->name ) );
-    sprintf( str, "Sheets/%s", sheet->name );
+
+    gchar *str = g_strdup_printf( "Sheets/%s", sheet->name );
 
     initdata->sheet = sheet;
     comp_add_newmenu_item( str, &SheetComponentClass, initdata );
+
+    g_free( str );
 }
 
 PUBLIC void init_shcomp(void) {
-  comp_register_componentclass(&SheetComponentClass);
-  comp_register_componentclass(&FileSheetComponentClass);
+    comp_register_componentclass(&SheetComponentClass);
+    comp_register_componentclass(&FileSheetComponentClass);
 
-  scan_library_dir();
+    scan_library_dir();
 }
 
 PUBLIC void done_shcomp(void) {
-  //g_hash_table_destroy(generatorclasses);
-  //generatorclasses = NULL;
 }
+

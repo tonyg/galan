@@ -64,6 +64,7 @@ typedef struct OData {
 
 typedef struct TransportData {
   gdouble freq;
+  gint32 ticks_per_beat;
   gint period;
 } TransportData;
 
@@ -74,7 +75,7 @@ int rate = SAMPLE_RATE;				 /* stream rate */
 
 GList *transport_clocks = NULL;
 
-PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes );
+PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes, double bpm );
 
 PRIVATE void audio_play_fragment(Data *data, SAMPLE *left, SAMPLE *right, int length) {
   int i;
@@ -123,10 +124,15 @@ PRIVATE int process_callback( jack_nframes_t nframes, Data *data ) {
 	jack_get_transport_info( jack_client, &trans_info );
 
 	if( trans_info.valid & JackTransportState && trans_info.valid & JackTransportPosition && trans_info.transport_state == JackTransportRolling ) {
+
+	    double bpm;
+	    if( trans_info.valid & JackTransportBBT )
+		bpm = trans_info.beats_per_minute;
+	    else bpm = 0;
 	    
 	    for( l = transport_clocks; l; l = g_list_next( l ) ) {
 		Generator *g = l->data;
-		transport_frame_event( g, trans_info.frame, nframes );
+		transport_frame_event( g, trans_info.frame, nframes, bpm );
 	    }
 	}
 	else
@@ -146,30 +152,17 @@ jack_shutdown (void *arg)
 }
 
 PRIVATE void clock_handler(AClock *clock, AClockReason reason) {
-  //Data *d = clock->gen->data;
 
   switch (reason) {
     case CLOCK_DISABLE:
       jack_deactivate( jack_client );
-      //snd_async_del_handler(d->async_handler);
-      //d->async_handler = NULL;
       break;
 
     case CLOCK_ENABLE:
       jack_set_process_callback( jack_client, process_callback, NULL ); 
       jack_on_shutdown (jack_client, jack_shutdown, 0);
 
-      g_print( "pre activate\n" );
       jack_activate( jack_client );
-      g_print( "post activate\n" );
-      //if (jack_connect (jack_client, jack_port_name (d->port_r), "alsa_pcm:playback_2")) {
-	//  g_print ("cannot connect output ports\n");
-      //}
-      //if (jack_connect (d->jack_client, jack_port_name (d->port_l), "alsa_pcm:playback_1")) {
-//	  g_print ("cannot connect output ports\n");
-//      }
-//      g_print ("srcport = %s\n", jack_port_name (d->port_r) );
-
 	      
       break;
 
@@ -226,14 +219,13 @@ PRIVATE void playport_realtime_handler(Generator *g, AEvent *event) {
     }
 
     default:
-      g_warning("oss_output module doesn't care for events of kind %d.", event->kind);
+      g_warning("jack_output module doesn't care for events of kind %d.", event->kind);
       break;
   }
 }
 
 PRIVATE int init_instance(Generator *g) {
   Data *data;
-  //int err;
 
   if (instance_count > 0)
     /* Not allowed more than one of these things. */
@@ -246,7 +238,6 @@ PRIVATE int init_instance(Generator *g) {
 
   data->l_buf = safe_malloc( sizeof(SAMPLE) * 4096 );
   data->r_buf = safe_malloc( sizeof(SAMPLE) * 4096 );
-  //jack_timestamp = ;
 
   if( jack_client == NULL )
       jack_client = jack_client_new( "galan" );
@@ -429,6 +420,7 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
 
     return TRUE;
 }
+
 PRIVATE InputSignalDescriptor input_sigs[] = {
   { "Left Channel", SIG_FLAG_REALTIME },
   { "Right Channel", SIG_FLAG_REALTIME },
@@ -450,6 +442,7 @@ PRIVATE gboolean transport_init_instance(Generator *g) {
   g->data = data;
 
   data->period = 0;
+  data->ticks_per_beat = 4;
 
   transport_clocks = g_list_append( transport_clocks, g );
   return TRUE;
@@ -465,6 +458,7 @@ PRIVATE void transport_unpickle_instance(Generator *g, ObjectStoreItem *item, Ob
   g->data = data;
 
   data->period = objectstore_item_get_integer(item, "transport_period", 0);
+  data->ticks_per_beat = objectstore_item_get_integer(item, "ticks_per_beat", 4);
 
   if (data->period != 0) {
     data->freq = (gdouble) SAMPLE_RATE / data->period;
@@ -475,6 +469,7 @@ PRIVATE void transport_unpickle_instance(Generator *g, ObjectStoreItem *item, Ob
 PRIVATE void transport_pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
   TransportData *data = g->data;
   objectstore_item_set_integer(item, "transport_period", data->period);
+  objectstore_item_set_integer(item, "ticks_per_beat", data->ticks_per_beat);
 }
 
 PRIVATE void transport_evt_freq_handler(Generator *g, AEvent *event) {
@@ -486,12 +481,26 @@ PRIVATE void transport_evt_freq_handler(Generator *g, AEvent *event) {
     data->period = 0;
   else
     data->period = SAMPLE_RATE / event->d.number;
+
+  gen_update_controls(g, 0);
 }
 
-PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes ) {
+PRIVATE void transport_evt_tpb_handler(Generator *g, AEvent *event) {
+  TransportData *data = g->data;
+
+  data->ticks_per_beat = (gint) (event->d.number);
+  
+  gen_update_controls(g, 1);
+  
+}
+
+PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes, gdouble bpm ) {
     TransportData *data = g->data;
     AEvent e;
     SAMPLETIME t,i;
+
+    if( bpm != 0.0 )
+	data->period = SAMPLE_RATE * 60.0 / (gdouble) data->ticks_per_beat / bpm;
 
     if( data->period != 0 ) {
 
@@ -503,6 +512,14 @@ PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME n
     }
 
 }
+
+PRIVATE ControlDescriptor transport_controls[] = {
+  { CONTROL_KIND_KNOB, "rate", 0,500,1,1, 0,TRUE, TRUE, 0,
+    NULL,NULL, control_double_updater, (gpointer) offsetof(TransportData, freq) },
+  { CONTROL_KIND_KNOB, "tpb", 0,32,1,1, 0,TRUE, TRUE, 1,
+    NULL,NULL, control_int32_updater, (gpointer) offsetof(TransportData, ticks_per_beat) },
+  { CONTROL_KIND_NONE, }
+};
 
 PRIVATE void setup_class(void) {
   GeneratorClass *k;
@@ -531,16 +548,17 @@ PRIVATE void setup_class(void) {
 			     recport_init_instance, recport_destroy_instance,
 			     (AGenerator_pickle_t) recport_init_instance, NULL);
 
-  gencomp_register_generatorclass(k, FALSE, "Outputs/Jack In Port",
+  gencomp_register_generatorclass(k, FALSE, "Sources/Jack In Port",
 				  NULL,
 				  NULL);
 
-  k = gen_new_generatorclass("jack_transport", FALSE, 1, 1,
-			     NULL, NULL, NULL,
+  k = gen_new_generatorclass("jack_transport", FALSE, 2, 1,
+			     NULL, NULL, transport_controls,
 			     transport_init_instance, transport_destroy_instance,
 			     (AGenerator_pickle_t) transport_unpickle_instance, transport_pickle_instance);
 
   gen_configure_event_input(k, 0, "Freq", transport_evt_freq_handler );
+  gen_configure_event_input(k, 1, "TpB", transport_evt_tpb_handler );
   gen_configure_event_output(k, 0, "Position");
 
   gencomp_register_generatorclass(k, FALSE, "Misc/Jack Transport Clock",

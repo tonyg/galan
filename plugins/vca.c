@@ -41,8 +41,8 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   SAMPLE tmpbuf[MAXIMUM_REALTIME_STEP];
   int i;
 
-  if (!gen_read_realtime_input(g, SIG_ENVELOPE, 0, tmpbuf, buflen) ||
-      !gen_read_realtime_input(g, SIG_INPUT, 0, buf, buflen))
+  if (!gen_read_realtime_input(g, SIG_ENVELOPE, -1, tmpbuf, buflen) ||
+      !gen_read_realtime_input(g, SIG_INPUT, -1, buf, buflen))
     return FALSE;
 
   for (i = 0; i < buflen; i++)

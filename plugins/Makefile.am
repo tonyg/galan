@@ -8,7 +8,7 @@ plugindir = $(pkglibdir)/plugins
 # empty) whitespace-separated list of names from the list just
 # below. (The optional plugins HAVE to be defined in EXTRA_PROGRAMS -
 # see the infopages for automake.)
-EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so
+EXTRA_PROGRAMS = esd_output.so pcm_out.so ogg_ra.so emu10k1.so alsa_out.so
 
 plugin_PROGRAMS = \
 	osc.so oss_output.so random.so rart.so voice.so ctrl.so gain.so \
@@ -27,6 +27,9 @@ CLEANFILES=*.so.c
 
 esd_output_so_INCLUDES=`esd-config --cflags`
 esd_output_so_LDFLAGS=`esd-config --libs`
+
+alsa_out_so_INCLUDES= @ALSA_CFLAGS@
+alsa_out_so_LDFLAGS= @ALSA_LIBS@
 
 voice_so_LDFLAGS=-laudiofile
 pcm_out_so_LDFLAGS=-laudiofile

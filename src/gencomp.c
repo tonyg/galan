@@ -31,16 +31,39 @@
 #include "control.h"
 #include "gencomp.h"
 
-#define GENCOMP_ICONLENGTH	48
-#define GENCOMP_TITLEHEIGHT	15
-#define GENCOMP_CONNECTOR_SPACE	5
-#define GENCOMP_CONNECTOR_WIDTH	10
+#define GENCOMP_ICONLENGTH	48 /**< The Length of an icon. Hmmm what is that for ? */
+#define GENCOMP_TITLEHEIGHT	15 /**< The height of the title string */
+#define GENCOMP_CONNECTOR_SPACE	5  /**< Space between two connectors */
+#define GENCOMP_CONNECTOR_WIDTH	10 
 #define GENCOMP_BORDER_WIDTH	(GENCOMP_CONNECTOR_WIDTH + GENCOMP_CONNECTOR_SPACE)
 
+/**
+ * This is for enumerating all the components.
+ * I would prefer a counter for every Generatorclass.
+ * But this is for the future.
+ */
 
 PRIVATE int next_component_number = 1;
 
+/**
+ * \brief Dictionary mapping from string -> GeneratorClass
+ *
+ * This hash contains all GeneratorClasses. When a generator is unpickled
+ * its class is determined via this dictionary.
+ */
+
 PRIVATE GHashTable *generatorclasses = NULL;
+
+
+/**
+ * \brief Build Connector s when instantiating a Component.
+ *
+ * \param c The Component the connectors should be build on.
+ * \param count The number of connectors to be build.
+ * \param is_outbound When TRUE indicates that the function should build outbound connectors.
+ * \param is_signal When TRUE indicates that the function should build signal connectors.
+ *
+ */
 
 PRIVATE void build_connectors(Component *c, int count, gboolean is_outbound, gboolean is_signal) {
   int i;
@@ -50,6 +73,18 @@ PRIVATE void build_connectors(Component *c, int count, gboolean is_outbound, gbo
 		       is_outbound, i,
 		       0, 0);
 }
+
+/**
+ * \brief This function sets the \a x and \a y fields of the Connector `s of a Component.
+ *
+ * \param c The Component the connectors should be set.
+ * \param count The number of connectors to be set.
+ * \param is_outbound When TRUE indicates that the function should setup the outbound connectors.
+ * \param is_signal When TRUE indicates that the function should setup the signal connectors.
+ * \param hsize The horizontal size of the area relevatn for connector placement.
+ * \param vsize The vertical size of the area relevatn for connector placement.
+ *
+ */
 
 PRIVATE void resize_connectors(Component *c, int count,
 			       gboolean is_outbound, gboolean is_signal,
@@ -74,6 +109,13 @@ PRIVATE void resize_connectors(Component *c, int count,
     con->y = y;
   }
 }
+
+/**
+ * \brief Determine the size of the Component \a c and lay out the Connector `s.
+ *
+ * \param c The Component to resize.
+ *
+ */
 
 PRIVATE void gencomp_resize(Component *c) {
   int body_vert, body_horiz;
@@ -100,6 +142,13 @@ PRIVATE void gencomp_resize(Component *c) {
   c->width = body_horiz + 2 * GENCOMP_BORDER_WIDTH;
   c->height = body_vert + 2 * GENCOMP_BORDER_WIDTH;
 }
+
+/**
+ * \brief Initialize the GenComp specific part of the Component.
+ *
+ * \param c The Component which is already setup by the component constructor.
+ * \param init_data The GenCompInitData which is needed to setup the component.
+ */
 
 PRIVATE int gencomp_initialize(Component *c, gpointer init_data) {
   GenCompData *d = safe_malloc(sizeof(GenCompData));
@@ -144,6 +193,12 @@ PRIVATE int gencomp_initialize(Component *c, gpointer init_data) {
   return 1;
 }
 
+/**
+ * \brief Destroy the GenCompData of a Component.
+ *
+ * \pram c The Component which is being destroyed.
+ */
+
 PRIVATE void gencomp_destroy(Component *c) {
   GenCompData *d = c->data;
 
@@ -153,6 +208,11 @@ PRIVATE void gencomp_destroy(Component *c) {
 
   free(d);
 }
+
+/**
+ * \brief assure that connectors are valid.
+ *
+ */
 
 PRIVATE GList *collect_connectors(GList *lst, Component *c, ConnectorKind kind,
 				  gboolean is_output, int num_conns) {
@@ -175,6 +235,12 @@ PRIVATE GList *collect_connectors(GList *lst, Component *c, ConnectorKind kind,
 
   return lst;
 }
+
+/**
+ * \brief Validate all Connector `s on Component \a c.
+ *
+ * \pram c The Component to validate.
+ */
 
 PRIVATE void validate_connectors(Component *c) {
   GenCompData *d = c->data;
@@ -240,14 +306,23 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
 
     if( !connectorreference_equal( &(con->ref), &(c->sheet->highlight_ref) ) )
 	colidx = COMP_COLOR_VIOLET;
-    else
-	if ((con->ref.kind == COMP_SIGNAL_CONNECTOR)
-		&& ((con->ref.is_output
+    else {
+	if (con->ref.kind == COMP_SIGNAL_CONNECTOR) {
+	    guint flags = con->ref.is_output
 			? d->g->klass->out_sigs[con->ref.queue_number].flags
-			: d->g->klass->in_sigs[con->ref.queue_number].flags) & SIG_FLAG_RANDOMACCESS))
-	    colidx = (con->refs == NULL) ? COMP_COLOR_RED : COMP_COLOR_YELLOW;
-	else
+			: d->g->klass->in_sigs[con->ref.queue_number].flags;
+
+
+	    if( flags & SIG_FLAG_OPENGL ) {
+		colidx = (con->refs == NULL) ? COMP_COLOR_CYAN : COMP_COLOR_BLACK;
+	    } else if( flags & SIG_FLAG_RANDOMACCESS ) {
+		colidx = (con->refs == NULL) ? COMP_COLOR_RED : COMP_COLOR_YELLOW;
+	    } else {
+		colidx = (con->refs == NULL) ? COMP_COLOR_BLUE : COMP_COLOR_GREEN;
+	    }
+	} else
 	    colidx = (con->refs == NULL) ? COMP_COLOR_BLUE : COMP_COLOR_GREEN;
+    }
 
     gdk_gc_set_foreground(gc, &colors[colidx]);
     gdk_draw_arc(drawable, gc, TRUE,
@@ -256,7 +331,8 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
 		 GENCOMP_CONNECTOR_WIDTH,
 		 GENCOMP_CONNECTOR_WIDTH,
 		 0, FULLCIRCLE_DEGREES_NUMBER);
-    gdk_draw_arc(drawable, style->white_gc, FALSE,
+    gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
+    gdk_draw_arc(drawable, gc, FALSE,
 		 con->x + c->x - (GENCOMP_CONNECTOR_WIDTH>>1),
 		 con->y + c->y - (GENCOMP_CONNECTOR_WIDTH>>1),
 		 GENCOMP_CONNECTOR_WIDTH,
@@ -275,7 +351,7 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
 	    : con->y + (GENCOMP_CONNECTOR_WIDTH>>1))
 	 : con->y) + c->y;
 
-    gdk_draw_line(drawable, style->white_gc,
+    gdk_draw_line(drawable, gc,
 		  x, y,
 		  (con->ref.kind == COMP_SIGNAL_CONNECTOR ? x + GENCOMP_CONNECTOR_SPACE : x),
 		  (con->ref.kind == COMP_SIGNAL_CONNECTOR ? y : y + GENCOMP_CONNECTOR_SPACE));
@@ -283,19 +359,20 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
     l = g_list_next(l);
   }
 
-  gdk_gc_set_foreground(gc, &style->black);
+  gdk_gc_set_foreground(gc, &colors[COMP_COLOR_BLACK]);
   gdk_draw_rectangle(drawable, gc, TRUE,
 		     c->x + GENCOMP_BORDER_WIDTH,
 		     c->y + GENCOMP_BORDER_WIDTH,
 		     c->width - 2 * GENCOMP_BORDER_WIDTH,
 		     c->height - 2 * GENCOMP_BORDER_WIDTH);
-  gdk_draw_rectangle(drawable, style->white_gc, FALSE,
+  gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
+  gdk_draw_rectangle(drawable, gc, FALSE,
 		     c->x + GENCOMP_BORDER_WIDTH,
 		     c->y + GENCOMP_BORDER_WIDTH,
 		     c->width - 2 * GENCOMP_BORDER_WIDTH - 1,
 		     c->height - 2 * GENCOMP_BORDER_WIDTH - 1);
 
-  gdk_draw_text(drawable, style->font, style->white_gc,
+  gdk_draw_text(drawable, style->font, gc,
 		c->x + GENCOMP_BORDER_WIDTH + (GENCOMP_CONNECTOR_WIDTH>>1),
 		c->y + GENCOMP_BORDER_WIDTH + GENCOMP_TITLEHEIGHT - 3,
 		d->g->name, strlen(d->g->name));
@@ -307,6 +384,8 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
 		         + GENCOMP_TITLEHEIGHT,
 		    GENCOMP_ICONLENGTH,
 		    GENCOMP_ICONLENGTH);
+  
+  gdk_gc_set_foreground(gc, &style->black);
 }
 
 PRIVATE int gencomp_find_connector_at(Component *c, gint x, gint y, ConnectorReference *ref) {
@@ -526,6 +605,11 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
   return result;
 }
 
+/**
+ * \brief The GenComp ComponentClass.
+ *
+ */
+
 PUBLIC ComponentClass GeneratorComponentClass = {
   "gencomp",
 
@@ -551,6 +635,21 @@ PUBLIC ComponentClass GeneratorComponentClass = {
   gencomp_build_popup
 };
 
+/**
+ * \brief Register a GeneratorClass so that a Component with GeneratorComponentClass can be instantiated.
+ *
+ * This function allocates the GenCompInitData describing GenratorClass \a k and puts it into
+ * the generatorclasses hash.
+ *
+ * \param k The New GeneratorClass.
+ * \param prefer If there already exists a GeneratorClass with the same name and \a prefer is TRUE 
+ *        it is overwritten by the new GenratorClass. This is used by the audio_out plugins for example.
+ * \param menupath This is a string indicating where the GenratorClass shows up in the New Menu.
+ * \param iconpath This is a string is the path to the pixmap which is shown in the component.
+ * \param propgen This function will be called when the Properties menu of the Component is selected.
+ *
+ */
+
 PUBLIC void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer,
 					    char *menupath, char *iconpath,
 					    PropertiesCallback propgen) {
@@ -575,12 +674,22 @@ PUBLIC void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer,
   }
 }
 
+/**
+ * \brief Initialize the GenComp.
+ */
+
 PUBLIC void init_gencomp(void) {
   generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
   comp_register_componentclass(&GeneratorComponentClass);
 }
 
+/**
+ * \brief Cleanup the GenComp.
+ */
+
 PUBLIC void done_gencomp(void) {
   g_hash_table_destroy(generatorclasses);
   generatorclasses = NULL;
 }
+
+

@@ -57,16 +57,39 @@ PRIVATE int instance_count = 0;
 PRIVATE char device[256];
 
 snd_pcm_format_t format = SND_PCM_FORMAT_S16;	 /* sample format */
-int rate = 44100;				 /* stream rate */
+int rate = SAMPLE_RATE;				 /* stream rate */
 int channels = 2;				 /* count of channels */
-int buffer_time = 300000;			 /* ring buffer length in us */
-int period_time = 30000;			 /* period time in us */
-double freq = 440;				 /* sinusoidal wave frequency in Hz */
+int buffer_time = 1000000*2048/SAMPLE_RATE;	 /* ring buffer length in us */
+int period_time = 1000000*1024/SAMPLE_RATE;	 /* period time in us */
 
 snd_pcm_sframes_t buffer_size;
 snd_pcm_sframes_t period_size;
 snd_output_t *output = NULL;
 
+/*
+ *   Underrun and suspend recovery
+ */
+ 
+static int xrun_recovery(snd_pcm_t *handle, int err)
+{
+    g_print( "xrun !!!....\n" );
+	if (err == -EPIPE) {	/* under-run */
+		err = snd_pcm_prepare(handle);
+		if (err < 0)
+			printf("Can't recovery from underrun, prepare failed: %s\n", snd_strerror(err));
+		return 0;
+	} else if (err == -ESTRPIPE) {
+		while ((err = snd_pcm_resume(handle)) == -EAGAIN)
+			sleep(1);	/* wait until the suspend flag is released */
+		if (err < 0) {
+			err = snd_pcm_prepare(handle);
+			if (err < 0)
+				printf("Can't recovery from suspend, prepare failed: %s\n", snd_strerror(err));
+		}
+		return 0;
+	}
+	return err;
+}
 PRIVATE void audio_play_fragment(snd_pcm_t *handle, SAMPLE *left, SAMPLE *right, int length) {
   OUTPUTSAMPLE *outbuf;
   int buflen = length * sizeof(OUTPUTSAMPLE) * 2;
@@ -84,6 +107,13 @@ PRIVATE void audio_play_fragment(snd_pcm_t *handle, SAMPLE *left, SAMPLE *right,
   }
 
   err = snd_pcm_writei(handle, outbuf, length);
+  if( err < 0 ) {
+      if (xrun_recovery(handle, err) < 0) {
+	  printf("Write error: %s\n", snd_strerror(err));
+	  exit(EXIT_FAILURE);
+      }
+  }
+
   //g_print( "len=%d, err=%d state=%d\n", length, err, snd_pcm_state(handle) );
   free(outbuf);
 }
@@ -189,29 +219,6 @@ static int set_swparams(snd_pcm_t *handle, snd_pcm_sw_params_t *swparams)
 	return 0;
 }
 
-/*
- *   Underrun and suspend recovery
- */
- 
-static int xrun_recovery(snd_pcm_t *handle, int err)
-{
-	if (err == -EPIPE) {	/* under-run */
-		err = snd_pcm_prepare(handle);
-		if (err < 0)
-			printf("Can't recovery from underrun, prepare failed: %s\n", snd_strerror(err));
-		return 0;
-	} else if (err == -ESTRPIPE) {
-		while ((err = snd_pcm_resume(handle)) == -EAGAIN)
-			sleep(1);	/* wait until the suspend flag is released */
-		if (err < 0) {
-			err = snd_pcm_prepare(handle);
-			if (err < 0)
-				printf("Can't recovery from suspend, prepare failed: %s\n", snd_strerror(err));
-		}
-		return 0;
-	}
-	return err;
-}
 
 PRIVATE gboolean open_audiofd(ALSAData *d) {
   int err;

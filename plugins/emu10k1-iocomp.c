@@ -383,16 +383,19 @@ PRIVATE gboolean emuiocomp_accept_inbound(Component *c, ConnectorReference *src,
     return FALSE;
 }
 
-PRIVATE void emuiocomp_unlink_outbound(Component *c, ConnectorReference *src,
+PRIVATE gboolean emuiocomp_unlink_outbound(Component *c, ConnectorReference *src,
 				     ConnectorReference *dst) {
   //EmuIOCompData *data = c->data;
+  return TRUE;
 }
 
-PRIVATE void emuiocomp_unlink_inbound(Component *c, ConnectorReference *src,
+PRIVATE gboolean emuiocomp_unlink_inbound(Component *c, ConnectorReference *src,
 				    ConnectorReference *dst) {
   //EmuIOCompData *data = c->data;
   dsp_del_route( get_patch_manager(), src->queue_number, dst->queue_number );
   dsp_load( get_patch_manager() );
+
+  return TRUE;
 }
 
 PRIVATE char *emuiocomp_get_title(Component *c) {

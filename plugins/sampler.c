@@ -174,8 +174,6 @@ PRIVATE void destroy_instance(Generator *g) {
 
 
 PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-	/* TODO: now the scope has state scope_phase, scope_yscale, scope_xscale
-	 */
 	
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
@@ -190,8 +188,6 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-	/* TODO: now the scope has state scope_phase, scope_yscale, scope_xscale
-	 */
   Data *data = g->data;
   objectstore_item_set_integer(item, "scope_phase", data->phase);
   objectstore_item_set_double(item, "scope_ysize", data->ysize);
@@ -231,7 +227,7 @@ PRIVATE void loop_handler( SampleDisplay *s, int start, int end ) {
 
 PRIVATE void loop_selection_handler( GtkWidget *b, Control *c ) {
 
-    Data *data = c->g->data;
+    //Data *data = c->g->data;
     SampleDisplay *sc = c->data;
 
     sample_display_set_loop( sc, sc->sel_start, sc->sel_end );
@@ -239,7 +235,7 @@ PRIVATE void loop_selection_handler( GtkWidget *b, Control *c ) {
 
 PRIVATE void zoom_selection_handler( GtkWidget *b, Control *c ) {
 
-    Data *data = c->g->data;
+    //Data *data = c->g->data;
     SampleDisplay *sc = c->data;
 
     sample_display_set_window( sc, sc->sel_start, sc->sel_end );
@@ -255,7 +251,7 @@ PRIVATE void zoom_out_handler( GtkWidget *b, Control *c ) {
 }
 PRIVATE void zoom_in_handler( GtkWidget *b, Control *c ) {
 
-    Data *data = c->g->data;
+    //Data *data = c->g->data;
     SampleDisplay *sc = c->data;
 
     sample_display_set_window( sc, sc->win_start + sc->win_length/4, sc->win_start + sc->win_length * 0.75 );

@@ -77,8 +77,8 @@ struct ComponentClass {
 
   gboolean (*accept_outbound)(Component *c, ConnectorReference *src, ConnectorReference *dst);
   gboolean (*accept_inbound)(Component *c, ConnectorReference *src, ConnectorReference *dst);
-  void (*unlink_outbound)(Component *c, ConnectorReference *src, ConnectorReference *dst);
-  void (*unlink_inbound)(Component *c, ConnectorReference *src, ConnectorReference *dst);
+  gboolean (*unlink_outbound)(Component *c, ConnectorReference *src, ConnectorReference *dst);
+  gboolean (*unlink_inbound)(Component *c, ConnectorReference *src, ConnectorReference *dst);
 
   /* These both return freshly-malloced strings */
   char *(*get_title)(Component *c);

@@ -364,7 +364,7 @@ PRIVATE gboolean gencomp_accept_inbound(Component *c, ConnectorReference *src,
   return TRUE;
 }
 
-PRIVATE void gencomp_unlink_outbound(Component *c, ConnectorReference *src,
+PRIVATE gboolean gencomp_unlink_outbound(Component *c, ConnectorReference *src,
 				     ConnectorReference *dst) {
   GenCompData *data = c->data;
   GenCompData *otherdata = dst->c->data;
@@ -373,12 +373,15 @@ PRIVATE void gencomp_unlink_outbound(Component *c, ConnectorReference *src,
     gen_unlink(gen_find_link(src->kind == COMP_SIGNAL_CONNECTOR,
 			     data->g, src->queue_number,
 			     otherdata->g, dst->queue_number));
+  return TRUE;
 }
 
-PRIVATE void gencomp_unlink_inbound(Component *c, ConnectorReference *src,
+PRIVATE gboolean gencomp_unlink_inbound(Component *c, ConnectorReference *src,
 				    ConnectorReference *dst) {
   /* noop: the gen_link has already been removed by
      gencomp_unlink_outbound, if it's supposed to happen at all. */
+
+  return TRUE;
 }
 
 PRIVATE char *gencomp_get_title(Component *c) {

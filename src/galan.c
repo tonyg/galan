@@ -74,7 +74,6 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   init_clock();
   init_control();
   init_gui();
-  g_print( "init gui\n" );
   init_comp();
   init_gencomp();
   init_iscomp();

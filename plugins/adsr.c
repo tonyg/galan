@@ -393,7 +393,7 @@ PRIVATE ControlDescriptor controls[] = {
     NULL,NULL, control_double_updater, (gpointer) offsetof(Data, release) },
   { CONTROL_KIND_KNOB, "level", 0,1,0.01,0.01, 0,TRUE, TRUE,EVT_SUSTAIN_LEVEL,
     NULL,NULL, control_double_updater, (gpointer) offsetof(Data, sustain_level) },
-  { CONTROL_KIND_USERDEF, "all", 0,0,0,0, 0,FALSE, TRUE,0, init_all, done_all, refresh_all, NULL },
+  { CONTROL_KIND_USERDEF, "compound", 0,0,0,0, 0,FALSE, TRUE,0, init_all, done_all, refresh_all, NULL },
   { CONTROL_KIND_NONE, }
 };
 

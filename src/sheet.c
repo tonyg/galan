@@ -31,6 +31,8 @@
 #include "control.h"
 #include "gencomp.h"
 #include "iscomp.h"
+#include "shcomp.h"
+#include "msgbox.h"
 
 #define GEN_AREA_LENGTH		2048
 
@@ -431,11 +433,6 @@ PRIVATE void sheet_pickle_instance(Generator *g, ObjectStoreItem *item, ObjectSt
   //SheetGeneratorData *data = g->data;
 }
 
-typedef struct InterSheetLinks {
-    GList *inputevents, *outputevents, *inputsignals, *outputsignals;
-    int anzinputevents, anzoutputevents, anzinputsignals, anzoutputsignals;
-} InterSheetLinks;
-
 PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
 
     GList *lst = sheet->components;
@@ -533,6 +530,31 @@ PUBLIC void sheet_register_component_class( Sheet *sheet ) {
     free(isl);
 }
 
+PUBLIC void sheet_register_ref( Sheet *s, Component *comp ) {
+    //g_print( "adding %s..\n", s->name );
+    s->referring_sheets = g_list_append( s->referring_sheets, comp );
+}
+
+PUBLIC void sheet_unregister_ref( Sheet *s, Component *comp ) {
+    s->referring_sheets = g_list_remove( s->referring_sheets, comp );
+}
+
+PUBLIC gboolean sheet_has_refs( Sheet *s ) {
+    return ( s->referring_sheets != NULL );
+}
+
+PUBLIC void sheet_kill_refs( Sheet *s ) {
+    GList *compX = s->referring_sheets;
+
+    while( compX != NULL ) {
+	GList *temp = g_list_next( compX );
+	Component *c = compX->data;
+
+	sheet_delete_component( c->sheet, c );
+	compX = temp;
+    }
+    s->referring_sheets = NULL;
+}
 
 PUBLIC Sheet *create_sheet( void ) {
   GtkWidget *eb;
@@ -543,6 +565,9 @@ PUBLIC Sheet *create_sheet( void ) {
   sheet->components = NULL;
   sheet->sheetmode  = SHEET_MODE_NORMAL;
   sheet->sheetklass = NULL;
+  sheet->panel_control_active = FALSE;
+  sheet->panel_control = NULL;
+  sheet->referring_sheets = NULL;
   sheet->highlight_ref.kind = COMP_NO_CONNECTOR;
 
   sheet->name = safe_malloc( sizeof( "sheet" ) + 20 );
@@ -573,6 +598,9 @@ PUBLIC Sheet *create_sheet( void ) {
     gdk_colormap_alloc_color(colormap, &comp_colors[i], FALSE, TRUE);
   
   //gui_register_sheet( sheet );
+
+
+  //sheet->control_panel = control_panel_new( sheet->name );
 
   return sheet;
 }
@@ -611,6 +639,8 @@ PUBLIC int sheet_get_textwidth(Sheet *sheet, char *text) {
 }
 
 PUBLIC void sheet_clear(Sheet *sheet) {
+
+  sheet_kill_refs( sheet );
   while (sheet->components != NULL) {
     GList *temp = g_list_next(sheet->components);
 
@@ -624,8 +654,59 @@ PUBLIC void sheet_clear(Sheet *sheet) {
   reset_control_panel();
 }
 
+PUBLIC void sheet_remove( Sheet *sheet ) {
+    sheet_clear( sheet );
+    gui_unregister_sheet( sheet );
 
-PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item, Sheet *sheet ) {
+    if( sheet->control_panel ) {
+	control_panel_unregister_panel( sheet->control_panel );
+	free( sheet->control_panel );
+    }
+    if( sheet->name )
+	free( sheet->name );
+    free( sheet );
+}
+
+PRIVATE GtkWidget *rename_text_widget=NULL;
+
+PRIVATE void rename_handler(MsgBoxResponse action_taken, Sheet *s) {
+    if (action_taken == MSGBOX_OK) {
+
+	GList *compX;
+
+	free(s->name);
+	s->name = safe_string_dup(gtk_entry_get_text(GTK_ENTRY(rename_text_widget)));
+	update_sheet_name( s );
+
+	for( compX = s->referring_sheets; compX != NULL; compX=g_list_next( compX ) ) {
+	    Component *c = compX->data;
+
+	    sheet_queue_redraw_component(c->sheet, c);	/* to 'erase' the old size */
+	    shcomp_resize(c);
+	    sheet_queue_redraw_component(c->sheet, c);	/* to 'fill in' the new size */
+	}
+    }
+}
+
+PUBLIC void sheet_rename(Sheet *sheet ) {
+  GtkWidget *hb = gtk_hbox_new(FALSE, 5);
+  GtkWidget *label = gtk_label_new("Rename Sheet:");
+  GtkWidget *text = gtk_entry_new();
+
+  gtk_box_pack_start(GTK_BOX(hb), label, TRUE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hb), text, TRUE, FALSE, 0);
+
+  gtk_widget_show(label);
+  gtk_widget_show(text);
+
+  gtk_entry_set_text(GTK_ENTRY(text), sheet->name);
+
+  rename_text_widget = text;
+  popup_dialog("Rename", MSGBOX_OK | MSGBOX_CANCEL, 0, MSGBOX_OK, hb,
+	       (MsgBoxResponseHandler) rename_handler, sheet);
+}
+
+PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
 
     // First i give it the Sheet Struct which is already there
     // but later it will be created here and given back by sheet_loadfrom
@@ -634,19 +715,27 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item, Sheet *sheet ) {
 
     if( s == NULL ) {
 
-	//s = safe_malloc( sizeof( Sheet ) );
-	//
-	// usw und sofort
+	ObjectStoreDatum *sheetlist = objectstore_item_get( item, "sheets" );
 	
 	s=create_sheet( );
 	s->name = safe_string_dup( objectstore_item_get_string( item, "name", "strango" ) );
 	
+	objectstore_set_object( item, s );
+	s->control_panel = control_panel_unpickle( objectstore_item_get_object( item, "control_panel" ) );
 	gui_register_sheet( s );
 	
-	//s = sheet;
-	objectstore_set_object( item, s );
+	s->panel_control_active = objectstore_item_get_integer(item, "panel_control_active", FALSE );
+	if( s->panel_control_active )
+	    s->panel_control = control_unpickle( objectstore_item_get_object(item, "panel_control" ) );
+	else
+	    s->panel_control = NULL;
+
 	s->components = objectstore_extract_list_of_items(objectstore_item_get(item, "components"),
 							 item->db, (objectstore_unpickler_t) comp_unpickle);
+	if( sheetlist ) {
+	    objectstore_extract_list_of_items(sheetlist, item->db, 
+		    (objectstore_unpickler_t) sheet_unpickle);
+	}
     }
     return s;
 }
@@ -659,6 +748,13 @@ PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
 
 	item = objectstore_new_item( db, "Sheet", (gpointer) sheet );
 	objectstore_item_set_string( item, "name", sheet->name );
+
+	if( sheet->control_panel )
+	    objectstore_item_set_object( item, "control_panel", control_panel_pickle( sheet->control_panel, db ) );
+	objectstore_item_set_integer(item, "panel_control_active", sheet->panel_control_active );
+	if( sheet->panel_control_active )
+	    objectstore_item_set_object(item, "panel_control", control_pickle( sheet->panel_control, db ) );
+
 	objectstore_item_set( item, "components",
 		objectstore_create_list_of_items( sheet->components, db,
 		    (objectstore_pickler_t) comp_pickle ));
@@ -679,25 +775,28 @@ PUBLIC Sheet *sheet_loadfrom(Sheet *sheet, FILE *f) {
 //  sheet_clear(sheet);	/* empties GList *sheet->components. */
 
   root = objectstore_get_root(db);
-  sheet = sheet_unpickle( root, NULL );
-  //sheet->components = objectstore_extract_list_of_items(objectstore_item_get(root, "components"),
-  //						 db, (objectstore_unpickler_t) comp_unpickle);
+  sheet = sheet_unpickle( root );
 
   objectstore_kill_objectstore(db);
   reset_control_panel();
   return sheet;
 }
 
-PUBLIC void sheet_saveto(Sheet *sheet, FILE *f) {
-  ObjectStore *db = objectstore_new_objectstore();
+PUBLIC void sheet_saveto(Sheet *sheet, FILE *f, gboolean sheet_only ) {
+  ObjectStore *db;
+  ObjectStoreItem *root;
+
+  
+  db = objectstore_new_objectstore();
+  root = sheet_pickle( sheet, db );
   //ObjectStoreItem *root = objectstore_new_item(db, "Sheet", (gpointer) sheet);
 
-  ObjectStoreItem *root = sheet_pickle( sheet, db );
   objectstore_set_root(db, root);
 
-  //  objectstore_item_set(root, "components",
-  //		       objectstore_create_list_of_items(sheet->components, db,
-  //							(objectstore_pickler_t) comp_pickle));
+  if( !sheet_only )
+      objectstore_item_set(root, "sheets", objectstore_create_list_of_items(get_sheet_list(),
+		  db, (objectstore_pickler_t) sheet_pickle));
+
   objectstore_write(f, db);
   objectstore_kill_objectstore(db);
 }

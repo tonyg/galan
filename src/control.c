@@ -32,12 +32,40 @@
 #include "gtkknob.h"
 #include "gtkslider.h"
 #include "msgbox.h"
+#include "sheet.h"
 
 #define GAUGE_SIZE 32
 #define GRANULARITY 8
 
 PRIVATE GtkWidget *control_panel = NULL;
-PRIVATE GtkWidget *fixed_widget = NULL;
+PRIVATE ControlPanel *global_panel = NULL;
+PRIVATE GtkWidget *control_notebook = NULL;
+//PRIVATE GtkWidget *fixed_widget = NULL;
+PRIVATE GList *control_panels = NULL;
+
+PUBLIC void control_panel_register_panel( ControlPanel *panel, char *name, gboolean add_fixed) {
+
+    panel->scrollwin = gtk_scrolled_window_new( NULL, NULL );
+    if( add_fixed )
+	gtk_scrolled_window_add_with_viewport( GTK_SCROLLED_WINDOW( panel->scrollwin ), panel->fixedwidget );
+
+    gtk_widget_show(panel->scrollwin);
+
+    gtk_notebook_append_page( GTK_NOTEBOOK( control_notebook ), panel->scrollwin, gtk_label_new( name ) );
+    control_panels = g_list_append( control_panels, panel );
+    panel->visible = TRUE;
+}
+
+PUBLIC void control_panel_unregister_panel( ControlPanel *panel ) {
+
+    int pagenum;
+
+    control_panels = g_list_remove( control_panels, panel );
+    pagenum = gtk_notebook_page_num( GTK_NOTEBOOK( control_notebook ), panel->scrollwin );
+    gtk_notebook_remove_page( GTK_NOTEBOOK( control_notebook ), pagenum );
+    panel->scrollwin = NULL;
+    panel->visible = FALSE;
+}
 
 PRIVATE void control_moveto(Control *c, int x, int y) {
   x = floor((x + (GRANULARITY>>1)) / ((gdouble) GRANULARITY)) * GRANULARITY;
@@ -46,7 +74,8 @@ PRIVATE void control_moveto(Control *c, int x, int y) {
   if (x != c->x || y != c->y) {
     x = MAX(x, 0);
     y = MAX(y, 0);
-    gtk_fixed_move(GTK_FIXED(fixed_widget), c->whole, x, y);
+    gtk_fixed_move(GTK_FIXED(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget),
+		c->whole, x, y);
     c->x = x;
     c->y = y;
   }
@@ -217,7 +246,7 @@ PRIVATE gboolean eventbox_handler(GtkWidget *eventbox, GdkEvent *event, Control 
   }
 }
 
-PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
+PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, ControlPanel *panel) {
   Control *c = safe_malloc(sizeof(Control));
   GtkAdjustment *adj = NULL;
 
@@ -229,6 +258,11 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
   c->page = desc->page;
 
   c->folded = FALSE;
+
+  if( panel == NULL && global_panel == NULL )
+      global_panel = control_panel_new( "Global", TRUE, NULL );
+
+  c->panel = panel;
 
   c->moving = c->saved_x = c->saved_y = 0;
   c->x = 0;
@@ -262,6 +296,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
       break;
 
     case CONTROL_KIND_USERDEF:
+    case CONTROL_KIND_PANEL:
       c->widget = NULL;
       break;
 
@@ -293,7 +328,12 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
     GtkWidget *eventbox;
     GtkWidget *vbox;
 
-    c->title_frame = gtk_frame_new(g->name);
+    if( desc->kind == CONTROL_KIND_PANEL )
+	c->this_panel = desc->refresh_data;
+    else
+	c->this_panel = NULL;
+
+    c->title_frame = gtk_frame_new(g == NULL ? c->this_panel->name : g->name);
     gtk_widget_show(c->title_frame);
 
     vbox = gtk_vbox_new(FALSE, 0);
@@ -301,7 +341,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
     gtk_widget_show(vbox);
 
     eventbox = gtk_event_box_new();
-    gtk_box_pack_start(GTK_BOX(vbox), eventbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), eventbox, FALSE, FALSE, 0);
     gtk_widget_show(eventbox);
     gtk_signal_connect(GTK_OBJECT(eventbox), "event", GTK_SIGNAL_FUNC(eventbox_handler), c);
 
@@ -309,7 +349,11 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
     gtk_container_add(GTK_CONTAINER(eventbox), c->title_label);
     gtk_widget_show(c->title_label);
 
-    gtk_box_pack_start(GTK_BOX(vbox), c->widget, TRUE, TRUE, 0);
+    if( desc->kind == CONTROL_KIND_PANEL )
+	gtk_widget_reparent( c->widget, vbox );
+    else
+	gtk_box_pack_start(GTK_BOX(vbox), c->widget, FALSE, FALSE, 0);
+
     gtk_widget_show(c->widget);
 
     if (adj != NULL && c->desc->allow_direct_edit) {
@@ -325,17 +369,22 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
     }
 
     c->whole = c->title_frame;
-    gtk_fixed_put(GTK_FIXED(fixed_widget), c->whole, c->x, c->y);
+    gtk_fixed_put(GTK_FIXED(panel == NULL ? global_panel->fixedwidget : panel->fixedwidget),
+	    c->whole, c->x, c->y);
 
     if (!GTK_WIDGET_REALIZED(eventbox))
       gtk_widget_realize(eventbox);
+    if (!GTK_WIDGET_REALIZED(c->widget))
+      gtk_widget_realize(c->widget);
 
     gdk_window_set_events(eventbox->window, 
 	    GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK  );
   }
 
-  gen_register_control(c->g, c);
-  gen_update_controls( c->g, -1 );
+  if( c->desc->kind != CONTROL_KIND_PANEL ) {
+      gen_register_control(c->g, c);
+      gen_update_controls( c->g, -1 );
+  }
 
 
   return c;
@@ -344,8 +393,10 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
 PUBLIC void control_kill_control(Control *c) {
   g_return_if_fail(c != NULL);
 
+  if( c->desc->destroy != NULL )
+      c->desc->destroy( c );
   gtk_widget_hide(c->whole);
-  gtk_container_remove(GTK_CONTAINER(fixed_widget), c->whole);
+  gtk_container_remove(GTK_CONTAINER(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget), c->whole);
 
   if (c->name != NULL)
     free(c->name);
@@ -367,13 +418,52 @@ PRIVATE int find_control_index(Control *c) {
   return -1;
 }
 
+PRIVATE GtkWidget *panel_fixed = NULL;
+
+PRIVATE void init_panel( Control *control ) {
+    control->widget = panel_fixed;
+}
+
+PRIVATE void done_panel( Control *control ) {
+
+    GtkWidget *viewport; 
+
+
+    control->this_panel->sheet->panel_control_active = FALSE;
+    control->this_panel->sheet->panel_control = NULL;
+
+    control_panel_register_panel( control->this_panel, control->this_panel->name, FALSE );
+    viewport = gtk_viewport_new (gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW(control->this_panel->scrollwin)),
+	    gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW(control->this_panel->scrollwin)));
+    gtk_container_add (GTK_CONTAINER (control->this_panel->scrollwin), viewport);
+    gtk_widget_reparent( control->this_panel->fixedwidget, viewport );
+    gtk_widget_show( viewport );
+}
+
+PRIVATE  ControlDescriptor desc = 
+  { CONTROL_KIND_PANEL, "panel", 0,0,0,0, 0,FALSE, TRUE,0, init_panel, done_panel, NULL, NULL };
+
+
 PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   Generator *g = gen_unpickle(objectstore_item_get_object(item, "generator"));
   int control_index = objectstore_item_get_integer(item, "desc_index", 0);
-  Control *c = control_new_control(&g->klass->controls[control_index], g);
+  ObjectStoreItem *ccp = objectstore_item_get_object( item, "panel" );
+  ControlPanel *cp = ((ccp == NULL) ? NULL : control_panel_unpickle( ccp ));
+  ControlPanel *tp = control_panel_unpickle( objectstore_item_get_object( item, "this_panel" ));
+  Control *c; 
   char *name;
   int x, y;
 
+  if( g == NULL ) {
+      desc.refresh_data = tp;
+      panel_fixed = tp->fixedwidget;
+      c = control_new_control( &desc, NULL, cp );
+      control_panel_unregister_panel( tp );
+  } else {
+      c = control_new_control(&g->klass->controls[control_index], g, cp);
+  }
+
+  
   name = objectstore_item_get_string(item, "name", NULL);
   c->name = name ? safe_string_dup(name) : NULL;
   if (name)
@@ -384,7 +474,7 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   c->step = objectstore_item_get_double(item, "step", 1);
   c->page = objectstore_item_get_double(item, "page", 1);
 
-  if( c->folded = objectstore_item_get_double(item, "folded", 0) )
+  if( (c->folded = objectstore_item_get_integer(item, "folded", 0)) )
       gtk_widget_hide( c->widget );
 
   x = objectstore_item_get_integer(item, "x_coord", 0);
@@ -397,8 +487,16 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
 
 PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
   ObjectStoreItem *item = objectstore_new_item(db, "Control", c);
-  objectstore_item_set_object(item, "generator", gen_pickle(c->g, db));
-  objectstore_item_set_integer(item, "desc_index", find_control_index(c));
+  if( c->g != NULL ) {
+      objectstore_item_set_object(item, "generator", gen_pickle(c->g, db));
+      objectstore_item_set_integer(item, "desc_index", find_control_index(c));
+  }
+
+  if( c->this_panel )
+      objectstore_item_set_object(item, "this_panel", control_panel_pickle(c->this_panel, db));
+
+  if( c->panel )
+      objectstore_item_set_object(item, "panel", control_panel_pickle(c->panel, db));
   if (c->name)
     objectstore_item_set_string(item, "name", c->name);
   objectstore_item_set_double(item, "min", c->min);
@@ -430,7 +528,11 @@ PUBLIC void control_emit(Control *c, gdouble number) {
 PUBLIC void control_update_names(Control *c) {
   g_return_if_fail(c != NULL);
 
-  gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
+  if( c->g != NULL )
+      gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
+  else
+      gtk_frame_set_label(GTK_FRAME(c->title_frame), c->this_panel->name );
+
   gtk_label_set_text(GTK_LABEL(c->title_label), c->name ? c->name : c->desc->name);
 }
 
@@ -464,8 +566,66 @@ PRIVATE gboolean control_panel_delete_handler(GtkWidget *cp, GdkEvent *event) {
   return TRUE;
 }
 
+PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *sheet ) {
+
+  ControlPanel *panel = safe_malloc( sizeof( ControlPanel ) );
+  panel->scrollwin = NULL; //gtk_scrolled_window_new(NULL, NULL);
+  panel->name = safe_string_dup(name);
+
+  panel->fixedwidget = gtk_fixed_new();
+  //gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(panel->scrollwin), panel->fixedwidget);
+
+
+  if( visible )
+      control_panel_register_panel( panel, name, TRUE );
+  else
+      panel->visible = FALSE;
+
+  panel->sheet = sheet;
+
+  //gtk_widget_show(panel->scrollwin);
+  gtk_widget_show(panel->fixedwidget);
+  if (!GTK_WIDGET_REALIZED(panel->fixedwidget))
+    gtk_widget_realize(panel->fixedwidget);
+  return panel;
+}
+
+PUBLIC ControlPanel *control_panel_unpickle(ObjectStoreItem *item) {
+
+    ControlPanel *cp;
+    if( item == NULL )
+	return NULL;
+
+    cp = objectstore_get_object( item );
+    if( cp == NULL ) {
+	char *name = objectstore_item_get_string(item, "name", "Panel" );
+	ObjectStoreItem *sitem = objectstore_item_get_object( item, "sheet" );
+	//gboolean visible = objectstore_item_get_integer( item, "visible", TRUE );
+	cp = control_panel_new( name, TRUE, NULL );
+	objectstore_set_object(item, cp);
+	cp->sheet = ( sitem == NULL ? NULL : sheet_unpickle( sitem ) );
+    }
+
+    return cp;
+}
+
+PUBLIC ObjectStoreItem *control_panel_pickle(ControlPanel *cp, ObjectStore *db) {
+  ObjectStoreItem *item = objectstore_get_item(db, cp);
+
+  if (item == NULL) {
+    item = objectstore_new_item(db, "ControlPanel", cp);
+    if (cp->name)
+	objectstore_item_set_string(item, "name", cp->name);
+    if( cp->sheet )
+	objectstore_item_set_object( item, "sheet", sheet_pickle( cp->sheet, db ) );
+
+    objectstore_item_set_integer( item, "visible", cp->visible );
+  }
+
+  return item;
+}
+
 PUBLIC void init_control(void) {
-  GtkWidget *scrollwin = gtk_scrolled_window_new(NULL, NULL);
 
   control_panel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(control_panel), "gAlan Control Panel");
@@ -476,17 +636,10 @@ PUBLIC void init_control(void) {
   gtk_signal_connect(GTK_OBJECT(control_panel), "delete_event",
 		     GTK_SIGNAL_FUNC(control_panel_delete_handler), NULL);
 
-  gtk_container_add(GTK_CONTAINER(control_panel), scrollwin);
-  gtk_widget_show(scrollwin);
 
-  fixed_widget = gtk_fixed_new();
-  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrollwin), fixed_widget);
-  gtk_widget_show(fixed_widget);
-
-  if (!GTK_WIDGET_REALIZED(fixed_widget))
-    gtk_widget_realize(fixed_widget);
-
-  gdk_window_set_events(fixed_widget->window, GDK_ALL_EVENTS_MASK);
+  control_notebook = gtk_notebook_new();
+  gtk_widget_show( control_notebook );
+  gtk_container_add(GTK_CONTAINER(control_panel), control_notebook);
 }
 
 PUBLIC void show_control_panel(void) {

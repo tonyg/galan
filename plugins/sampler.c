@@ -266,6 +266,7 @@ PRIVATE void init_scope( Control *control ) {
 
 	vb=gtk_vbox_new( 0,FALSE );
 	hb=gtk_hbox_new( 0,FALSE );
+	g_assert( vb != NULL );
 
 	zoom_in = gtk_button_new_with_label( "+" );
 	gtk_signal_connect( GTK_OBJECT( zoom_in ), "clicked", GTK_SIGNAL_FUNC( zoom_in_handler ), control );
@@ -290,7 +291,6 @@ PRIVATE void init_scope( Control *control ) {
 	
 	gtk_widget_show_all( vb );
 	
-	g_assert( sc != NULL );
 	control->widget = vb;
 	control->data = sc;
 }

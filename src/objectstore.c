@@ -387,7 +387,10 @@ PUBLIC ObjectStoreItem *objectstore_new_item(ObjectStore *db, char *tag, gpointe
 }
 
 PUBLIC gpointer objectstore_get_object(ObjectStoreItem *item) {
-  return item->object;
+    if( item )
+	return item->object;
+    else
+	return NULL;
 }
 
 PUBLIC void objectstore_set_object(ObjectStoreItem *item, gpointer object) {
@@ -451,7 +454,11 @@ PUBLIC gint32 objectstore_item_get_binary(ObjectStoreItem *item, char *name, voi
 }
 
 PUBLIC ObjectStoreDatum *objectstore_item_get(ObjectStoreItem *item, char *name) {
-  ObjectStoreItemField *field = g_hash_table_lookup(item->fields, name);
+  ObjectStoreItemField *field;
+  if( item == NULL )
+      return NULL;
+
+  field = g_hash_table_lookup(item->fields, name);
 
   return field ? field->value : NULL;
 }

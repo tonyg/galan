@@ -85,7 +85,7 @@ PRIVATE void resize_connectors(Component *c, int count,
   }
 }
 
-PRIVATE void shcomp_resize(Component *c) {
+PUBLIC void shcomp_resize(Component *c) {
   int body_vert, body_horiz;
   ShCompData *data = c->data;
 
@@ -172,9 +172,12 @@ PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
   InterSheetLinks *isl = find_intersheet_links( id->sheet );
 
   d->sheet = id->sheet;
+
+  sheet_register_ref( id->sheet, c );
   
   d->isl = *isl;
 
+  //d->panel_control_active = FALSE;
 
   build_connectors(c, d->isl.anzinputevents, 0, 0);
   build_connectors(c, d->isl.anzinputsignals, 0, 1);
@@ -195,11 +198,17 @@ PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
 PRIVATE void shcomp_destroy(Component *c) {
   ShCompData *d = c->data;
 
+  sheet_unregister_ref( d->sheet, c );
+
+  if( !sheet_has_refs( d->sheet ) && d->sheet->panel_control_active )
+      control_kill_control( d->sheet->panel_control );
+
   //free(d->name);
   //g_list_free( d->isl.inputevents );
   //g_list_free( d->isl.outputevents );
   //g_list_free( d->isl.inputsignals);
   //g_list_free( d->isl.outputsignals );
+
 
   free(d);
 }
@@ -207,7 +216,9 @@ PRIVATE void shcomp_destroy(Component *c) {
 PRIVATE void shcomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *db) {
   ShCompData *d = safe_malloc(sizeof(ShCompData));
   
-  d->sheet = sheet_unpickle( objectstore_item_get_object( item, "othersheet" ), NULL );
+  d->sheet = sheet_unpickle( objectstore_item_get_object( item, "othersheet" ) );
+
+  sheet_register_ref( d->sheet, c );
   //ShCompInitData *id;
 
   //d->name = safe_string_dup( objectstore_item_get_string(item, "name", "was geht denn hier ???" ) );
@@ -250,6 +261,7 @@ PRIVATE void shcomp_pickle(Component *c, ObjectStoreItem *item, ObjectStore *db)
 	      (objectstore_pickler_t) comp_pickle) );
   objectstore_item_set(item, "isl_outputsignals", objectstore_create_list_of_items( d->isl.outputsignals, db, 
 	      (objectstore_pickler_t) comp_pickle) );
+
   //objectstore_item_set_integer(item, "reftype", d->reftype);
 }
 
@@ -460,38 +472,48 @@ PRIVATE char *shcomp_get_connector_name(Component *c, ConnectorReference *ref) {
   return cc->klass->get_title( cc );
 }
 
-PRIVATE GtkWidget *rename_text_widget = NULL;
 
-PRIVATE void rename_handler(MsgBoxResponse action_taken, Component *c) {
-  if (action_taken == MSGBOX_OK) {
-    ShCompData *d = c->data;
-    free(d->sheet->name);
-    d->sheet->name = safe_string_dup(gtk_entry_get_text(GTK_ENTRY(rename_text_widget)));
-    update_sheet_name( d->sheet );
-
-    sheet_queue_redraw_component(c->sheet, c);	/* to 'erase' the old size */
-    shcomp_resize(c);
-    sheet_queue_redraw_component(c->sheet, c);	/* to 'fill in' the new size */
-  }
-}
 
 PRIVATE void do_rename(Component *c, guint action, GtkWidget *widget) {
   ShCompData *d = c->data;
-  GtkWidget *hb = gtk_hbox_new(FALSE, 5);
-  GtkWidget *label = gtk_label_new("Rename Sheet:");
-  GtkWidget *text = gtk_entry_new();
+  sheet_rename( d->sheet );
+}
 
-  gtk_box_pack_start(GTK_BOX(hb), label, TRUE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(hb), text, TRUE, FALSE, 0);
+PRIVATE GtkWidget *panel_fixed = NULL;
 
-  gtk_widget_show(label);
-  gtk_widget_show(text);
+PRIVATE void init_panel( Control *control ) {
+    control->widget = panel_fixed;
+}
+PRIVATE void done_panel( Control *control ) {
 
- gtk_entry_set_text(GTK_ENTRY(text), d->sheet->name);
+    GtkWidget *viewport;
 
-  rename_text_widget = text;
-  popup_dialog("Rename", MSGBOX_OK | MSGBOX_CANCEL, 0, MSGBOX_OK, hb,
-	       (MsgBoxResponseHandler) rename_handler, c);
+    control->this_panel->sheet->panel_control_active = FALSE;
+    control->this_panel->sheet->panel_control = NULL;
+
+    control_panel_register_panel( control->this_panel, control->this_panel->name, FALSE );
+
+    viewport = gtk_viewport_new (gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW(control->this_panel->scrollwin)),
+	    gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW(control->this_panel->scrollwin)));
+
+
+    gtk_container_add (GTK_CONTAINER (control->this_panel->scrollwin), viewport);
+    gtk_widget_reparent( control->this_panel->fixedwidget, viewport );
+    gtk_widget_show( viewport );
+}
+
+PRIVATE  ControlDescriptor desc = 
+  { CONTROL_KIND_PANEL, "panel", 0,0,0,0, 0,FALSE, TRUE,0, init_panel, done_panel, NULL, NULL };
+
+PRIVATE void do_control(Component *c, guint action, GtkWidget *widget) {
+  ShCompData *d = c->data;
+
+  //gtk_object_ref( GTK_OBJECT(d->sheet->control_panel->fixedwidget) );
+  desc.refresh_data = d->sheet->control_panel;
+  panel_fixed = d->sheet->control_panel->fixedwidget;
+  d->sheet->panel_control = control_new_control( &desc, NULL, c->sheet->control_panel );
+  d->sheet->panel_control_active = TRUE;
+  control_panel_unregister_panel( d->sheet->control_panel );
 }
 
 //PRIVATE void do_props(Component *c, guint action, GtkWidget *widget) {
@@ -506,7 +528,7 @@ PRIVATE void do_delete(Component *c, guint action, GtkWidget *widget) {
 
 PRIVATE GtkItemFactoryEntry popup_items[] = {
   { "/_Rename...",	NULL,	do_rename, 0,		NULL },
-//  { "/New _Control",	NULL,	NULL, 0,		"<Branch>" },
+  { "/Add _Control",	NULL,	do_control, 0,		NULL },
 //  { "/_Properties...",	NULL,	do_props, 0,		NULL },
   { "/sep1",		NULL,	NULL, 0,		"<Separator>" },
   { "/_Delete",		NULL,	do_delete, 0,		NULL },
@@ -525,7 +547,7 @@ PRIVATE void kill_popup(GtkWidget *popup, GtkItemFactory *ifact) {
 #define NEW_CONTROL_PREFIX "/New Control/"
 
 PRIVATE GtkWidget *shcomp_build_popup(Component *c) {
-  //ShCompData *d = c->data;
+  ShCompData *d = c->data;
   GtkItemFactory *ifact;
   int nitems = sizeof(popup_items) / sizeof(popup_items[0]);
   GtkWidget *result;
@@ -546,6 +568,10 @@ PRIVATE GtkWidget *shcomp_build_popup(Component *c) {
 //  }
 
   result = gtk_item_factory_get_widget(ifact, "<shcomp-popup>");
+
+  if( d->sheet->panel_control_active )
+      gtk_widget_set_state(gtk_item_factory_get_item(ifact, "<shcomp-popup>/Add Control"),
+	      GTK_STATE_INSENSITIVE);
 
 #ifndef NATIVE_WIN32
   /* %%% Why does gtk_item_factory_get_item() not exist in the gtk-1.3 libraries?

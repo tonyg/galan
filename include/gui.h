@@ -21,6 +21,7 @@
 
 struct sheet;
 extern void gui_register_sheet( struct sheet *sheet );
+extern void gui_unregister_sheet( struct sheet *sheet );
 extern GList *get_sheet_list( void );
 extern void update_sheet_name( struct sheet *sheet );
 

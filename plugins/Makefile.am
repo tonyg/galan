@@ -34,6 +34,7 @@ ogg_ra_so_LDFLAGS=-lvorbis -lvorbisfile
 emu10k1_so_LDFLAGS= emu10k1-lib/libdsp.o
 
 emu10k1_so_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
+ladspa_so_SOURCES = ladspa.c ladspa-load.c
 
 %.so.c: %.c
 	ln -s $< $@

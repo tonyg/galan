@@ -27,7 +27,9 @@
 G_MODULE_IMPORT int galan_main(int argc, char *argv[]);
 
 PUBLIC int main(int argc, char *argv[]) {
-  printf("gAlan version " VERSION ", Copyright (C) 1999 Tony Garnock-Jones\n"
+  printf("gAlan version " VERSION "\n"
+	 "Copyright (C) 1999 Tony Garnock-Jones\n"
+         "Copyright (C) 2002 Torben Hohn\n"
 	 "gAlan comes with ABSOLUTELY NO WARRANTY; for details, see the file\n"
 	 "\"COPYING\" that came with the gAlan distribution.\n"
 	 "This is free software, distributed under the GNU General Public\n"

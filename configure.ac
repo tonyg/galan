@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(galan, 0.3.0-test3, torbenh@users.sourceforge.net)
+AC_INIT(galan, 0.3.0-alpha1, torbenh@users.sourceforge.net)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE
 
@@ -35,7 +35,17 @@ AC_CHECK_HEADER(esd.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.la")
 AC_CHECK_HEADER(vorbis/vorbisfile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.la")
 AC_CHECK_HEADERS(audiofile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.la voice.la")
 AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} oss_output.la oss_input.la")
+AC_CHECK_HEADERS(drfftw.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+		           FFTW_WITH_PREFIX="yes" )
+AC_CHECK_HEADERS(rfftw.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+		           FFTW_WITH_PREFIX="no" )
 
+if test "x$FFTW_WITH_PREFIX" = "xyes"; then
+	AC_DEFINE( FFTW_PREFIX, 1, "include drfftw.h" )
+else
+	AC_DEFINE( FFTW_PREFIX, 0, "include rfftw.h" )
+fi
+	
 dnl Feature tests
 dnl ===========================================================================
 

@@ -71,8 +71,23 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 }
 
 PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
-  event->d.number *= ((Data *) g->data)->factor;
-  gen_send_events(g, EVT_OUTPUT, -1, event);
+    int i;
+
+    switch( event->kind ) {
+	case AE_NUMBER:
+	    event->d.number *= ((Data *) g->data)->factor;
+	    gen_send_events(g, EVT_OUTPUT, -1, event);
+	    break;
+	case AE_NUMARRAY:
+	    for( i=0; i<event->d.array.len; i++ )
+		event->d.array.numbers[i] *= ((Data *) g->data)->factor;
+	    
+	    gen_send_events(g, EVT_OUTPUT, -1, event);
+	    break;
+	default:
+	    g_warning( "evtmul does not know this eventkind\n" );
+	    break;
+    }
 }
 
 PRIVATE void evt_factor_handler(Generator *g, AEvent *event) {

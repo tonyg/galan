@@ -66,6 +66,7 @@ struct Control {
   ControlDescriptor *desc;
   char *name;				/* overriding name. Set to NULL to use default. */
   gdouble min, max, step, page;		/* overrides desc's values */
+  gboolean folded;
 
   int moving, saved_x, saved_y;		/* variables to implement drag-moving of controls */
   int x, y;				/* position within control window */

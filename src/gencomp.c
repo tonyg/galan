@@ -568,11 +568,6 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
   ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<gencomp-popup>", NULL);
   gtk_item_factory_create_items(ifact, nitems, popup_items, c);
 
-  if(d->g->klass->numcontrols > 3) {
-      GtkItemFactoryEntry ent = { NEW_CONTROL_PREFIX "ALL", NULL, all_controls_callback, 0, NULL };
-      gtk_item_factory_create_item(ifact, &ent, c, 1);
-  }
-
   for (i = 0; i < d->g->klass->numcontrols; i++) {
     GtkItemFactoryEntry ent = { NULL, NULL, new_control_callback, i, NULL };
     char *name = malloc(strlen(NEW_CONTROL_PREFIX) + strlen(d->g->klass->controls[i].name) + 1);
@@ -583,6 +578,11 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
 
     gtk_item_factory_create_item(ifact, &ent, c, 1);
     free(name);
+  }
+
+  if(d->g->klass->numcontrols > 3) {
+      GtkItemFactoryEntry ent = { NEW_CONTROL_PREFIX "ALL", NULL, all_controls_callback, 0, NULL };
+      gtk_item_factory_create_item(ifact, &ent, c, 1);
   }
 
 

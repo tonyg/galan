@@ -56,6 +56,8 @@ Infrastructure-related:
 
 * variable output sample-rate/bit-depth/number-of-channels etc. to cope
   with slower machines
+  ( this has to be done for jack support, too ).
+  
 
 * make sure you can drive the program entirely from the keyboard!
 	* shortcuts for 'important' things?
@@ -87,7 +89,14 @@ Infrastructure-related:
   ( this could be complicated when loading/saving )
 
 * fix up down buttons in patloop.c
+
+* the sheet (widget) should support layers so that documentation components can be turned on and off
+  And names of connectors can be on the sheet too. It is still not very convenient with the statusbar :(
   
+* a component needs to describe its capabilities so that i can find a common denominator for the context
+  menu of selected components. I could hard code deletion. But this is not really what i want.
+  the properties of a component should also be copyable. So that i can set the properties for 10 controls
+  at once. This would be really useful !!! For now it is a pain.
 
 Documentation
 ----------------------------------------

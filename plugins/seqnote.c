@@ -274,7 +274,7 @@ PRIVATE void do_paste(Control *c, guint action, GtkWidget *widget) {
 	  break;
   }
 
-  for( offset=i; i<SEQUENCE_LENGTH; i++ ) {
+  for( offset=i; i<end; i++ ) {
       data->pattern[data->edit][i] = clipseq[i-offset];
       data->note[data->edit][i] = clipnote[i-offset];
   }

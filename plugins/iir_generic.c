@@ -37,7 +37,8 @@
 #define SIG_OUTPUT		0
 
 #define EVT_COEFFS		0
-#define NUM_EVENT_INPUTS	1
+#define EVT_RESET		1
+#define NUM_EVENT_INPUTS	2
 
 #define NUM_EVENT_OUTPUTS	0
 
@@ -181,6 +182,13 @@ PRIVATE void evt_coeffs_handler(Generator *g, AEvent *event) {
       data->zcoeffs[i] = event->d.array.numbers[i+data->len];
 }
 
+PRIVATE void evt_reset_handler(Generator *g, AEvent *event) {
+  Data *data = g->data;
+  int i;
+
+  for( i=0; i<data->len-1; i++ )
+      data->state[i] = 0;
+}
 PRIVATE InputSignalDescriptor input_sigs[] = {
   { "Input", SIG_FLAG_REALTIME },
   { NULL, }
@@ -205,6 +213,7 @@ PRIVATE void setup_class(void) {
 					     unpickle_instance, pickle_instance);
 
   gen_configure_event_input(k, EVT_COEFFS, "Coefficients", evt_coeffs_handler);
+  gen_configure_event_input(k, EVT_RESET, "Reset", evt_reset_handler);
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
 }

@@ -1,0 +1,21 @@
+# Handcrafted makefile for gAlan under win32.
+#
+# Note that this makefile relies on variables sent to it by the toplevel makefile.
+
+objects = buffer.o clock.o comp.o control.o event.o galan.o gencomp.o generator.o \
+	gui.o msgbox.o objectstore.o plugin.o prefs.o sheet.o \
+	gtkknob.o gtkslider.o
+
+all: galan.exe
+
+galan.exe: main.o galan.dll
+	gcc -g -o galan.exe main.o galan.lib
+
+galan.dll: $(objects) dllinit.o
+	dllwrap -g --export-all --output-def galan.def --output-lib galan.lib -o $@ $(objects) $(LIBS) dllinit.o
+
+%.o: %.c
+	gcc $(CFLAGS) $(EXTRA_DEFS) -c $<
+
+clean:
+	deltree /y $(objects) main.o galan.dll galan.def galan.lib

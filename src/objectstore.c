@@ -537,6 +537,13 @@ PUBLIC gdouble objectstore_datum_double_value(ObjectStoreDatum *datum) {
   return (datum->kind == OSI_KIND_DOUBLE) ? datum->d.number : datum->d.integer;
 }
 
+// XXX: Do i need strdup ??? (objectstore_item_get_string does not)
+
+PUBLIC char *objectstore_datum_string_value(ObjectStoreDatum *datum) {
+  RETURN_VAL_UNLESS(datum->kind == OSI_KIND_STRING, NULL);
+  return safe_string_dup( datum->d.string );
+}
+
 PUBLIC ObjectStoreKey objectstore_datum_object_key(ObjectStoreDatum *obj) {
   RETURN_VAL_UNLESS(obj->kind == OSI_KIND_OBJECT, 0);
   return obj->d.object_key;
@@ -575,7 +582,7 @@ PUBLIC GList *objectstore_extract_list_of_items(ObjectStoreDatum *array, ObjectS
   for (i = 0; i < len; i++) {
     ObjectStoreDatum *elt = objectstore_datum_array_get(array, i);
     ObjectStoreItem *item = objectstore_get_item_by_key(db, objectstore_datum_object_key(elt));
-    result = g_list_prepend(result, unpickler(item));
+    result = g_list_append(result, unpickler(item));
   }
 
   return result;

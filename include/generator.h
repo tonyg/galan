@@ -66,6 +66,7 @@ typedef enum AEventKind {
   AE_NONE = 0,		/* 'null event' kind */
   AE_NUMBER,		/* a numeric message */
   AE_REALTIME,		/* a realtime-has-elapsed message */
+  AE_STRING,		/* a string message  */
 
   AE_LAST_EVENT_KIND	/* end-of-enum marker */
 } AEventKind;
@@ -89,6 +90,7 @@ struct AEvent {		/* audio event */
   union {
     gdouble number;		/* AE_NUMBER */
     gint32 integer;		/* AE_REALTIME and AE_MASTER_PLAY */
+    gchar *string;		/* AE_STRING */
   } d;
 };
 
@@ -103,12 +105,12 @@ struct AClock {
 #define SIG_FLAG_RANDOMACCESS	0x00000002
 
 struct InputSignalDescriptor {
-  char *name;
+  const char *name;
   guint flags;
 };
 
 struct OutputSignalDescriptor {
-  char *name;
+  const char *name;
   guint32 flags;
   struct {
     AGenerator_t realtime;
@@ -187,7 +189,7 @@ extern void gen_init_aevent(AEvent *e, AEventKind kind,
 
 /*=======================================================================*/
 /* Managing GeneratorClasses */
-extern GeneratorClass *gen_new_generatorclass(char *name, gboolean prefer,
+extern GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 					      gint count_event_in, gint count_event_out,
 					      InputSignalDescriptor *input_sigs,
 					      OutputSignalDescriptor *output_sigs,
@@ -198,8 +200,8 @@ extern GeneratorClass *gen_new_generatorclass(char *name, gboolean prefer,
 					      AGenerator_pickle_t pickle_instance);
 extern void gen_kill_generatorclass(GeneratorClass *g);
 extern void gen_configure_event_input(GeneratorClass *g, gint index,
-				      char *name, AEvent_handler_t handler);
-extern void gen_configure_event_output(GeneratorClass *g, gint index, char *name);
+				      const char *name, AEvent_handler_t handler);
+extern void gen_configure_event_output(GeneratorClass *g, gint index, const char *name);
 
 /*=======================================================================*/
 /* Managing Generators */
@@ -250,6 +252,7 @@ extern void gen_post_aevent(AEvent *e);		/* queue an event */
 						/* does not keep the reference to e */
 
 extern void gen_purge_event_queue_refs(Generator *g);
+extern void gen_purge_inputevent_queue_refs(Generator *g);
 
 extern void gen_register_realtime_fn(Generator *g, AEvent_handler_t func);
 extern void gen_deregister_realtime_fn(Generator *g, AEvent_handler_t func);

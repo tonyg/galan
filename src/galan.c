@@ -29,10 +29,13 @@
 #include "gui.h"
 #include "comp.h"
 #include "gencomp.h"
+#include "iscomp.h"
+#include "sheet.h"
+#include "shcomp.h"
 #include "control.h"
 #include "prefs.h"
 
-PUBLIC char *safe_string_dup(char *str) {
+PUBLIC char *safe_string_dup(const char *str) {
   char *n;
 
   if (str == NULL)
@@ -65,24 +68,29 @@ PUBLIC void *safe_calloc(int nelems, size_t size) {
 PUBLIC int galan_main(int argc, char *argv[]) {
   gtk_set_locale();
   gtk_init(&argc, &argv);
+  gdk_rgb_init();
 
   init_generator();
   init_clock();
-  init_prefs();
   init_gui();
   init_control();
   init_comp();
   init_gencomp();
+  init_iscomp();
+  init_shcomp();
+  init_prefs();
   init_objectstore();
   init_plugins();
 
   gtk_main();
 
   done_objectstore();
+  done_prefs();
+  done_shcomp();
+  done_iscomp();
   done_gencomp();
   done_comp();
   done_gui();
-  done_prefs();
   done_clock();
   done_generator();
 

@@ -46,7 +46,7 @@ enum ControlKind {
 
 struct ControlDescriptor {
   ControlKind kind;			/* kind of control */
-  char *name;				/* default control name */
+  const char *name;				/* default control name */
   gdouble min, max, step, page;		/* for sliders and knobs */
   int size;				/* vertical size; optional; only for sliders - 0 =>deflt */
   gboolean allow_direct_edit;		/* put in a GtkEntry? - only for sliders, knobs */

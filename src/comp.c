@@ -41,7 +41,10 @@ PRIVATE GList *menuentries = NULL;
 PRIVATE GHashTable *componentclasses = NULL;
 
 PRIVATE void newmenu_callback(MenuEntry *p, guint callback_action, GtkWidget *widget) {
-  sheet_build_new_component(p->k, p->init_data);
+
+    GtkItemFactory *ifact = gtk_item_factory_from_widget( widget );
+    Sheet *sheet = gtk_object_get_user_data( GTK_OBJECT( ifact ) );
+    sheet_build_new_component(sheet, p->k, p->init_data);
 }
 
 PUBLIC void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer init_data) {
@@ -69,7 +72,7 @@ PRIVATE void kill_newmenu(GtkWidget *menu, GtkItemFactory *ifact) {
   gtk_object_unref(GTK_OBJECT(ifact));
 }
 
-PUBLIC GtkWidget *comp_get_newmenu(void) {
+PUBLIC GtkWidget *comp_get_newmenu(Sheet *sheet) {
   GtkItemFactory *ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<new>", NULL);
   GtkWidget *menu;
   GList *lst = menuentries;
@@ -83,6 +86,7 @@ PUBLIC GtkWidget *comp_get_newmenu(void) {
     lst = g_list_next(lst);
   }
 
+  gtk_object_set_user_data( GTK_OBJECT( ifact ), sheet );
   menu = gtk_item_factory_get_widget(ifact, "<new>");
 
   gtk_signal_connect(GTK_OBJECT(menu), "destroy", GTK_SIGNAL_FUNC(kill_newmenu), ifact);
@@ -95,10 +99,11 @@ PUBLIC void comp_register_componentclass(ComponentClass *k) {
 }
 
 PUBLIC Component *comp_new_component(ComponentClass *k, gpointer init_data,
-				     gint x, gint y) {
+				     Sheet *sheet, gint x, gint y) {
   Component *c = safe_malloc(sizeof(Component));
 
   c->klass = k;
+  c->sheet = sheet;
   c->x = x;
   c->y = y;
   c->width = c->height = 0;
@@ -120,8 +125,6 @@ PUBLIC Component *comp_new_component(ComponentClass *k, gpointer init_data,
 }
 
 PUBLIC void comp_kill_component(Component *c) {
-  if (c->klass->destroy_instance)
-    c->klass->destroy_instance(c);
 
   while (c->connectors != NULL) {
     GList *tmp = g_list_next(c->connectors);
@@ -133,10 +136,13 @@ PUBLIC void comp_kill_component(Component *c) {
     c->connectors = tmp;
   }
 
+  if (c->klass->destroy_instance)
+    c->klass->destroy_instance(c);
+
   free(c);
 }
 
-PRIVATE ConnectorReference *unpickle_connectorreference(ConnectorReference *ref,
+PUBLIC ConnectorReference *unpickle_connectorreference(ConnectorReference *ref,
 							ObjectStoreItem *item) {
   if (ref == NULL)
     ref = safe_malloc(sizeof(ConnectorReference));
@@ -149,7 +155,7 @@ PRIVATE ConnectorReference *unpickle_connectorreference(ConnectorReference *ref,
   return ref;
 }
 
-PRIVATE gpointer unpickler_for_connectorreference(ObjectStoreItem *item) {
+PUBLIC gpointer unpickler_for_connectorreference(ObjectStoreItem *item) {
   return unpickle_connectorreference(NULL, item);
 }
 
@@ -164,8 +170,10 @@ PRIVATE Connector *unpickle_connector(ObjectStoreItem *item) {
   return conn;
 }
 
+
 PUBLIC Component *comp_unpickle(ObjectStoreItem *item) {
   Component *comp = objectstore_get_object(item);
+  ObjectStoreItem *shitem;
 
   if (comp == NULL) {
     comp = safe_malloc(sizeof(Component));
@@ -185,7 +193,13 @@ PUBLIC Component *comp_unpickle(ObjectStoreItem *item) {
       }
       comp->klass = k;
     }
+    comp->data = NULL;
 
+    shitem = objectstore_item_get_object( item, "sheet" );
+    if( shitem == NULL )
+	shitem = objectstore_get_root( item->db );
+
+    comp->sheet = sheet_unpickle( shitem, NULL );
     comp->x = objectstore_item_get_integer(item, "x_coord", 0);
     comp->y = objectstore_item_get_integer(item, "y_coord", 0);
     comp->width = objectstore_item_get_integer(item, "width", 70);
@@ -194,14 +208,13 @@ PUBLIC Component *comp_unpickle(ObjectStoreItem *item) {
       objectstore_extract_list_of_items(objectstore_item_get(item, "connectors"),
 					item->db,
 					(objectstore_unpickler_t) unpickle_connector);
-    comp->data = NULL;
     comp->klass->unpickle_instance(comp, item, item->db);
   }
 
   return comp;
 }
 
-PRIVATE ObjectStoreItem *pickle_connectorreference(ConnectorReference *ref, ObjectStore *db) {
+PUBLIC ObjectStoreItem *pickle_connectorreference(ConnectorReference *ref, ObjectStore *db) {
   ObjectStoreItem *item = objectstore_new_item(db, "ConnectorReference", ref);
   objectstore_item_set_object(item, "component", comp_pickle(ref->c, db));
   objectstore_item_set_integer(item, "kind", ref->kind);
@@ -229,6 +242,7 @@ PUBLIC ObjectStoreItem *comp_pickle(Component *c, ObjectStore *db) {
   if (item == NULL) {
     item = objectstore_new_item(db, "Component", c);
     objectstore_item_set_string(item, "class_tag", c->klass->class_tag);
+    objectstore_item_set_object(item, "sheet", sheet_pickle(c->sheet, db) );
     objectstore_item_set_integer(item, "x_coord", c->x);
     objectstore_item_set_integer(item, "y_coord", c->y);
     objectstore_item_set_integer(item, "width", c->width);
@@ -398,7 +412,7 @@ PUBLIC char *comp_get_connector_name(ConnectorReference *ref) {
 
   return result;
 }
-
+/*
 PUBLIC void comp_append_popup(Component *c, GtkWidget *menu) {
   char *name;
   GtkWidget *submenu;
@@ -418,6 +432,15 @@ PUBLIC void comp_append_popup(Component *c, GtkWidget *menu) {
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), submenu);
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_widget_show(item);
+}
+*/
+
+PUBLIC GtkWidget *comp_get_popup(Component *c) {
+
+  if (c->klass->build_popup == NULL)
+    return NULL;
+
+  return c->klass->build_popup(c);
 }
 
 PUBLIC Connector *comp_new_connector(Component *c, ConnectorKind kind,
@@ -446,15 +469,12 @@ PUBLIC Connector *comp_get_connector(ConnectorReference *ref) {
 
 PUBLIC void comp_kill_connector(Connector *con) {
   while (con->refs != NULL) {
-    GList *tmp = g_list_next(con->refs);
     ConnectorReference *ref = con->refs->data;
 
-    comp_remove_connection(comp_get_connector(ref),
-			   &con->ref);
-    free(ref);
+    comp_unlink(ref, &(con->ref) ); 
 
-    g_list_free_1(con->refs);
-    con->refs = tmp;
+    // FIXME: this leaks i think...
+    //free(ref);
   }
 
   free(con);
@@ -473,6 +493,7 @@ PUBLIC void comp_remove_connection(Connector *con, ConnectorReference *other) {
 
   free(node->data);
   con->refs = g_list_remove_link(con->refs, node);
+  g_list_free_1(node);
 }
 
 PUBLIC void init_comp(void) {

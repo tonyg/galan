@@ -40,6 +40,7 @@ typedef enum OscKind {
   OSC_KIND_SIN = 0,
   OSC_KIND_SQR,
   OSC_KIND_SAW,
+  OSC_KIND_TRI,
 
   OSC_NUM_KINDS
 } OscKind;
@@ -56,6 +57,7 @@ PRIVATE SAMPLE sample_table[OSC_NUM_KINDS][SAMPLE_RATE];
 PRIVATE void setup_tables(void) {
   const gdouble rad_per_sample = 2.0 * M_PI / SAMPLE_RATE;
   const gdouble saw_step = (SAMPLE_MAX - SAMPLE_MIN) / SAMPLE_RATE;
+  const gdouble tri_step = 2*saw_step;
   int i;
 
   for (i = 0; i < SAMPLE_RATE; i++)
@@ -68,6 +70,11 @@ PRIVATE void setup_tables(void) {
 
   for (i = 0; i < SAMPLE_RATE; i++)
     sample_table[OSC_KIND_SAW][i] = SAMPLE_MIN + i * saw_step;
+
+  for (i = 0; i < SAMPLE_RATE / 2; i++)
+    sample_table[OSC_KIND_TRI][i] = SAMPLE_MIN + i * tri_step;
+  for (i = SAMPLE_RATE / 2; i < SAMPLE_RATE; i++)
+    sample_table[OSC_KIND_TRI][i] = SAMPLE_MAX - (i-SAMPLE_RATE/2) * tri_step;
 }
 
 PRIVATE int init_instance(Generator *g) {
@@ -143,7 +150,7 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
 };
 
 PRIVATE ControlDescriptor osc_controls[] = {
-  { CONTROL_KIND_KNOB, "Waveform", 0,2,0,1, 0,FALSE, TRUE,EVT_KIND,
+  { CONTROL_KIND_KNOB, "Waveform", 0,3,0,1, 0,FALSE, TRUE,EVT_KIND,
     NULL,NULL, control_int32_updater, (gpointer) offsetof(OscData, kind) },
   { CONTROL_KIND_SLIDER, "Freq", 20,22049,10,1, 0,TRUE, TRUE,EVT_FREQ,
     NULL,NULL, control_double_updater, (gpointer) offsetof(OscData, frequency) },

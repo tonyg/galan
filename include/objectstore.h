@@ -130,6 +130,7 @@ extern ObjectStoreDatum *objectstore_datum_new_binary(int length, void *data);
 /* Methods on specific kinds of ObjectStoreDatums */
 extern gint32 objectstore_datum_integer_value(ObjectStoreDatum *datum);
 extern gdouble objectstore_datum_double_value(ObjectStoreDatum *datum);
+extern char *objectstore_datum_string_value(ObjectStoreDatum *datum); 
 extern ObjectStoreKey objectstore_datum_object_key(ObjectStoreDatum *obj);
 extern int objectstore_datum_array_length(ObjectStoreDatum *array);
 extern ObjectStoreDatum *objectstore_datum_array_get(ObjectStoreDatum *array, int index);

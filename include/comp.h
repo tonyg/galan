@@ -19,6 +19,8 @@
 #ifndef Comp_H
 #define Comp_H
 
+struct sheet;
+
 typedef enum ComponentColors {
   COMP_COLOR_BLACK = 0,
   COMP_COLOR_WHITE,
@@ -26,6 +28,7 @@ typedef enum ComponentColors {
   COMP_COLOR_GREEN,
   COMP_COLOR_BLUE,
   COMP_COLOR_YELLOW,
+  COMP_COLOR_VIOLET,
 
   COMP_NUM_COLORS
 } ComponentColors;
@@ -87,6 +90,7 @@ struct ComponentClass {
 struct Component {
   ComponentClass *klass;
 
+  struct sheet *sheet; 
   gint x, y, width, height;
   GList *connectors;
 
@@ -96,18 +100,22 @@ struct Component {
 /*=======================================================================*/
 /* 'New' menu management and ComponentClass registry */
 extern void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer init_data);
-extern GtkWidget *comp_get_newmenu(void);
+extern GtkWidget *comp_get_newmenu(struct sheet *sheet);
 
 extern void comp_register_componentclass(ComponentClass *k);
 
 /*=======================================================================*/
 /* Component creation/deletion */
 extern Component *comp_new_component(ComponentClass *k, gpointer init_data,
-				     gint x, gint y);
+				     struct sheet *sheet, gint x, gint y);
 extern void comp_kill_component(Component *c);
 
 extern Component *comp_unpickle(ObjectStoreItem *item);
 extern ObjectStoreItem *comp_pickle(Component *c, ObjectStore *db);
+extern ConnectorReference *unpickle_connectorreference(ConnectorReference *ref,
+							ObjectStoreItem *item);
+extern gpointer unpickler_for_connectorreference(ObjectStoreItem *item);
+extern ObjectStoreItem *pickle_connectorreference(ConnectorReference *ref, ObjectStore *db);
 
 /*=======================================================================*/
 /* Methods on Components */
@@ -128,6 +136,7 @@ extern char *comp_get_connector_name(ConnectorReference *ref);
 /*=======================================================================*/
 /* Individual component popup-menu management */
 extern void comp_append_popup(Component *c, GtkWidget *menu);
+extern GtkWidget *comp_get_popup(Component *c);
 
 /*=======================================================================*/
 /* Functions dealing with Connectors */

@@ -24,7 +24,8 @@
 #define SAMPLE_RATE		48000
 
 #if WANT_FLOATING_POINT_SAMPLES
-#define SAMPLE double
+
+#define SAMPLE float
 #define SAMPLE_ADD(a,b)		((a)+(b))
 #define SAMPLE_MUL(a,b)		((a)*(b))
 #define SAMPLE_UNIT		((SAMPLE) +1)
@@ -185,6 +186,8 @@ struct OutputSignalDescriptor {
 struct GeneratorClass {
   char *name;				/* human-readable name - and also
 					   tag for save/load, so MUST be unique */
+  char *tag;				/* this is the new tag for save/load 
+					   it is needed because of the ladspas */
 
   /* Event inputs */
   gint in_count;
@@ -257,6 +260,17 @@ extern GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 					      void (*destructor)(Generator *),
 					      AGenerator_pickle_t unpickle_instance,
 					      AGenerator_pickle_t pickle_instance);
+
+extern GeneratorClass *gen_new_generatorclass_with_different_tag(const char *name, const char *tag, gboolean prefer,
+					      gint count_event_in, gint count_event_out,
+					      InputSignalDescriptor *input_sigs,
+					      OutputSignalDescriptor *output_sigs,
+					      ControlDescriptor *controls,
+					      gboolean (*initializer)(Generator *),
+					      void (*destructor)(Generator *),
+					      AGenerator_pickle_t unpickle_instance,
+					      AGenerator_pickle_t pickle_instance);
+
 extern void gen_kill_generatorclass(GeneratorClass *g);
 extern void gen_configure_event_input(GeneratorClass *g, gint index,
 				      const char *name, AEvent_handler_t handler);

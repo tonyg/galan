@@ -201,9 +201,9 @@ PRIVATE gboolean init_instance(Generator *g) {
   GList *portX;
   g->data = data;
 
-  data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->name );
+  data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->tag );
   //printf( "retrieved: %s %x\n", g->klass->name, data->ladspa_descriptor );
-  data->lpdat = g_hash_table_lookup( LPluginIndex, g->klass->name );
+  data->lpdat = g_hash_table_lookup( LPluginIndex, g->klass->tag );
   data->instance_handle = data->ladspa_descriptor->instantiate( data->ladspa_descriptor, SAMPLE_RATE ); 
   //printf( "got instancehandle: %x\n", data->instance_handle );
 
@@ -284,13 +284,12 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   ObjectStoreDatum *inarray, *outarray;
   g->data = data;
 
-  data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->name );
-  data->lpdat = g_hash_table_lookup( LPluginIndex, g->klass->name );
+  data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->tag );
+  data->lpdat = g_hash_table_lookup( LPluginIndex, g->klass->tag );
   data->instance_handle = data->ladspa_descriptor->instantiate( data->ladspa_descriptor, SAMPLE_RATE ); 
+
   
-  if( data->ladspa_descriptor->activate )
-      data->ladspa_descriptor->activate( data->instance_handle ); 
-  
+
   inarray = objectstore_item_get(item, "ladspa_inarray");
   outarray  = objectstore_item_get(item, "ladspa_oldoutarray");
 
@@ -306,20 +305,31 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->outsignals = safe_malloc( sizeof( LADSPA_Data * ) * outscount  );
 
   for( i=0; i<inecount; i++ ) {
-      data->inevents[i] =
-	objectstore_datum_double_value(
-	  objectstore_datum_array_get(inarray, i)
-	);
+      
+      ObjectStoreDatum *field = objectstore_datum_array_get(inarray, i);
+      if( field )
+	  data->inevents[i] = objectstore_datum_double_value( field );
+      else
+      {
+	  unsigned long portindex = (unsigned long) g_list_nth_data( data->lpdat->inevent, i );
+	  LADSPA_PortRangeHintDescriptor hint = data->ladspa_descriptor->PortRangeHints[portindex].HintDescriptor;
+	  ControlDescriptor *control = &(g->klass->controls[i]);
+
+	  data->inevents[i] = get_default( control, hint );
+      }
+
       data->ladspa_descriptor->connect_port( 
 	      data->instance_handle, 
 	      (int) g_list_nth_data( data->lpdat->inevent, i ),
 	      &(data->inevents[i]) );
   }
   for( i=0; i<outecount; i++ ) {
-      data->oldoutevents[i] =
-	objectstore_datum_double_value(
-	  objectstore_datum_array_get(outarray, i)
-	);
+      ObjectStoreDatum *field = objectstore_datum_array_get(outarray, i);
+      if( field )
+	  data->oldoutevents[i] = objectstore_datum_double_value( field );
+      else
+	  data->oldoutevents[i] = 0;
+
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
 	      (int) g_list_nth_data( data->lpdat->outevent, i ),
@@ -341,6 +351,9 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 	      (int) g_list_nth_data( data->lpdat->insig, i ),
 	      data->insignals[i] );
   }  
+
+  if( data->ladspa_descriptor->activate )
+      data->ladspa_descriptor->activate( data->instance_handle ); 
 
   data->lastrun = 0;
 
@@ -501,7 +514,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
     ControlDescriptor *controls;
     char *generatorpath;
 
-    GeneratorClass *k;
+    GeneratorClass *k, *v;
     
     plugindata->insig = NULL;
     plugindata->outsig = NULL;
@@ -603,7 +616,14 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
     controls[i].kind = CONTROL_KIND_NONE;
    
     //printf( "Menu : %s\n", get_lrdf_menuname( psDescriptor->UniqueID ) );
-    k = gen_new_generatorclass( psDescriptor->Label, FALSE,
+    k = gen_new_generatorclass_with_different_tag( psDescriptor->Label, 
+				g_strdup_printf( "ladspa-%d", psDescriptor->UniqueID ), FALSE,
+				g_list_length( plugindata->inevent ), g_list_length( plugindata->outevent ),
+				inputdescr, outputdescr, controls,
+				init_instance, destroy_instance,
+				unpickle_instance, pickle_instance);
+
+    v = gen_new_generatorclass( psDescriptor->Label, FALSE,
 				g_list_length( plugindata->inevent ), g_list_length( plugindata->outevent ),
 				inputdescr, outputdescr, controls,
 				init_instance, destroy_instance,
@@ -613,6 +633,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	unsigned long portindex = (unsigned long) portX->data;
 
 	gen_configure_event_input(k, i, psDescriptor->PortNames[portindex], evt_input_handler);
+	gen_configure_event_input(v, i, psDescriptor->PortNames[portindex], evt_input_handler);
     }
 
     //printf( "Output Events:\n" );
@@ -621,13 +642,18 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	unsigned long portindex = (unsigned long) portX->data;
 
 	gen_configure_event_output(k, i, psDescriptor->PortNames[portindex] );
+	gen_configure_event_output(v, i, psDescriptor->PortNames[portindex] );
     }
    
    
     
     //printf( "inserting: %s %x\n", psDescriptor->Label, psDescriptor );
-    g_hash_table_insert(DescriptorIndex, (char *)psDescriptor->Label, (LADSPA_Descriptor *) psDescriptor);
-    g_hash_table_insert(LPluginIndex, (char *)psDescriptor->Label, plugindata);
+    //XXX: Is it necessary to add both tags ? Should be handled by the generator resolution.
+    
+    g_hash_table_insert(DescriptorIndex, k->tag, (LADSPA_Descriptor *) psDescriptor);
+    g_hash_table_insert(DescriptorIndex, v->tag, (LADSPA_Descriptor *) psDescriptor);
+    g_hash_table_insert(LPluginIndex, k->tag, plugindata);
+    g_hash_table_insert(LPluginIndex, v->tag, plugindata);
 
 	
 #ifdef HAVE_LRDF

@@ -24,7 +24,7 @@ plugin_LTLIBRARIES = \
 	evtsgn.la strcombo.la filerequester.la midi_seq_clock.la  midiclock.la sqrt.la \
 	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
 	integrate.la diff.la notetofreq.la fbdelay.la fft.la powerspectrum.la\
-	arrwindow.la arrmul.la arradd.la ifft.la ra2evt.la sigpow.la sigsignum.la\
+	arrwindow.la arrmul.la arradd.la ifft.la ra2evt.la sigpow.la sigsignum.la sigabs.la voice_allocator.la\
 	@OPTIONAL_PLUGINS@
 
 

@@ -112,9 +112,50 @@ PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 					      void (*destructor)(Generator *),
 					      AGenerator_pickle_t unpickle_instance,
 					      AGenerator_pickle_t pickle_instance) {
+
+    return
+	gen_new_generatorclass_with_different_tag( name, name, prefer,
+		count_event_in, count_event_out,
+		input_sigs,
+		output_sigs,
+		controls,
+		initializer,
+		destructor,
+		unpickle_instance,
+		pickle_instance );
+}
+/**
+ * \brief Registers a new GeneratorClass with the system.
+ *
+ * \param name The Name of the GenratorClass which is presented to the humen (you know... those who cant remeber numbers)
+ * \param tag The Tag of the GenratorClass (This must be unique as it is used to find the GenratorClass on load)
+ * \param prefer If a GenratorClass with the same name exists should this be overwritten.
+ * \param count_event_in Number of Input AEvents the GenratorClass will have.
+ * \param count_event_out Number of Output AEvents the GenratorClass will have.
+ * \param input_sigs An Array of InputSignalDescriptor describing the Input Signals. (Can be NULL)
+ * \param output_sigs An Array of OutputSignalDescriptor describing the Output Signals. (Can be NULL)
+ * \param controls An Array of ControlDescriptor describing the Controls of the GenratorClass. (Can bu NULL)
+ * \param initializer The Constructor Function for the GeneratorClass specific initialisation. (Can be NULL)
+ * \param destructor The Destructor Function for the GeneratorClass specific destruction. (Can be NULL)
+ * \param unpickle_instance Unpickle Function
+ * \param pickle_instance Pickle Function
+ *
+ */
+
+PUBLIC GeneratorClass *gen_new_generatorclass_with_different_tag(const char *name, const char *tag, gboolean prefer,
+					      gint count_event_in, gint count_event_out,
+					      InputSignalDescriptor *input_sigs,
+					      OutputSignalDescriptor *output_sigs,
+					      ControlDescriptor *controls,
+					      int (*initializer)(Generator *),
+					      void (*destructor)(Generator *),
+					      AGenerator_pickle_t unpickle_instance,
+					      AGenerator_pickle_t pickle_instance) {
+
   GeneratorClass *k = safe_malloc(sizeof(GeneratorClass));
 
   k->name = safe_string_dup(name);
+  k->tag = safe_string_dup(tag);
 
   k->in_count = count_event_in;
   k->out_count = count_event_out;
@@ -158,13 +199,13 @@ PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 
   /* Only insert into hash table if this name is not already taken, or if we are preferred. */
   {
-    GeneratorClass *oldk = g_hash_table_lookup(generatorclasses, k->name);
+    GeneratorClass *oldk = g_hash_table_lookup(generatorclasses, k->tag);
 
     if (oldk == NULL)
-      g_hash_table_insert(generatorclasses, k->name, k);
+      g_hash_table_insert(generatorclasses, k->tag, k);
     else if (prefer) {
-      g_hash_table_remove(generatorclasses, k->name);
-      g_hash_table_insert(generatorclasses, k->name, k);
+      g_hash_table_remove(generatorclasses, k->tag);
+      g_hash_table_insert(generatorclasses, k->tag, k);
     }
   }
 
@@ -184,6 +225,7 @@ PUBLIC void gen_kill_generatorclass(GeneratorClass *g) {
   int i;
 
   free(g->name);
+  free(g->tag);
 
   for (i = 0; i < g->in_count; i++)
     if (g->in_names[i] != NULL)
@@ -206,13 +248,15 @@ PUBLIC void gen_kill_generatorclass(GeneratorClass *g) {
  * \param index Number of EventInput you want to setup.
  * \param name The Name of the Input Connector which will show up in the application.
  * \param handler When an Event is received on the input this function will be called.
+ *
+ * TODO: change the g to a k.
  */
 
 PUBLIC void gen_configure_event_input(GeneratorClass *g, gint index,
 				      const char *name, AEvent_handler_t handler) {
   if (g->in_names[index] != NULL)
-    g_warning("Event input already configured: class %s, index %d, name %s, existing name %s",
-	      g->name, index, name, g->in_names[index]);
+    g_warning("Event input already configured: class (%s tag: %s), index %d, name %s, existing name %s",
+	      g->name, g->tag, index, name, g->in_names[index]);
 
   g->in_names[index] = safe_string_dup(name);
   g->in_handlers[index] = handler;
@@ -348,10 +392,8 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
 
     Generator *g;
     int i;
-    while( (g = g_async_queue_pop( gen_kill_queue_stage2 )) != NULL )
+    while( (g = g_async_queue_pop( gen_kill_queue_stage2 )) != (gpointer) -1 )
     {
-	// i should lock here but you never know if glib is used in there.
-	// lock_malloc_lock() is evil this will be removed.
 	if (g->klass->destroy_instance != NULL)
 	    g->klass->destroy_instance(g);
 
@@ -384,8 +426,6 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
 	safe_free(g->last_buflens);
 	safe_free(g->last_results);
 	safe_free(g);
-
-	//unlock_malloc_lock();
     }
     return 0;
 }
@@ -461,8 +501,6 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
     g->out_events = make_event_list(k->out_count);
     g->in_signals = make_event_list(k->in_sig_count);
     g->out_signals = make_event_list(k->out_sig_count);
-    unpickle_eventlink_list_array(objectstore_item_get(item, "out_events"), item->db);
-    unpickle_eventlink_list_array(objectstore_item_get(item, "out_signals"), item->db);
 
     g->last_sampletime = 0;
     g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
@@ -477,6 +515,8 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
     if (g->klass->unpickle_instance != NULL)
       g->klass->unpickle_instance(g, item, item->db);
 
+    unpickle_eventlink_list_array(objectstore_item_get(item, "out_events"), item->db);
+    unpickle_eventlink_list_array(objectstore_item_get(item, "out_signals"), item->db);
     g->controls = objectstore_extract_list_of_items(objectstore_item_get(item, "controls"),
 						    item->db,
 						    (objectstore_unpickler_t) control_unpickle);
@@ -522,7 +562,7 @@ PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
 
   if (item == NULL) {
     item = objectstore_new_item(db, "Generator", g);
-    objectstore_item_set_string(item, "class_name", g->klass->name);
+    objectstore_item_set_string(item, "class_name", g->klass->tag);
     objectstore_item_set_string(item, "name", g->name);
     objectstore_item_set(item, "out_events",
 			 pickle_eventlink_list_array(db, g->out_events, g->klass->out_count));
@@ -565,7 +605,7 @@ PUBLIC ObjectStoreItem *gen_pickle_without_el(Generator *g, ObjectStore *db) {
 
   if (item == NULL) {
     item = objectstore_new_item(db, "Generator", g);
-    objectstore_item_set_string(item, "class_name", g->klass->name);
+    objectstore_item_set_string(item, "class_name", g->klass->tag);
     objectstore_item_set_string(item, "name", g->name);
 
     if (g->klass->pickle_instance != NULL)
@@ -978,7 +1018,7 @@ PUBLIC SAMPLETIME gen_get_randomaccess_output_range(Generator *g, gint index) {
   if (fn)
     return fn(g, &g->klass->out_sigs[index]);
   else {
-    g_warning("Generator %s does not implement get_range", g->klass->name);
+    g_warning("Generator (%s tag: %s) does not implement get_range", g->klass->name, g->klass->tag);
     return 0;
   }
 }
@@ -1269,14 +1309,14 @@ PUBLIC GHashTable *get_generator_classes( void ) {
 
 PUBLIC void init_generator(void) {
 
-    GError err;
+    GError *err;
 
     gen_link_queue = g_async_queue_new();
     gen_unlink_queue = g_async_queue_new();
     gen_kill_queue = g_async_queue_new();
     gen_kill_queue_stage2 = g_async_queue_new();
 
-    kill_thread = g_thread_create( gen_kill_generator_stage2_thread, NULL, TRUE, &err );
+    kill_thread = g_thread_create( (GThreadFunc) gen_kill_generator_stage2_thread, NULL, TRUE, &err );
 
     generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
 
@@ -1285,11 +1325,14 @@ PUBLIC void init_generator(void) {
 
 PUBLIC void done_generator(void) {
     
-  g_hash_table_destroy(generatorclasses);
-  generatorclasses = NULL;
+    g_async_queue_push( gen_kill_queue_stage2, (gpointer) -1 );
+    g_thread_join( kill_thread );
+
+    g_hash_table_destroy(generatorclasses);
+    generatorclasses = NULL;
   
-  g_async_queue_unref( gen_link_queue );
-  g_async_queue_unref( gen_unlink_queue );
-  g_async_queue_unref( gen_kill_queue );
-  g_async_queue_unref( gen_kill_queue_stage2 );
+    g_async_queue_unref( gen_link_queue );
+    g_async_queue_unref( gen_unlink_queue );
+    g_async_queue_unref( gen_kill_queue );
+    g_async_queue_unref( gen_kill_queue_stage2 );
 }

@@ -61,7 +61,6 @@
 //PRIVATE int next_component_number = 1;
 //PRIVATE ComponentClass InterSheetComponentClass;	/* forward reference */
 
-
 PRIVATE void build_connectors(Component *c, int count, gboolean is_outbound, gboolean is_signal) {
   int i;
 
@@ -236,7 +235,9 @@ PRIVATE int fileshcomp_initialize(Component *c, gpointer init_data) {
   //printf( "hi %s\n", id->filename );
   FILE *f = fopen( id->filename, "rb" );
 
+  sheet_set_load_hidden( TRUE );
   shcid->sheet = sheet_loadfrom( NULL, f );
+  sheet_set_load_hidden( FALSE );
   fclose( f );
   retval =  shcomp_initialize( c, shcid );
   free(shcid);
@@ -250,6 +251,9 @@ PRIVATE void shcomp_destroy(Component *c) {
 
   if( !sheet_has_refs( d->sheet ) && d->sheet->panel_control_active )
       control_kill_control( d->sheet->panel_control );
+
+  if( !sheet_has_refs( d->sheet ) && ! d->sheet->visible )
+      sheet_remove( d->sheet );
 
   //free(d->name);
   //g_list_free( d->isl.inputevents );
@@ -589,14 +593,6 @@ PRIVATE void kill_popup(GtkWidget *popup, GtkItemFactory *ifact) {
   gtk_object_unref(GTK_OBJECT(ifact));
 }
 
-//PRIVATE void new_control_callback(Component *c, guint control_index, GtkWidget *menuitem) {
-//  ShCompData *d = c->data;
-//
-//  control_new_control(&d->g->klass->controls[control_index], d->g);
-//}
-
-#define NEW_CONTROL_PREFIX "/New Control/"
-
 PRIVATE GtkWidget *shcomp_build_popup(Component *c) {
   ShCompData *d = c->data;
   GtkItemFactory *ifact;
@@ -606,35 +602,11 @@ PRIVATE GtkWidget *shcomp_build_popup(Component *c) {
   ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<shcomp-popup>", NULL);
   gtk_item_factory_create_items(ifact, nitems, popup_items, c);
 
-//  for (i = 0; i < d->g->klass->numcontrols; i++) {
-//    GtkItemFactoryEntry ent = { NULL, NULL, new_control_callback, i, NULL };
-//    char *name = malloc(strlen(NEW_CONTROL_PREFIX) + strlen(d->g->klass->controls[i].name) + 1);
-//
-//    strcpy(name, NEW_CONTROL_PREFIX);
-//    strcat(name, d->g->klass->controls[i].name);
-//    ent.path = name;
-//
-//    gtk_item_factory_create_item(ifact, &ent, c, 1);
-//    free(name);
-//  }
-
   result = gtk_item_factory_get_widget(ifact, "<shcomp-popup>");
 
   if( d->sheet->panel_control_active )
       gtk_widget_set_state(gtk_item_factory_get_item(ifact, "<shcomp-popup>/Add Control"),
 	      GTK_STATE_INSENSITIVE);
-
-#ifndef NATIVE_WIN32
-  /* %%% Why does gtk_item_factory_get_item() not exist in the gtk-1.3 libraries?
-     Maybe it's something I'm doing wrong. I'll have another go at fixing it later. */
-//  if (d->g->klass->numcontrols == 0)
-//    gtk_widget_set_state(gtk_item_factory_get_item(ifact, "<shcomp-popup>/New Control"),
-//			 GTK_STATE_INSENSITIVE);
-//
-//  if (d->propgen == NULL)
-//    gtk_widget_set_state(gtk_item_factory_get_item(ifact, "<shcomp-popup>/Properties..."),
-//			 GTK_STATE_INSENSITIVE);
-#endif
 
   gtk_signal_connect(GTK_OBJECT(result), "destroy", GTK_SIGNAL_FUNC(kill_popup), ifact);
 

@@ -265,7 +265,7 @@ PRIVATE void gencomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *
 
   d->g = gen_unpickle(objectstore_item_get_object(item, "gencomp_generator"));
 
-  id = g_hash_table_lookup(generatorclasses, d->g->klass->name);
+  id = g_hash_table_lookup(generatorclasses, d->g->klass->tag);
 
   if( id != NULL ) {
       d->icon =
@@ -675,13 +675,13 @@ PUBLIC void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer,
 
   /* Only insert into hash table if this name is not already taken, or if we are preferred. */
   {
-    GenCompInitData *oldid = g_hash_table_lookup(generatorclasses, k->name);
+    GenCompInitData *oldid = g_hash_table_lookup(generatorclasses, k->tag);
 
     if (oldid == NULL)
-      g_hash_table_insert(generatorclasses, k->name, id);
+      g_hash_table_insert(generatorclasses, k->tag, id);
     else if (prefer) {
-      g_hash_table_remove(generatorclasses, k->name);
-      g_hash_table_insert(generatorclasses, k->name, id);
+      g_hash_table_remove(generatorclasses, k->tag);
+      g_hash_table_insert(generatorclasses, k->tag, id);
     }
   }
 }

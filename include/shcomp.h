@@ -34,10 +34,6 @@ typedef struct InterSheetLinks {
 
 struct ShCompData {
     Sheet *sheet;
-    //GList *ei, *eo, *si, *so;
-    //int aei, aeo, asi, aso;
-    //gboolean panel_control_active;
-    //Control *panel_control;
     InterSheetLinks isl;
 };
 
@@ -49,6 +45,7 @@ struct FileShCompInitData {
     char *filename;
 };
 
+extern void sheet_set_load_hidden( gboolean v );
 extern void shcomp_register_sheet( Sheet *sheet );
 extern void shcomp_resize( Component *c );
 extern void init_shcomp(void);

@@ -62,18 +62,22 @@ typedef struct OData {
     SAMPLE *buf;
 } OData;
 
+typedef struct TransportData {
+  gdouble freq;
+  gint period;
+} TransportData;
+
 PRIVATE int instance_count = 0;
 PRIVATE int jack_instance_count = 0;
-//PRIVATE char device[256];
 
 int rate = SAMPLE_RATE;				 /* stream rate */
 
+GList *transport_clocks = NULL;
 
+PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes );
 
 PRIVATE void audio_play_fragment(Data *data, SAMPLE *left, SAMPLE *right, int length) {
-  //OUTPUTSAMPLE *outbuf;
-  //int buflen = length * sizeof(OUTPUTSAMPLE) * 2;
-  int i,err;
+  int i;
 
   OUTPUTSAMPLE *lout, *rout;
   SAMPLETIME offset = gen_get_sampletime() - jack_timestamp;
@@ -89,15 +93,10 @@ PRIVATE void audio_play_fragment(Data *data, SAMPLE *left, SAMPLE *right, int le
     lout[i+offset] = (OUTPUTSAMPLE) left[i];
     rout[i+offset] = (OUTPUTSAMPLE) right[i];
   }
-  //jack_offset += length;
-
-  //g_print( "writing %d frames\n", length );
 }
 
 PRIVATE void playport_play_fragment(OData *data, SAMPLE *samples, int length) {
-  //OUTPUTSAMPLE *outbuf;
-  //int buflen = length * sizeof(OUTPUTSAMPLE) * 2;
-  int i,err;
+  int i;
 
   OUTPUTSAMPLE *out;
   SAMPLETIME offset = gen_get_sampletime() - jack_timestamp;
@@ -111,25 +110,30 @@ PRIVATE void playport_play_fragment(OData *data, SAMPLE *samples, int length) {
   for (i = 0; i < length; i++) {
     out[i+offset] = (OUTPUTSAMPLE) samples[i];
   }
-  //jack_offset += length;
-
-  //g_print( "writing %d frames\n", length );
 }
 
 PRIVATE int process_callback( jack_nframes_t nframes, Data *data ) {
-    //g_print( "hallo process %d frames:)\n", nframes );
-    //
-    //XXX: ha... ich habs... jack_offset wird zu jack_timestamp und dann
-    //     kann ich immer gen_get_sampletime() - jack_timestamp rechnen und
-    //     habe auch meinen offset. sehr gut.
+
     jack_timestamp = gen_get_sampletime();
 
-    // XXX: ok... hier muss das ding stehen, was deltas zurueck gibt mit denen man dann
-    //            mal eben den jack_offset hochzaehlen kann.
-    //            Das abschicken des Realtime Events sollte noch schoener gekapselt sein,
-    //            und irgendwie sollte ich noch eine bessere Loesung fuer dieses dilemma
-    //            finden.
-    
+    if( transport_clocks ) {
+	jack_transport_info_t trans_info;
+	GList *l;
+
+	jack_get_transport_info( jack_client, &trans_info );
+
+	if( trans_info.valid & JackTransportState && trans_info.valid & JackTransportPosition && trans_info.transport_state == JackTransportRolling ) {
+	    
+	    for( l = transport_clocks; l; l = g_list_next( l ) ) {
+		Generator *g = l->data;
+		transport_frame_event( g, trans_info.frame, nframes );
+	    }
+	}
+	else
+	    if( trans_info.valid & JackTransportState && trans_info.transport_state == JackTransportRolling )
+		printf( "Invalid Frame :(\n" );
+
+    }
     gen_clock_mainloop_have_remaining( nframes );
 
     return 0;
@@ -249,6 +253,12 @@ PRIVATE int init_instance(Generator *g) {
   
 
   if (jack_client == NULL) {
+      if( data->l_buf )
+	  free( data->l_buf );
+
+      if( data->r_buf )
+	  free( data->r_buf );
+
     free(data);
     popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
 		 "Could not open Jack Client");
@@ -307,85 +317,95 @@ PRIVATE int playport_init_instance(Generator *g) {
 }
 
 PRIVATE int recport_init_instance(Generator *g) {
-  OData *data;
-  //int err;
+    OData *data;
 
-  jack_instance_count++;
+    jack_instance_count++;
 
-  data = safe_malloc(sizeof(OData));
+    data = safe_malloc(sizeof(OData));
 
-  //data->buf = safe_malloc( sizeof(SAMPLE) * 4096 );
-  //jack_timestamp = ;
+    if( jack_client == NULL )
+	jack_client = jack_client_new( "galan" );
 
-  if( jack_client == NULL )
-      jack_client = jack_client_new( "galan" );
-  
 
-  if (jack_client == NULL) {
-    free(data);
-    popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
-		 "Could not open Jack Client");
-    return 0;
-  }
+    if (jack_client == NULL) {
+	free(data);
+	popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		"Could not open Jack Client");
+	return 0;
+    }
 
-  data->port = jack_port_register (jack_client, g->name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+    data->port = jack_port_register (jack_client, g->name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 
-  if( jack_clock == NULL ) {
-      jack_clock = gen_register_clock(g, "Jack Clock", clock_handler);
-      gen_select_clock(jack_clock);	/* a not unreasonable assumption? */
-  }
+    if( jack_clock == NULL ) {
+	jack_clock = gen_register_clock(g, "Jack Clock", clock_handler);
+	gen_select_clock(jack_clock);	/* a not unreasonable assumption? */
+    }
 
-  g->data = data;
+    g->data = data;
 
-  //gen_register_realtime_fn(g, playport_realtime_handler);
-
-  return 1;
+    return 1;
 }
 
-// TODO: free buffers... and ports...
 
 PRIVATE void destroy_instance(Generator *g) {
-  Data *data = g->data;
+    Data *data = g->data;
 
-  gen_deregister_realtime_fn(g, realtime_handler);
+    gen_deregister_realtime_fn(g, realtime_handler);
 
-  if (data != NULL) {
+    if (data != NULL) {
+	if( data->l_buf )
+	    free( data->l_buf );
 
-    if( jack_instance_count == 1 )
-	gen_deregister_clock(jack_clock);
+	if( data->r_buf )
+	    free( data->r_buf );
 
-    free(data);
-  }
+	jack_port_unregister( jack_client, data->port_l );
+	jack_port_unregister( jack_client, data->port_r );
 
-  instance_count--;
-  jack_instance_count--;
+	if( jack_instance_count == 1 ) {
+	    gen_deregister_clock(jack_clock);
+	    jack_client_close( jack_client );
+	}
+
+	free(data);
+    }
+
+    instance_count--;
+    jack_instance_count--;
 }
 
 PRIVATE void playport_destroy_instance(Generator *g) {
-  OData *data = g->data;
+    OData *data = g->data;
 
-  gen_deregister_realtime_fn(g, playport_realtime_handler);
+    gen_deregister_realtime_fn(g, playport_realtime_handler);
 
-  if (data != NULL) {
+    if (data != NULL) {
 
-    if( jack_instance_count == 1 )
-	gen_deregister_clock(jack_clock);
+	if( data->buf )
+	    free( data->buf );
 
-    free(data);
-  }
+	jack_port_unregister( jack_client, data->port );
+	if( jack_instance_count == 1 ) {
+	    gen_deregister_clock(jack_clock);
+	    jack_client_close( jack_client );
+	}
 
-  jack_instance_count--;
+	free(data);
+    }
+
+    jack_instance_count--;
 }
 
 PRIVATE void recport_destroy_instance(Generator *g) {
   OData *data = g->data;
 
-  //gen_deregister_realtime_fn(g, playport_realtime_handler);
-
   if (data != NULL) {
 
-    if( jack_instance_count == 1 )
+    jack_port_unregister( jack_client, data->port );
+    if( jack_instance_count == 1 ) {
 	gen_deregister_clock(jack_clock);
+	jack_client_close( jack_client );
+    }
 
     free(data);
   }
@@ -425,6 +445,65 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
   { NULL, }
 };
 
+PRIVATE gboolean transport_init_instance(Generator *g) {
+  TransportData *data = safe_malloc(sizeof(TransportData));
+  g->data = data;
+
+  data->period = 0;
+
+  transport_clocks = g_list_append( transport_clocks, g );
+  return TRUE;
+}
+
+PRIVATE void transport_destroy_instance(Generator *g) {
+    transport_clocks = g_list_remove( transport_clocks, g );
+  free(g->data);
+}
+
+PRIVATE void transport_unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
+  TransportData *data = safe_malloc(sizeof(TransportData));
+  g->data = data;
+
+  data->period = objectstore_item_get_integer(item, "transport_period", 0);
+
+  if (data->period != 0) {
+    data->freq = (gdouble) SAMPLE_RATE / data->period;
+  }
+  transport_clocks = g_list_append( transport_clocks, g );
+}
+
+PRIVATE void transport_pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
+  TransportData *data = g->data;
+  objectstore_item_set_integer(item, "transport_period", data->period);
+}
+
+PRIVATE void transport_evt_freq_handler(Generator *g, AEvent *event) {
+  TransportData *data = g->data;
+
+  data->freq = event->d.number;
+
+  if (event->d.number < 0.0001)
+    data->period = 0;
+  else
+    data->period = SAMPLE_RATE / event->d.number;
+}
+
+PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes ) {
+    TransportData *data = g->data;
+    AEvent e;
+    SAMPLETIME t,i;
+
+    if( data->period != 0 ) {
+
+	for( t=(frame-1)/data->period+1, i=t*data->period-frame; i<numframes; t++, i+=data->period ) {
+	    gen_init_aevent(&e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + i);
+	    e.d.number = t;
+	    gen_send_events(g, 0, -1, &e);
+	}
+    }
+
+}
+
 PRIVATE void setup_class(void) {
   GeneratorClass *k;
 
@@ -453,6 +532,18 @@ PRIVATE void setup_class(void) {
 			     (AGenerator_pickle_t) recport_init_instance, NULL);
 
   gencomp_register_generatorclass(k, FALSE, "Outputs/Jack In Port",
+				  NULL,
+				  NULL);
+
+  k = gen_new_generatorclass("jack_transport", FALSE, 1, 1,
+			     NULL, NULL, NULL,
+			     transport_init_instance, transport_destroy_instance,
+			     (AGenerator_pickle_t) transport_unpickle_instance, transport_pickle_instance);
+
+  gen_configure_event_input(k, 0, "Freq", transport_evt_freq_handler );
+  gen_configure_event_output(k, 0, "Position");
+
+  gencomp_register_generatorclass(k, FALSE, "Misc/Jack Transport Clock",
 				  NULL,
 				  NULL);
 }

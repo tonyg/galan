@@ -728,6 +728,13 @@ PRIVATE void rename_handler(MsgBoxResponse action_taken, Sheet *s) {
 	GList *compX;
 
 	free(s->name);
+	if( s->control_panel != NULL ) {
+	    if( s->control_panel->name != NULL )
+		free(s->control_panel->name);
+	    s->control_panel->name = safe_string_dup(gtk_entry_get_text(GTK_ENTRY(rename_text_widget)));
+	    update_panel_name( s->control_panel );
+	}
+		    
 	s->name = safe_string_dup(gtk_entry_get_text(GTK_ENTRY(rename_text_widget)));
 	update_sheet_name( s );
 

@@ -102,6 +102,7 @@ extern void control_emit(Control *c, gdouble number);
 extern void control_update_names(Control *c);
 extern void control_update_range(Control *c);
 extern void control_update_value(Control *c);
+extern void control_set_value(Control *c, gfloat value);
 
 extern void init_control(void);
 
@@ -110,9 +111,9 @@ extern void hide_control_panel(void);
 extern void reset_control_panel(void);
 
 extern ControlPanel *control_panel_new( char *name, gboolean visible, struct sheet *sheet );
-extern void control_set_value(Control *c, gfloat value);
 extern void control_panel_register_panel( ControlPanel *panel, char *name, gboolean add_fixed );
 extern void control_panel_unregister_panel( ControlPanel *panel );
+extern void update_panel_name( ControlPanel *panel );
 extern ControlPanel *control_panel_unpickle(ObjectStoreItem *item);
 extern ObjectStoreItem *control_panel_pickle(ControlPanel *cp, ObjectStore *db);
 

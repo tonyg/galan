@@ -761,8 +761,8 @@ PRIVATE void scan_library_dir( void ) {
 
     if( sheetdir )
 	load_all_gsheets( sheetdir, "Lib" );
-
-    load_all_gsheets(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "sheets", "Lib" );
+    else
+	load_all_gsheets(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "sheets", "Lib" );
 }
 
 

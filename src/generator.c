@@ -144,9 +144,12 @@ PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 	 k->controls[k->numcontrols].kind != CONTROL_KIND_NONE;
 	 k->numcontrols++) ;
 
-  k->in_names = safe_calloc(count_event_in, sizeof(char *));
-  k->in_handlers = safe_calloc(count_event_in, sizeof(AEvent_handler_t));
-  k->out_names = safe_calloc(count_event_out, sizeof(char *));
+  if( count_event_in > 0 ) {
+	  k->in_names = safe_calloc(count_event_in, sizeof(char *));
+	  k->in_handlers = safe_calloc(count_event_in, sizeof(AEvent_handler_t));
+  }
+  if( count_event_out > 0 ) {
+	  k->out_names = safe_calloc(count_event_out, sizeof(char *));
 
   k->initialize_instance = initializer;
   k->destroy_instance = destructor;

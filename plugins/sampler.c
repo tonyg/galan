@@ -63,11 +63,14 @@
 #define EVT_XSCALE		2
 #define EVT_LOOP_START		3
 #define EVT_LOOP_END		4
-#define NUM_EVENT_INPUTS	5
+#define EVT_EMIT_BUFFER		5
+#define EVT_RCV_BUFFER		6
+#define NUM_EVENT_INPUTS	7
 
 #define EVT_LOOP_START_OUT	0
 #define EVT_LOOP_END_OUT	1
-#define NUM_EVENT_OUTPUTS	2
+#define EVT_BUFFER_OUT		2
+#define NUM_EVENT_OUTPUTS	3
 
 
 typedef struct Data {
@@ -98,7 +101,7 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 
 	    if( data->go ) {
 		gint32 oldphase;
-		GList *l;
+		//GList *l;
 		SAMPLE *buf, *bufX;
 
 		int bufbytes    = event->d.integer * sizeof(SAMPLE);
@@ -118,14 +121,17 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 
 		if( data->phase >= intbufbytes )
 		{	
-		    for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
-		    {
-			Control *controlx = l->data;
-			g_assert( controlx->data != NULL );
-			sample_display_set_data_8( (SampleDisplay *)controlx->data,
-				data->intbuf, intbufbytes, TRUE );
-			sample_display_set_loop( (SampleDisplay *)controlx->data, 0, intbufbytes-1 );
-		    }
+//		    for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
+//		    {
+//			Control *controlx = l->data;
+//			g_assert( controlx->data != NULL );
+//			sample_display_set_data_8( (SampleDisplay *)controlx->data,
+//				data->intbuf, intbufbytes, TRUE );
+//			sample_display_set_loop( (SampleDisplay *)controlx->data, 0, intbufbytes-1 );
+//		    }
+		    data->loop_start = 0;
+		    data->loop_end = intbufbytes-1;
+		    gen_update_controls( g, -1 );
 		    data->phase = 0;
 		    data->go = FALSE;
 		}
@@ -338,6 +344,11 @@ PRIVATE void done_scope(Control *control) {
 }
 
 PRIVATE void refresh_scope(Control *control) {
+    Data *data = control->g->data;
+    int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->xsize);
+    sample_display_set_data_8( (SampleDisplay *)control->data,
+	    data->intbuf, intbufbytes, TRUE );
+    sample_display_set_loop( (SampleDisplay *)control->data, data->loop_start, data->loop_end );
 }
 
 
@@ -387,15 +398,15 @@ PRIVATE void evt_loop_start_handler(Generator *g, AEvent *event) {
    * generating the gint8[] so nothing special here
    */
   Data *data = g->data;
-  GList *l;
 
   data->loop_start = MAX( 0, event->d.number );
-  for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
-  {
-      Control *controlx = l->data;
-      g_assert( controlx->data != NULL );
-      sample_display_set_loop( (SampleDisplay *)controlx->data, data->loop_start, data->loop_end );
-  }
+  //for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
+  //{
+  //    Control *controlx = l->data;
+  //    g_assert( controlx->data != NULL );
+  //    sample_display_set_loop( (SampleDisplay *)controlx->data, data->loop_start, data->loop_end );
+  //}
+  gen_update_controls( g, -1 );
   gen_send_events( g, EVT_LOOP_START_OUT, -1, event );
 }
 
@@ -405,16 +416,64 @@ PRIVATE void evt_loop_end_handler(Generator *g, AEvent *event) {
    * generating the gint8[] so nothing special here
    */
   Data *data = g->data;
-  GList *l;
 
   data->loop_end = MIN( event->d.number, data->xsize * SAMPLE_RATE - 1 );
-  for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
-  {
-      Control *controlx = l->data;
-      g_assert( controlx->data != NULL );
-      sample_display_set_loop( (SampleDisplay *)controlx->data, data->loop_start, data->loop_end );
-  }
+  //for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
+  //{
+  //    Control *controlx = l->data;
+  //    g_assert( controlx->data != NULL );
+  //    sample_display_set_loop( (SampleDisplay *)controlx->data, data->loop_start, data->loop_end );
+  //}
+  gen_update_controls( g, -1 );
   gen_send_events( g, EVT_LOOP_END_OUT, -1, event );
+}
+
+PRIVATE void evt_emit_buffer_handler(Generator *g, AEvent *event) {
+  Data *data = g->data;
+
+  gen_init_aevent(event, AE_NUMARRAY, NULL, 0, NULL, 0, event->time);
+
+  event->d.array.len = data->xsize * SAMPLE_RATE;
+  //g_printf( "hallo %d\n", event->d.array.len );
+  event->d.array.numbers = data->samplebuf;
+
+  gen_send_events(g, EVT_BUFFER_OUT, -1, event);
+  event->kind = AE_NONE;
+}
+
+PRIVATE void evt_receive_buffer_handler(Generator *g, AEvent *event) {
+  /* handle incoming events on queue EVT_YSCALE
+   * when yscale changes need to resize buffer
+   * first free, malloc, then be smart
+   * i also drop all data in the buffer. could be better...
+   * lets see if there is demand..
+   */
+
+  int i;
+  Data *data = g->data;
+  RETURN_UNLESS( event->kind == AE_NUMARRAY );
+
+  //g_printf( "here %d\n", event->d.array.len );
+  if( (gdouble)event->d.array.len/SAMPLE_RATE != data->xsize) {
+      free( data->intbuf );
+      free( data->samplebuf );
+
+      data->xsize = (gdouble)event->d.array.len / SAMPLE_RATE ;
+      data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
+      data->samplebuf = (SAMPLE *)safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
+      data->phase = 0; 
+      //g_printf( "here %d\n", event->d.array.len );
+  }
+  
+  memcpy( data->samplebuf, event->d.array.numbers, event->d.array.len*sizeof( gdouble )  );
+  for( i=0; i<event->d.array.len; i++ )
+      data->intbuf[i] = CLIP_SAMPLE(event->d.array.numbers[i]) * 127;
+
+  data->loop_start = 0;
+  data->loop_end = data->xsize * SAMPLE_RATE - 1;
+
+  gen_update_controls( g, -1 );
+  
 }
 
 PRIVATE InputSignalDescriptor input_sigs[] = {
@@ -446,9 +505,12 @@ PRIVATE void setup_class(void) {
   gen_configure_event_input(k, EVT_XSCALE, "XSize", evt_xscale_handler);
   gen_configure_event_input(k, EVT_LOOP_START, "Loop Start", evt_loop_start_handler);
   gen_configure_event_input(k, EVT_LOOP_END, "Loop End", evt_loop_end_handler);
+  gen_configure_event_input(k, EVT_EMIT_BUFFER, "Emit Buffer", evt_emit_buffer_handler);
+  gen_configure_event_input(k, EVT_RCV_BUFFER, "Receive Buffer", evt_receive_buffer_handler);
 
   gen_configure_event_output(k, EVT_LOOP_START_OUT, "Loop Start Out");
   gen_configure_event_output(k, EVT_LOOP_END_OUT, "Loop End Out");
+  gen_configure_event_output(k, EVT_BUFFER_OUT, "Buffer Out");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
 				  PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),

@@ -118,6 +118,17 @@ PRIVATE void rename_ctrl_handler(GtkWidget *widget, Control *c) {
 	       (MsgBoxResponseHandler) ctrl_rename_handler, c);
 }
 
+PRIVATE void fold_ctrl_handler(GtkWidget *widget, Control *c) {
+    c->folded = !(c->folded);
+
+    if( c->folded )
+	gtk_widget_hide( c->widget );
+    else
+	gtk_widget_show( c->widget );
+
+    gtk_widget_queue_resize( c->whole );
+}
+
 PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   static GtkWidget *old_popup_menu = NULL;
   GtkWidget *menu;
@@ -139,6 +150,13 @@ PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   gtk_widget_show(item);
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_signal_connect(GTK_OBJECT(item), "activate", GTK_SIGNAL_FUNC(rename_ctrl_handler), c);
+
+  item = gtk_check_menu_item_new_with_label( "Folded" );
+  gtk_check_menu_item_set_state( GTK_CHECK_MENU_ITEM( item ), c->folded );
+  gtk_widget_show(item);
+  gtk_menu_append(GTK_MENU(menu), item);
+  gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(fold_ctrl_handler), c);
+
 
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
 		 be->button, be->time);
@@ -209,6 +227,8 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
   c->max = desc->max;
   c->step = desc->step;
   c->page = desc->page;
+
+  c->folded = FALSE;
 
   c->moving = c->saved_x = c->saved_y = 0;
   c->x = 0;
@@ -364,6 +384,9 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   c->step = objectstore_item_get_double(item, "step", 1);
   c->page = objectstore_item_get_double(item, "page", 1);
 
+  if( c->folded = objectstore_item_get_double(item, "folded", 0) )
+      gtk_widget_hide( c->widget );
+
   x = objectstore_item_get_integer(item, "x_coord", 0);
   y = objectstore_item_get_integer(item, "y_coord", 0);
   control_moveto(c, x, y);
@@ -384,6 +407,7 @@ PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
   objectstore_item_set_double(item, "page", c->page);
   objectstore_item_set_integer(item, "x_coord", c->x);
   objectstore_item_set_integer(item, "y_coord", c->y);
+  objectstore_item_set_integer(item, "folded", c->folded);
   /* don't save c->data in any form, Controls are MVC views, not models. */
   return item;
 }

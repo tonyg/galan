@@ -20,7 +20,7 @@ plugin_LTLIBRARIES = \
 	evtcomp.la evtgate.la evttimer.la evtsum.la evtpower.la evtnotetofreq.la evtabs.la evtinteger.la\
 	evtsgn.la strcombo.la filerequester.la midi_seq_clock.la  midiclock.la sqrt.la \
 	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
-	integrate.la diff.la notetofreq.la\
+	integrate.la diff.la notetofreq.la fbdelay.la\
 	@OPTIONAL_PLUGINS@
 
 LDFLAGS = "-module" @GTK_LIBS@

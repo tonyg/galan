@@ -225,6 +225,7 @@ struct Generator {
   GList **in_signals;
   GList **out_signals;
 
+  //EventQ *input_events;
   /* Sample caching for multiple (realtime) reads */
   /* note that we don't cache randomaccess signal generators */
   SAMPLETIME last_sampletime;
@@ -355,6 +356,8 @@ extern void gen_stop_clock(void);	/* useful? who knows. */
 
 extern void gen_clock_mainloop(void);
 extern void gen_clock_mainloop_have_remaining(gint remaining);
+
+extern GHashTable *get_generator_classes( void );
 
 /*=======================================================================*/
 /* Module setup/shutdown */

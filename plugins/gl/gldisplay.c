@@ -30,6 +30,7 @@
 #include <gmodule.h>
 #include <gtkgl/gtkglarea.h>
 #include <GL/gl.h>
+#include <GL/glu.h>
 
 #include "global.h"
 #include "generator.h"
@@ -96,14 +97,17 @@ PRIVATE gint init(GtkWidget *widget)
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       //glOrtho(0,100, 100,0, -1,1);
-      glFrustum( -1,1, 1,-1, 2, 40 );
+      //glFrustum( -1,1, 1,-1, 2, 40 );
+
+      gluPerspective( 45,1,1,100 );
+      
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
-      glDepthFunc( GL_LESS );
+      //glDepthFunc( GL_LESS );
       glEnable(GL_DEPTH_TEST);
       /* remove back faces */
       glDisable(GL_CULL_FACE);
-      glCullFace(GL_FRONT);
+      //glCullFace(GL_FRONT);
 
       /* speedups */
       glEnable(GL_DITHER);
@@ -174,12 +178,13 @@ PRIVATE int attrlist[] = {
     GDK_GL_RED_SIZE,1,
     GDK_GL_GREEN_SIZE,1,
     GDK_GL_BLUE_SIZE,1,
+    GDK_GL_DEPTH_SIZE,1,
     GDK_GL_DOUBLEBUFFER,
     GDK_GL_NONE
 };
 
 
-PRIVATE void init_scope( Control *control ) {
+PRIVATE void init_scope( Control *control, int w, int h ) {
 
 	GtkWidget *glarea;
 
@@ -208,7 +213,7 @@ PRIVATE void init_scope( Control *control ) {
 		     GTK_SIGNAL_FUNC(init), NULL);
 
   /* set minimum size */
-  gtk_widget_set_usize(GTK_WIDGET(glarea), 100,100);
+  gtk_widget_set_usize(GTK_WIDGET(glarea), w,h);
   gtk_object_set_data( GTK_OBJECT(glarea), "Control", control );
 
   control->widget = glarea;
@@ -219,6 +224,14 @@ PRIVATE void done_scope(Control *control) {
 
 PRIVATE void refresh_scope(Control *control) {
     gtk_widget_queue_draw( control->widget );
+}
+
+PRIVATE void init_big_scope( Control *control ){
+	init_scope( control, 400, 400 );
+}
+
+PRIVATE void init_small_scope( Control *control ){
+	init_scope( control, 100, 100 );
 }
 
 
@@ -237,7 +250,8 @@ PRIVATE InputSignalDescriptor input_sigs[] = {
 };
 
 PRIVATE ControlDescriptor controls[] = {
-  { CONTROL_KIND_USERDEF, "glarea", 0,0,0,0, 0,FALSE, 0,0, init_scope, done_scope, refresh_scope },
+  { CONTROL_KIND_USERDEF, "glarea", 0,0,0,0, 0,FALSE, 0,0, init_small_scope, done_scope, refresh_scope },
+  { CONTROL_KIND_USERDEF, "glarea-big", 0,0,0,0, 0,FALSE, 0,0, init_big_scope, done_scope, refresh_scope },
   /* { kind, name, min,max,step,page, size,editable, is_dst,queue_number,
        init,destroy,refresh,refresh_data }, */
   { CONTROL_KIND_NONE, }

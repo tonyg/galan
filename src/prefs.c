@@ -142,10 +142,10 @@ PRIVATE gboolean optlist_row_selected(GtkCList *optlist, gint row, gint column,
     /* Reinstate it so that changes from now on take effect */
     gtk_object_set_data(GTK_OBJECT(droplist->entry), "option_name", option_name);
   }
-  return TRUE;
+  return FALSE;
 }
 
-PRIVATE void droplist_entry_changed(GtkEntry *entry, gpointer data) {
+PRIVATE gboolean droplist_entry_changed(GtkEntry *entry, gpointer data) {
   gchar *option_name = gtk_object_get_data(GTK_OBJECT(entry), "option_name");
 
   if (option_name != NULL) {
@@ -156,6 +156,7 @@ PRIVATE void droplist_entry_changed(GtkEntry *entry, gpointer data) {
     else
       prefs_set_item(option_name, value_text);
   }
+  return TRUE;
 }
 
 PUBLIC void prefs_edit_prefs(void) {
@@ -167,9 +168,10 @@ PUBLIC void prefs_edit_prefs(void) {
   GtkWidget *frame = gtk_frame_new("Options");
   GtkWidget *optlist = gtk_clist_new(1);
   GtkWidget *droplist = gtk_combo_new();
+  GtkWidget *scrollwin = gtk_scrolled_window_new(NULL,NULL);
 
   /* Configure the widgets */
-  gtk_widget_set_usize(optlist, 200, 100);
+  //gtk_widget_set_usize(optlist, 200, 100);
   gtk_clist_set_selection_mode(GTK_CLIST(optlist), GTK_SELECTION_SINGLE);
   gtk_clist_column_titles_hide(GTK_CLIST(optlist));
   gtk_clist_set_column_width(GTK_CLIST(optlist), 0, 200);
@@ -184,8 +186,10 @@ PUBLIC void prefs_edit_prefs(void) {
   gtk_container_add(GTK_CONTAINER(frame), ib);
   gtk_widget_show(ib);
 
-  gtk_box_pack_start(GTK_BOX(ib), optlist, FALSE, FALSE, 0);
+  gtk_container_add( GTK_CONTAINER( scrollwin ), optlist );
+  gtk_box_pack_start(GTK_BOX(ib), scrollwin, FALSE, FALSE, 0);
   gtk_widget_show(optlist);
+  gtk_widget_show(scrollwin);
 
   hb = gtk_hbox_new(FALSE, 5);
   gtk_box_pack_start(GTK_BOX(ib), hb, FALSE, FALSE, 0);

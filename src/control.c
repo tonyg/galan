@@ -236,6 +236,41 @@ PRIVATE void fold_ctrl_handler(GtkWidget *widget, Control *c) {
     gtk_widget_queue_resize( c->whole );
 }
 
+PRIVATE void discreet_ctrl_handler(GtkWidget *widget, Control *c) {
+    c->discreet = !(c->discreet);
+
+    if( c->discreet ){
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_NONE);
+        gtk_frame_set_label (GTK_FRAME (c->title_frame) , NULL);
+        //gtk_adjustment_set_draw_value(c->widget,FALSE);
+	
+	
+	if( c->entry )
+		gtk_widget_hide( c->entry );
+
+        /* In order for this to work, you need the pixmap to bring up the menu...
+         * gtk_widget_hide( c->title_label );
+         * the following is a temp hack.
+         */
+        gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
+
+    }else{
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_ETCHED_IN);
+        gtk_label_set_text(GTK_LABEL(c->title_label),c->desc->name);
+        //gtk_adjustment_set_draw_value(c->widget,TRUE);
+	
+	if( c->entry )
+		gtk_widget_show( c->entry );
+        
+        /* In order for this to work, you need the pixmap to bring up the menu...
+         * gtk_widget_show( c->title_label );
+         * the following is a temp hack
+         */
+        control_update_names(c);
+    }
+    gtk_widget_queue_resize( c->whole );
+}
+
 PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   static GtkWidget *old_popup_menu = NULL;
   GtkWidget *menu;
@@ -264,6 +299,11 @@ PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(fold_ctrl_handler), c);
 
+  item = gtk_check_menu_item_new_with_label( "Discreet" );
+  gtk_check_menu_item_set_state( GTK_CHECK_MENU_ITEM( item ), c->discreet );
+  gtk_widget_show(item);
+  gtk_menu_append(GTK_MENU(menu), item);
+  gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(discreet_ctrl_handler), c);
 
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
 		 be->button, be->time);
@@ -333,6 +373,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   c->page = desc->page;
 
   c->folded = FALSE;
+  c->discreet = FALSE;
 
   if( panel == NULL && global_panel == NULL )
       global_panel = control_panel_new( "Global", TRUE, NULL );
@@ -432,16 +473,24 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
     gtk_widget_show(c->widget);
 
     if (adj != NULL && c->desc->allow_direct_edit) {
-      GtkWidget *entry = gtk_entry_new();
-      gtk_widget_set_usize(entry, GAUGE_SIZE, 0);
-      gtk_widget_show(entry);
-      gtk_box_pack_start(GTK_BOX(vbox), entry, FALSE, FALSE, 0);
+      c->entry = gtk_entry_new();
+      gtk_widget_set_usize(c->entry, GAUGE_SIZE, 0);
+      if( ! c->discreet )
+	      gtk_widget_show(c->entry);
 
-      gtk_signal_connect(GTK_OBJECT(entry), "activate",
+      gtk_box_pack_start(GTK_BOX(vbox), c->entry, FALSE, FALSE, 0);
+
+      gtk_signal_connect(GTK_OBJECT(c->entry), "activate",
 			 GTK_SIGNAL_FUNC(entry_changed), adj);
       gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
-			 GTK_SIGNAL_FUNC(update_entry), entry);
+			 GTK_SIGNAL_FUNC(update_entry), c->entry);
+    } else {
+    	c->entry = NULL;
     }
+    
+    c->whole = gtk_event_box_new();
+
+    gtk_widget_show( c->whole );
 
     c->whole = gtk_event_box_new();
     g_object_ref( G_OBJECT(c->whole) );
@@ -581,7 +630,25 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   c->page = objectstore_item_get_double(item, "page", 1);
 
   if( (c->folded = objectstore_item_get_integer(item, "folded", 0)) )
-      gtk_widget_hide( c->widget );
+      // XXX: Why is that ?
+      // hmm...
+        gtk_widget_hide( c->widget );
+ 
+  if( (c->discreet = objectstore_item_get_integer(item, "discreet", 0)) ) {
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_NONE);
+        gtk_frame_set_label (GTK_FRAME (c->title_frame) , NULL);
+        //gtk_adjustment_set_draw_value(c->widget,FALSE);
+	
+	
+	if( c->entry )
+		gtk_widget_hide( c->entry );
+
+        /* In order for this to work, you need the pixmap to bring up the menu...
+         * gtk_widget_hide( c->title_label );
+         * the following is a temp hack.
+         */
+        gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
+  }
 
   x = objectstore_item_get_integer(item, "x_coord", 0);
   y = objectstore_item_get_integer(item, "y_coord", 0);
@@ -612,6 +679,7 @@ PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
   objectstore_item_set_integer(item, "x_coord", c->x);
   objectstore_item_set_integer(item, "y_coord", c->y);
   objectstore_item_set_integer(item, "folded", c->folded);
+  objectstore_item_set_integer(item, "discreet", c->discreet);
   /* don't save c->data in any form, Controls are MVC views, not models. */
   return item;
 }
@@ -634,12 +702,15 @@ PUBLIC void control_emit(Control *c, gdouble number) {
 PUBLIC void control_update_names(Control *c) {
   g_return_if_fail(c != NULL);
 
-  if( c->g != NULL )
-      gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
-  else
-      gtk_frame_set_label(GTK_FRAME(c->title_frame), c->this_panel->name );
+  if( !c->discreet ) {
 
-  gtk_label_set_text(GTK_LABEL(c->title_label), c->name ? c->name : c->desc->name);
+      if( c->g != NULL )
+          gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
+      else
+          gtk_frame_set_label(GTK_FRAME(c->title_frame), c->this_panel->name );
+
+      gtk_label_set_text(GTK_LABEL(c->title_label), c->name ? c->name : c->desc->name);
+  }
 }
 
 PUBLIC void control_update_range(Control *c) {

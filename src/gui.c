@@ -108,10 +108,12 @@ PRIVATE void about_callback(void) {
 	       "License. Please see \"COPYING\" or http://www.gnu.org/copyleft/gpl.txt\n"
 	       "\n"
 	       "SITE_PKGLIB_DIR = %s\n"
+	       "SITE_PKGDATA_DIR = %s\n"
 	       "\n"
 	       "NOTE: This is BETA software\n",
 	       VERSION,
-	       SITE_PKGLIB_DIR
+	       SITE_PKGLIB_DIR,
+	       SITE_PKGDATA_DIR
 	       );
 }
 

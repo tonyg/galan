@@ -77,6 +77,7 @@ struct Control {
   char *name;				/* overriding name. Set to NULL to use default. */
   gdouble min, max, step, page;		/* overrides desc's values */
   gboolean folded;
+  gboolean discreet;
 
   int moving, saved_x, saved_y;		/* variables to implement drag-moving of controls */
   int x, y;				/* position within control window */
@@ -86,6 +87,9 @@ struct Control {
   GtkWidget *whole;			/* the control embedded in some wrapping */
   GtkWidget *title_frame;		/* the frame displaying the whole control */
   GtkWidget *title_label;		/* the label displaying the name */
+  GtkWidget *entry;			/* The Text field */
+
+  GtkWidget *ebox;			/* An Eventbox for speed */
 
   ControlPanel *this_panel;
   Generator *g;				/* source for output events; owner of control _OR_

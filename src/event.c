@@ -126,6 +126,17 @@ PUBLIC void gen_post_aevent(AEvent *e) {
 
 /**
  * \brief sort in all posted aevents
+ *
+ * XXX: ok... this has to be modified, to support for
+ *      local event queues on the generators...
+ *
+ *      if( g->has_local_queue )
+ *         deliver_directly( e );
+ *      else
+ *         deliver normally( e );
+ *
+ *      this seems thread safe... lets see if that
+ *      brings us some advantage...
  */
 
 PRIVATE void gen_sortin_aevents(void) {
@@ -247,6 +258,8 @@ PRIVATE void insert_fn(GList **lst, Generator *g, AEvent_handler_t func) {
  * also.
  * 
  * i need a Mutex for the rtfuncs struct.
+ *
+ * no ... make it a GSList.
  */
 
 PRIVATE void insert_fn_ec(GList **lst, event_callback *ec) {

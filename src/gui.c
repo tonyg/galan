@@ -65,7 +65,9 @@ PUBLIC GList *get_sheet_list( void ) {
 
 PUBLIC void gui_register_sheet( struct sheet *sheet ) {
 
-    gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, gtk_label_new( sheet->name ) );
+    if( sheet->visible )
+	gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, gtk_label_new( sheet->name ) );
+
     sheets = g_list_append( sheets, sheet );
 }
 
@@ -74,8 +76,11 @@ PUBLIC void gui_unregister_sheet( struct sheet *sheet ) {
     int pagenum;
 
     sheets = g_list_remove( sheets, sheet );
-    pagenum = gtk_notebook_page_num( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin );
-    gtk_notebook_remove_page( GTK_NOTEBOOK( mainnotebook ), pagenum );
+
+    if( sheet->visible ) {
+	pagenum = gtk_notebook_page_num( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin );
+	gtk_notebook_remove_page( GTK_NOTEBOOK( mainnotebook ), pagenum );
+    }
 }
 
 PUBLIC void update_sheet_name( struct sheet *sheet ) {
@@ -165,7 +170,7 @@ PUBLIC void load_sheet_from_name(char *name) {
 
 PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
   FILE *f;
-  char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+  const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
 
   f = fopen(newname, "rb");
 
@@ -214,7 +219,7 @@ PRIVATE void save_file_to(char *filename) {
 }
 
 PRIVATE void save_sheet_callback(GtkWidget *widget, GtkWidget *fs) {
-  char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+  const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
 
   save_file_to(newname);
 

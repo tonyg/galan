@@ -59,6 +59,15 @@ PRIVATE int next_sheet_number = 1;  /**< This is a counter for sheet numbers.
 				     *   \note It should be adjusted when we load a new sheet. But normally sheets should be
 				     *         named correctly after instantiantion so this will be done later.
 				     */
+
+
+PRIVATE gboolean load_hidden = FALSE;
+
+PUBLIC void sheet_set_load_hidden( gboolean v ) {
+    load_hidden = v;
+}
+
+
 /**
  * /brief Colors for normal Component drawing
  */
@@ -380,6 +389,46 @@ PRIVATE void do_popup_menu(Sheet *sheet, GdkEventButton *be) {
   old_popup_menu = menu;
 }
 
+/*! handle mouse motion events to display port names */
+PRIVATE gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
+		gpointer func_data)
+{
+  int x, y;
+  GdkModifierType state;
+  Component *c;
+  Sheet *sheet = (Sheet*)func_data;
+
+  if(event->is_hint)
+    gdk_window_get_pointer(event->window, &x, &y, &state);
+  else {
+    x = event->x;
+    y = event->y;
+    state = event->state;
+  }
+  
+  if((c = find_component_at(sheet, x, y)) != NULL)
+  {
+     char *name;
+     ConnectorReference ref;
+     
+     if(!comp_find_connector(c, x, y, &ref)) {
+	     gui_statusbar_push( "" );
+	     return FALSE;
+     }
+ 
+     name = comp_get_connector_name(&ref);
+     g_assert(name != NULL);
+
+     //g_print("tooltip %s\n", name);
+     gui_statusbar_push( name );
+     free(name);
+   } else {
+       gui_statusbar_push( "" );
+   }
+
+   return FALSE;
+}
+
 PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 
     Sheet *sheet = gtk_object_get_user_data( GTK_OBJECT(w) );
@@ -678,46 +727,6 @@ PUBLIC void sheet_kill_refs( Sheet *s ) {
     s->referring_sheets = NULL;
 }
 
-/*! handle mouse motion events to display port names */
-PRIVATE gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
-		gpointer func_data)
-{
-  int x, y;
-  GdkModifierType state;
-  Component *c;
-  Sheet *sheet = (Sheet*)func_data;
-
-  if(event->is_hint)
-    gdk_window_get_pointer(event->window, &x, &y, &state);
-  else {
-    x = event->x;
-    y = event->y;
-    state = event->state;
-  }
-  
-  if((c = find_component_at(sheet, x, y)) != NULL)
-  {
-     char *name;
-     ConnectorReference ref;
-     
-     if(!comp_find_connector(c, x, y, &ref)) {
-	     gui_statusbar_push( "" );
-	     return FALSE;
-     }
- 
-     name = comp_get_connector_name(&ref);
-     g_assert(name != NULL);
-
-     //g_print("tooltip %s\n", name);
-     gui_statusbar_push( name );
-     free(name);
-   } else {
-       gui_statusbar_push( "" );
-   }
-
-   return FALSE;
-}
-
 /**
  * \brief create an empty sheet
  *
@@ -1005,6 +1014,11 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
 	
 	s=create_sheet( );
 	s->name = safe_string_dup( objectstore_item_get_string( item, "name", "strango" ) );
+
+	if( load_hidden )
+	    s->visible = FALSE;
+	else
+	    s->visible = objectstore_item_get_integer( item, "visible", TRUE );
 	
 	objectstore_set_object( item, s );
 	s->control_panel = control_panel_unpickle( objectstore_item_get_object( item, "control_panel" ) );
@@ -1049,6 +1063,7 @@ PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
 	if( sheet->control_panel )
 	    objectstore_item_set_object( item, "control_panel", control_panel_pickle( sheet->control_panel, db ) );
 	objectstore_item_set_integer(item, "panel_control_active", sheet->panel_control_active );
+	objectstore_item_set_integer(item, "visible", sheet->visible );
 	if( sheet->panel_control_active )
 	    objectstore_item_set_object(item, "panel_control", control_pickle( sheet->panel_control, db ) );
 
@@ -1079,8 +1094,6 @@ PUBLIC Sheet *sheet_loadfrom(Sheet *sheet, FILE *f) {
     objectstore_kill_objectstore(db);
     return NULL;
   }
-
-//  sheet_clear(sheet);	/* empties GList *sheet->components. */
 
   root = objectstore_get_root(db);
   sheet = sheet_unpickle( root );

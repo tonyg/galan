@@ -198,7 +198,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
   binarylength = objectstore_item_get_binary(item, "sample_data", (void **) &samplebuf);
   if( binarylength > 0 )
-      for( i=0; i<(binarylength/sizeof(SAMPLE)); i++ ) {
+      for( i=0; i<data->xsize; i++ ) {
 	  data->samplebuf[i] = samplebuf[i];
 	  data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
       }

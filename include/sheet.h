@@ -42,6 +42,8 @@ typedef struct sheet {
 
     GeneratorClass *sheetklass;	    //*< This can be removed
     gchar *name;		    //*< the name of this sheet.
+    gboolean	visible;	    //*< controls if sheet is visible
+    gboolean	dirty;		    //*< dirty tag for save question
 } Sheet;
 
 extern Sheet *create_sheet();

@@ -398,7 +398,7 @@ PRIVATE ControlDescriptor controls[] = {
 };
 
 PRIVATE void setup_class(void) {
-  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE,
+  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, TRUE,
 					     NUM_EVENT_INPUTS, NUM_EVENT_OUTPUTS,
 					     input_sigs, output_sigs, controls,
 					     init_instance, destroy_instance,

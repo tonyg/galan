@@ -38,6 +38,7 @@
 #include "prefs.h"
 
 #include <jack/jack.h>
+#include <jack/miditypes.h>
 
 #define SIG_LEFT_CHANNEL	0
 #define SIG_RIGHT_CHANNEL	1
@@ -61,6 +62,24 @@ typedef struct OData {
     jack_port_t *port;
     SAMPLE *buf;
 } OData;
+
+typedef struct MidiInData {
+    jack_port_t *port;
+    
+} MidiInData;
+
+enum EVT_OUTPUTS { 
+    EVT_CLOCK = 0,
+    EVT_START,
+    EVT_CHANNEL,
+    EVT_NOTE,
+    EVT_VELOCITY,
+    EVT_PROGAMCHANGE,
+    EVT_CTRLPARAM,
+    EVT_CTRLVALUE,
+    EVT_NOTEOFF,
+    NUM_EVENT_OUTPUTS
+};
 
 typedef struct TransportData {
   gdouble freq;
@@ -163,7 +182,6 @@ PRIVATE void clock_handler(AClock *clock, AClockReason reason) {
       jack_on_shutdown (jack_client, jack_shutdown, 0);
 
       jack_activate( jack_client );
-	      
       break;
 
     default:
@@ -437,6 +455,9 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
   { NULL, }
 };
 
+
+// Transport
+
 PRIVATE gboolean transport_init_instance(Generator *g) {
   TransportData *data = safe_malloc(sizeof(TransportData));
   g->data = data;
@@ -513,6 +534,152 @@ PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME n
 
 }
 
+// Midiout
+
+PRIVATE void midiinport_realtime_handler(Generator *g, AEvent *event) {
+    MidiInData *data = g->data;
+
+    switch (event->kind) {
+	case AE_REALTIME:
+	    {
+
+		int nframes = event->d.integer;
+
+
+		int event_index;
+		jack_default_midi_event_t *in = (jack_default_midi_event_t *) jack_port_get_buffer (data->port, nframes);
+		//jack_nframes_t event_index = 0;
+
+		for(event_index=0; !in[event_index].is_last; event_index++)
+		{
+		    switch(in[event_index].type)
+		    {
+			case JACK_MIDI_EVENT_NOTEON: 
+			    {
+				AEvent e;
+				int note = in[event_index].data.note.note;
+				int vel = in[event_index].data.note.velocity;
+				int channel = in[event_index].data.note.channel;
+
+				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
+
+				e.d.number = channel;
+				gen_send_events(g, EVT_CHANNEL, -1, &e);
+
+				e.d.number = note;
+				gen_send_events(g, EVT_NOTE, -1, &e);
+
+				e.d.number = vel;
+				gen_send_events(g, EVT_VELOCITY, -1, &e);
+				break;
+			    }
+			case JACK_MIDI_EVENT_NOTEOFF:
+			    {
+				AEvent e;
+				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
+
+				e.d.number = in[event_index].data.note.channel;
+				gen_send_events(g, EVT_CHANNEL, -1, &e);
+
+				e.d.number = in[event_index].data.note.note;
+				gen_send_events(g, EVT_NOTEOFF, -1, &e);
+
+				e.d.number = in[event_index].data.note.velocity;
+				gen_send_events(g, EVT_VELOCITY, -1, &e);
+				break;
+			    }
+			case JACK_MIDI_EVENT_PGMCHANGE:
+			    {
+				AEvent e;
+				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
+
+				e.d.number = in[event_index].data.control.channel;
+				gen_send_events(g, EVT_CHANNEL, -1, &e);
+
+				//g_print( "(%x,%x)\n", data->midibuffer[0], data->midibuffer[1] );
+				e.d.number = in[event_index].data.control.value;
+				gen_send_events(g, EVT_PROGAMCHANGE, -1, &e);
+			    }
+			case JACK_MIDI_EVENT_CONTROLLER:
+			    {
+				AEvent e;
+				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
+
+				e.d.number = in[event_index].data.control.channel;
+				gen_send_events(g, EVT_CHANNEL, -1, &e);
+
+				e.d.number = in[event_index].data.control.param;
+				gen_send_events(g, EVT_CTRLPARAM, -1, &e);
+
+				e.d.number = in[event_index].data.control.value;
+				gen_send_events(g, EVT_CTRLVALUE, -1, &e);
+			    }
+		    }
+
+		}
+
+
+		break;
+	    }
+
+	default:
+	    g_warning("jack_midiin module doesn't care for events of kind %d.", event->kind);
+	    break;
+    }
+}
+
+PRIVATE int midiinport_init_instance(Generator *g) {
+    MidiInData *data;
+
+    jack_instance_count++;
+
+    data = safe_malloc(sizeof(MidiInData));
+
+    if( jack_client == NULL )
+	jack_client = jack_client_new( "galan" );
+
+
+    if (jack_client == NULL) {
+	free(data);
+	popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		"Could not open Jack Client");
+	return 0;
+    }
+
+    data->port = jack_port_register (jack_client, g->name, JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+
+    if( jack_clock == NULL ) {
+	jack_clock = gen_register_clock(g, "Jack Clock", clock_handler);
+	gen_select_clock(jack_clock);	/* a not unreasonable assumption? */
+    }
+
+    g->data = data;
+
+    gen_register_realtime_fn(g, midiinport_realtime_handler);
+    return 1;
+}
+
+PRIVATE void midiinport_destroy_instance(Generator *g) {
+  MidiInData *data = g->data;
+
+    gen_deregister_realtime_fn(g, midiinport_realtime_handler);
+  if (data != NULL) {
+
+    jack_port_unregister( jack_client, data->port );
+    if( jack_instance_count == 1 ) {
+	gen_deregister_clock(jack_clock);
+	jack_client_close( jack_client );
+    }
+
+    free(data);
+  }
+
+  jack_instance_count--;
+}
+
+
+// General
+
 PRIVATE ControlDescriptor transport_controls[] = {
   { CONTROL_KIND_KNOB, "rate", 0,500,1,1, 0,TRUE, TRUE, 0,
     NULL,NULL, control_double_updater, (gpointer) offsetof(TransportData, freq) },
@@ -552,10 +719,30 @@ PRIVATE void setup_class(void) {
 				  NULL,
 				  NULL);
 
+  k = gen_new_generatorclass("jack_midiin", FALSE, 0, NUM_EVENT_OUTPUTS,
+			     NULL, NULL, NULL,
+			     midiinport_init_instance, midiinport_destroy_instance,
+			     (AGenerator_pickle_t) midiinport_init_instance, NULL);
+
+  gen_configure_event_output(k, EVT_CLOCK,   "Clock");
+  gen_configure_event_output(k, EVT_START,   "Start");
+  gen_configure_event_output(k, EVT_CHANNEL,   "Channel");
+  gen_configure_event_output(k, EVT_NOTE,   "NoteOn");
+  gen_configure_event_output(k, EVT_VELOCITY,   "Velocity");
+  gen_configure_event_output(k, EVT_PROGAMCHANGE,   "Program");
+  gen_configure_event_output(k, EVT_CTRLPARAM,   "Control Param");
+  gen_configure_event_output(k, EVT_CTRLVALUE,   "Control Value" );
+  gen_configure_event_output(k, EVT_NOTEOFF,   "NoteOff");
+
+  gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi In",
+				  NULL,
+				  NULL);
+
   k = gen_new_generatorclass("jack_transport", FALSE, 2, 1,
 			     NULL, NULL, transport_controls,
 			     transport_init_instance, transport_destroy_instance,
 			     (AGenerator_pickle_t) transport_unpickle_instance, transport_pickle_instance);
+
 
   gen_configure_event_input(k, 0, "Freq", transport_evt_freq_handler );
   gen_configure_event_input(k, 1, "TpB", transport_evt_tpb_handler );

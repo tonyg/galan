@@ -113,6 +113,7 @@ typedef enum AEventKind {
   AE_REALTIME,		/**< a realtime-has-elapsed message */
   AE_STRING,		/**< a string message  */
   AE_NUMARRAY,		/**< an array message  */
+  AE_DBLARRAY,		/**< a double array message  */
 
   AE_LAST_EVENT_KIND	/**< end-of-enum marker */
 } AEventKind;
@@ -132,8 +133,13 @@ struct EventLink {
 
 typedef struct arr {
     int len;
-    gdouble *numbers;
+    SAMPLE *numbers;
 } Array;
+
+typedef struct darr {
+    int len;
+    double *numbers;
+} DArray;
 
 struct AEvent {		/**< audio event */
   AEventKind kind;		/**< what kind of event? */
@@ -148,6 +154,7 @@ struct AEvent {		/**< audio event */
     gint32 integer;		/**< AE_REALTIME and AE_MASTER_PLAY */
     gchar *string;		/**< AE_STRING */
     Array array;		/**< AE_NUMARRAY */
+    DArray darray;		/**< AE_DBLARRAY */
   } d;
 };
 

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <locale.h>
 #include <ctype.h>
 
 #include <glib.h>
@@ -156,8 +157,10 @@ PRIVATE void objectstore_write_objectstoreitem(gpointer key_p, gpointer value,
 }
 
 PUBLIC gboolean objectstore_write(FILE *f, ObjectStore *db) {
+
   int i;
 
+  setlocale( LC_ALL, "C" );
   fprintf(f,
 	  "Mjik\n"
 	  "ObjectStore 0 [\n"
@@ -171,6 +174,7 @@ PUBLIC gboolean objectstore_write(FILE *f, ObjectStore *db) {
     objectstore_write_objectstoreitem((gpointer) i,
 				      g_hash_table_lookup(db->object_table, (gconstpointer) i),
 				      (gpointer) f);
+  setlocale( LC_ALL, "" );
   return TRUE;
 }
 
@@ -309,49 +313,59 @@ PRIVATE ObjectStoreItem *read_item(FILE *f) {
 }
 
 PUBLIC gboolean objectstore_read(FILE *f, ObjectStore *db) {
-  ObjectStoreItem *item;
-  ObjectStoreDatum *datum;
-  char magic[5];
+    ObjectStoreItem *item;
+    ObjectStoreDatum *datum;
+    char magic[5];
 
-  fread(magic, sizeof(char), 4, f);
-  magic[4] = '\0';
-  if (strcmp(magic, "Mjik"))
-    return FALSE;
+    setlocale( LC_NUMERIC, "C" );
 
-  item = read_item(f);
 
-  if (strcmp(item->tag, "ObjectStore") ||
-      item->key != 0) {
-    objectstore_kill_objectstoreitem(NULL, item, NULL);
-    return FALSE;
-  }
-
-  datum = objectstore_item_get(item, "version");
-  if (datum == NULL ||
-      datum->kind != OSI_KIND_INT ||
-      datum->d.integer != OBJECTSTORE_CURRENT_VERSION) {
-    objectstore_kill_objectstoreitem(NULL, item, NULL);
-    return FALSE;
-  }
-
-  datum = objectstore_item_get(item, "rootkey");
-  if (datum == NULL ||
-      datum->kind != OSI_KIND_INT)
-    return FALSE;
-  db->rootkey = datum->d.integer;
-
-  objectstore_kill_objectstoreitem(NULL, item, NULL);
-
-  while (!feof(f)) {
-    item = read_item(f);
-    if (item != NULL) {
-      g_hash_table_insert(db->object_table, (gpointer) item->key, item);
-      item->db = db;
-      db->nextkey = MAX(db->nextkey, item->key + 1);
+    fread(magic, sizeof(char), 4, f);
+    magic[4] = '\0';
+    if (strcmp(magic, "Mjik")) {
+	setlocale( LC_NUMERIC, "" );
+	return FALSE;
     }
-  }
 
-  return TRUE;
+    item = read_item(f);
+
+    if (strcmp(item->tag, "ObjectStore") ||
+	    item->key != 0) {
+	objectstore_kill_objectstoreitem(NULL, item, NULL);
+	setlocale( LC_NUMERIC, "" );
+	return FALSE;
+    }
+
+    datum = objectstore_item_get(item, "version");
+    if (datum == NULL ||
+	    datum->kind != OSI_KIND_INT ||
+	    datum->d.integer != OBJECTSTORE_CURRENT_VERSION) {
+	objectstore_kill_objectstoreitem(NULL, item, NULL);
+	setlocale( LC_NUMERIC, "" );
+	return FALSE;
+    }
+
+    datum = objectstore_item_get(item, "rootkey");
+    if (datum == NULL ||
+	    datum->kind != OSI_KIND_INT) {
+	setlocale( LC_NUMERIC, "");
+	return FALSE;
+    }
+    db->rootkey = datum->d.integer;
+
+    objectstore_kill_objectstoreitem(NULL, item, NULL);
+
+    while (!feof(f)) {
+	item = read_item(f);
+	if (item != NULL) {
+	    g_hash_table_insert(db->object_table, (gpointer) item->key, item);
+	    item->db = db;
+	    db->nextkey = MAX(db->nextkey, item->key + 1);
+	}
+    }
+
+    setlocale( LC_NUMERIC, "" );
+    return TRUE;
 }
 
 PUBLIC void objectstore_set_root(ObjectStore *db, ObjectStoreItem *root) {

@@ -268,8 +268,33 @@ PRIVATE void new_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
     sheet->control_panel = control_panel_new( sheet->name, TRUE, sheet );
 }
 
-//PRIVATE void open_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
-//}
+
+// Edit functions called for each selected component.
+
+PRIVATE void edit_delete_comp( Component *c, gpointer userdata ) {
+    sheet_delete_component( c->sheet, c );
+}
+
+PRIVATE void edit_clone_comp( Component *c, gpointer userdata ) {
+    comp_clone( c, c->sheet );
+}
+
+//---------------------------------------------------------------------------
+
+PRIVATE GFunc *edit_func[] = { (GFunc *) edit_delete_comp,
+			       (GFunc *) edit_clone_comp   };
+
+PRIVATE void edit_selected( gpointer userdata, guint action, GtkWidget *widget ) {
+    Sheet *sheet = gui_get_active_sheet();
+
+    g_list_foreach( sheet->selected_comps, edit_func[action], NULL );
+}
+
+PRIVATE void clone_selected( gpointer userdata, guint action, GtkWidget *widget ) {
+    Sheet *sheet = gui_get_active_sheet();
+
+    comp_clone_list( sheet->selected_comps, sheet );
+}
 
 PRIVATE void del_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
 
@@ -277,6 +302,14 @@ PRIVATE void del_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
 
     sheet_remove( sheet );
 }
+
+PRIVATE void clone_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
+    Sheet *sheet = gui_get_active_sheet();
+    Sheet *clone= sheet_clone( sheet ); 
+
+    gui_register_sheet( clone );
+}
+
 
 PRIVATE void ren_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
 
@@ -346,6 +379,7 @@ PRIVATE GtkItemFactoryEntry mainmenu_items[] = {
 //  { "/Sheet/_Open",		NULL,		open_sheet, 0,		NULL },
   { "/Sheet/_Save",		NULL,		save_file, 2,		NULL },
   { "/Sheet/Re_name",		NULL,		ren_sheet, 0,		NULL },
+  { "/Sheet/Clone",		NULL,		clone_sheet, 0,		NULL },
   { "/Sheet/sep1",		NULL,		NULL, 0,		"<Separator>" },
   { "/Sheet/_Clear",		NULL,		clear_sheet, 0,		NULL },
   { "/Sheet/_Remove",		NULL,		del_sheet, 0,		NULL },
@@ -354,6 +388,9 @@ PRIVATE GtkItemFactoryEntry mainmenu_items[] = {
   { "/Sheet/R_egister",		NULL,		reg_sheet2, 0,		NULL },
   { "/_Edit",			NULL,		NULL, 0,		"<Branch>" },
   { "/Edit/_Preferences...",	"<control>P",	prefs_edit_prefs, 0,	NULL },
+  { "/Edit/Delete",		"<del>",	edit_selected, 0,	NULL },
+  { "/Edit/Clone",		NULL,	edit_selected, 1,	NULL },
+  { "/Edit/Clone W Conn",		NULL,	clone_selected, 0,	NULL },
   { "/_Window",			NULL,		NULL, 0,		"<Branch>" },
   { "/Window/_Show Control Panel", NULL,	show_control_panel, 0,	NULL },
   { "/Window/_Hide Control Panel", NULL,	hide_control_panel, 0,	NULL },

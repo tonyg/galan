@@ -48,6 +48,7 @@ typedef struct GeneratorClass GeneratorClass;
 typedef struct Generator Generator;
 typedef struct ControlDescriptor ControlDescriptor;
 typedef struct Control Control;
+typedef struct ControlPanel ControlPanel;
 typedef struct AClock AClock;
 
 typedef enum AClockReason {
@@ -65,7 +66,6 @@ typedef enum AClockReason {
  */
 
 typedef void (*AEvent_handler_t)(Generator *recip, AEvent *event);
-
 
 /**
  * \brief This is the function type that is called to turn an AClock on and off.
@@ -191,6 +191,7 @@ struct OutputSignalDescriptor {
 #define GEN_DOUBLE_TO_INT(x)	((gint32) floor((x) + 0.5))
 
 struct GeneratorClass {
+
   char *name;				/* human-readable name - and also
 					   tag for save/load, so MUST be unique */
   char *tag;				/* this is the new tag for save/load 
@@ -290,6 +291,8 @@ extern void gen_kill_generator(Generator *g);
 
 extern Generator *gen_unpickle(ObjectStoreItem *item);
 extern ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db);
+
+extern Generator *gen_clone( Generator *g, ControlPanel *cp );
 
 /*=======================================================================*/
 /* Managing links between Generators */

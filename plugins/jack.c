@@ -180,7 +180,7 @@ PRIVATE void clock_handler(AClock *clock, AClockReason reason) {
       break;
 
     case CLOCK_ENABLE:
-      jack_set_process_callback( jack_client, process_callback, NULL ); 
+      jack_set_process_callback( jack_client, (JackProcessCallback) process_callback, NULL ); 
       jack_on_shutdown (jack_client, jack_shutdown, 0);
 
       jack_activate( jack_client );

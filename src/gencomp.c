@@ -210,6 +210,31 @@ PRIVATE void gencomp_destroy(Component *c) {
 }
 
 /**
+ * \brief Clone a GenComp
+ *
+ * \param c The Component to be cloned.
+ * \param sheet The Sheet where it should be placed
+ */
+
+PRIVATE Component *gencomp_clone(Component *c, Sheet *sheet) {
+    
+    GenCompData *d = c->data;
+
+    GenCompInitData *id = g_hash_table_lookup(generatorclasses, d->g->klass->tag);
+
+    Component *clone = comp_new_component(  c->klass, id, sheet, 0, 0 );
+    GenCompData *clonedata = clone->data;
+
+    gen_kill_generator( clonedata->g );
+    clonedata->g = gen_clone( d->g, sheet->control_panel );
+
+    return clone;
+    gencomp_resize(clone);
+    //sheet_queue_redraw_component( sheet, clone );
+}
+
+
+/**
  * \brief assure that connectors are valid.
  *
  */
@@ -541,9 +566,24 @@ PRIVATE void do_delete(Component *c, guint action, GtkWidget *widget) {
   sheet_delete_component(c->sheet, c);
 }
 
+PRIVATE void do_clone(Component *c, guint action, GtkWidget *widget) {
+    
+    GenCompData *d = c->data;
+
+    GenCompInitData *id = g_hash_table_lookup(generatorclasses, d->g->klass->tag);
+
+    Component *clone = sheet_build_new_component(  c->sheet, c->klass, id );
+    GenCompData *clonedata = clone->data;
+    gen_kill_generator( clonedata->g );
+    clonedata->g = gen_clone( d->g, c->sheet->control_panel );
+    gencomp_resize(clone);
+    sheet_queue_redraw_component( c->sheet, c );
+}
+
 PRIVATE GtkItemFactoryEntry popup_items[] = {
   { "/_Rename...",	NULL,	do_rename, 0,		NULL },
-  { "/New _Control",	NULL,	NULL, 0,		"<Branch>" },
+  { "/_Clone",		NULL,	do_clone, 0,		NULL },
+  { "/New Control",	NULL,	NULL, 0,		"<Branch>" },
   { "/_Properties...",	NULL,	do_props, 0,		NULL },
   { "/sep1",		NULL,	NULL, 0,		"<Separator>" },
   { "/_Delete",		NULL,	do_delete, 0,		NULL },
@@ -582,7 +622,7 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
 
   for (i = 0; i < d->g->klass->numcontrols; i++) {
     GtkItemFactoryEntry ent = { NULL, NULL, new_control_callback, i, NULL };
-    char *name = malloc(strlen(NEW_CONTROL_PREFIX) + strlen(d->g->klass->controls[i].name) + 1);
+    char *name = safe_malloc(strlen(NEW_CONTROL_PREFIX) + strlen(d->g->klass->controls[i].name) + 1);
 
     strcpy(name, NEW_CONTROL_PREFIX);
     strcat(name, d->g->klass->controls[i].name);
@@ -627,6 +667,7 @@ PUBLIC ComponentClass GeneratorComponentClass = {
 
   gencomp_initialize,
   gencomp_destroy,
+  gencomp_clone,
 
   gencomp_unpickle,
   gencomp_pickle,

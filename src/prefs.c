@@ -76,12 +76,12 @@ PRIVATE void kill_prefs_table(GHashTable *tab) {
   g_hash_table_foreach(tab, free_prefs_entry, NULL);
 }
 
-PUBLIC char *prefs_get_item(char *key) {
+PUBLIC char *prefs_get_item(const char *key) {
   PrefEntry *entry = g_hash_table_lookup(prefs, key);
   return entry ? entry->d.value : NULL;
 }
 
-PUBLIC void prefs_set_item(char *key, char *value) {
+PUBLIC void prefs_set_item(const char *key, const char *value) {
   PrefEntry *entry = safe_malloc(sizeof(PrefEntry));
   entry->key = safe_string_dup(key);
   entry->d.value = safe_string_dup(value);
@@ -89,7 +89,7 @@ PUBLIC void prefs_set_item(char *key, char *value) {
   g_hash_table_insert(prefs, entry->key, entry);
 }
 
-PUBLIC void prefs_clear_item(char *key) {
+PUBLIC void prefs_clear_item(const char *key) {
   PrefEntry *entry = g_hash_table_lookup(prefs, key);
 
   if (entry != NULL) {
@@ -100,7 +100,7 @@ PUBLIC void prefs_clear_item(char *key) {
   }
 }
 
-PUBLIC void prefs_register_option(char *key, char *value) {
+PUBLIC void prefs_register_option(const char *key, const char *value) {
   PrefEntry *entry = g_hash_table_lookup(options, key);
 
   if (entry == NULL) {
@@ -149,7 +149,7 @@ PRIVATE gboolean droplist_entry_changed(GtkEntry *entry, gpointer data) {
   gchar *option_name = gtk_object_get_data(GTK_OBJECT(entry), "option_name");
 
   if (option_name != NULL) {
-    gchar *value_text = gtk_entry_get_text(entry);
+    const gchar *value_text = gtk_entry_get_text(entry);
 
     if (value_text[0] == '\0')
       prefs_clear_item(option_name);

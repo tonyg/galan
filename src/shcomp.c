@@ -60,6 +60,8 @@
 
 //PRIVATE int next_component_number = 1;
 //PRIVATE ComponentClass InterSheetComponentClass;	/* forward reference */
+PRIVATE ComponentClass SheetComponentClass;
+PRIVATE void do_control(Component *c, guint action, GtkWidget *widget);
 
 PRIVATE void build_connectors(Component *c, int count, gboolean is_outbound, gboolean is_signal) {
   int i;
@@ -226,6 +228,37 @@ PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
   return 1;
 }
 
+PRIVATE Component *shcomp_clone(Component *c, Sheet *sheet) {
+  ShCompData *d = c->data;
+
+  Sheet *newsheet = sheet_clone( d->sheet );
+ 
+  ShCompInitData id;
+  Component *retval;
+  
+  id.sheet = newsheet;
+  retval = comp_new_component( &SheetComponentClass, &id, sheet, 0, 0 );
+  if( d->sheet->panel_control_active ) {
+      do_control( retval, 0, NULL );
+      newsheet->panel_control->frame_visible = d->sheet->panel_control->frame_visible;
+      if( ! (newsheet->panel_control->frame_visible) ) {
+	  gtk_frame_set_shadow_type (GTK_FRAME (newsheet->panel_control->title_frame) , GTK_SHADOW_NONE);
+	  gtk_frame_set_label (GTK_FRAME (newsheet->panel_control->title_frame) , NULL);
+	  gtk_label_set_text(GTK_LABEL(newsheet->panel_control->title_label),"    ");
+      }
+
+
+      newsheet->panel_control->control_visible = d->sheet->panel_control->control_visible;
+      if( ! (newsheet->panel_control->control_visible) ) {
+	  gtk_widget_hide( newsheet->panel_control->widget );
+      }
+      
+      control_moveto( newsheet->panel_control, d->sheet->panel_control->x, d->sheet->panel_control->y );
+  }
+  //shcomp_resize( retval );
+
+  return retval;
+}
 
 PRIVATE int fileshcomp_initialize(Component *c, gpointer init_data) {
   FileShCompInitData *id = (FileShCompInitData *) init_data;
@@ -553,8 +586,8 @@ PRIVATE void done_panel( Control *control ) {
 
 
     gtk_container_add (GTK_CONTAINER (control->this_panel->scrollwin), viewport);
-    gtk_widget_reparent( control->this_panel->fixedwidget, viewport );
     gtk_widget_show( viewport );
+    gtk_widget_reparent( control->this_panel->fixedwidget, viewport );
 }
 
 PRIVATE  ControlDescriptor desc = 
@@ -569,6 +602,10 @@ PRIVATE void do_control(Component *c, guint action, GtkWidget *widget) {
   d->sheet->panel_control = control_new_control( &desc, NULL, c->sheet->control_panel );
   d->sheet->panel_control_active = TRUE;
   control_panel_unregister_panel( d->sheet->control_panel );
+}
+
+PUBLIC void shcomp_do_control( Component *c ) {
+    do_control( c, 0, NULL );
 }
 
 //PRIVATE void do_props(Component *c, guint action, GtkWidget *widget) {
@@ -649,6 +686,7 @@ PRIVATE ComponentClass SheetComponentClass = {
 
   shcomp_initialize,
   shcomp_destroy,
+  shcomp_clone,
 
   shcomp_unpickle,
   shcomp_pickle,
@@ -674,6 +712,7 @@ PRIVATE ComponentClass FileSheetComponentClass = {
 
   fileshcomp_initialize,
   shcomp_destroy,
+  shcomp_clone,
 
   shcomp_unpickle,
   shcomp_pickle,

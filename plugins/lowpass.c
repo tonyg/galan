@@ -99,7 +99,7 @@ PRIVATE void calc_coeffs_and_send(Generator *g, AEvent *event) {
   gdouble tmp;
   gdouble coeffs[NUM_COEFFS];
 
-  gen_init_aevent(event, AE_NUMARRAY, NULL, 0, NULL, 0, event->time);
+  gen_init_aevent(event, AE_DBLARRAY, NULL, 0, NULL, 0, event->time);
   
   tmp = -M_PI * cutoff_ratio / data->reso;
 
@@ -110,8 +110,10 @@ PRIVATE void calc_coeffs_and_send(Generator *g, AEvent *event) {
   coeffs[3] = 1.0;
       coeffs[4] = coeffs[5] = 0;
 
-  event->d.array.len = NUM_COEFFS;
-  event->d.array.numbers = coeffs;
+  event->d.darray.len = NUM_COEFFS;
+
+  event->d.darray.numbers = coeffs;
+
 
   gen_send_events(g, EVT_COEFFS, -1, event);
   event->kind = AE_NONE;

@@ -32,12 +32,14 @@ typedef enum RefType {
 
 struct ISCompData {
     gchar *name;
+    gboolean poly;
     RefType reftype;
     ConnectorReference *ref;
 };
 
 struct ISCompInitData {
     RefType reftype;
+    gboolean poly;
 };
 
 extern void init_iscomp(void);

@@ -72,11 +72,13 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->alloc_ring = 0;
   array = objectstore_item_get(item, "note");
 
-  for (i = 0; i < NUM_VOICES; i++)
-      data->note[i] =
-	objectstore_datum_integer_value(
-	  objectstore_datum_array_get(array, i )
-	);
+  for (i = 0; i < NUM_VOICES; i++) {
+      ObjectStoreDatum *dat = objectstore_datum_array_get(array, i );
+      if( dat )
+	  data->note[i] = objectstore_datum_integer_value( dat );
+      else
+	  data->note[i] = -1;
+  }
 
   g->data = data;
 }

@@ -63,20 +63,9 @@ static void gtk_knob_adjustment_value_changed(GtkAdjustment *adjustment, gpointe
 static GtkWidgetClass *parent_class = NULL;
 static GList *animation = NULL;
 
-struct _MyAnimation {
-    GList *list;
-    int   width, height;
-};
 
-
-
-GdkPixbuf *get_empty_frame( GdkPixbufAnimation *anim ) {
-
-    return gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8,
-	    gdk_pixbuf_animation_get_width( anim ),
-	    gdk_pixbuf_animation_get_height( anim )      );
-}
-
+// Old gif loading code... will be removed soon...
+#if 0
 static GList *get_anim_list( char *name ) {
 
    GError *err = NULL;
@@ -93,8 +82,6 @@ static GList *get_anim_list( char *name ) {
        GdkPixbuf *pixbuf = gdk_pixbuf_animation_iter_get_pixbuf(iter);
        int delay = gdk_pixbuf_animation_iter_get_delay_time( iter );
        
-       //g_print( "Hallo :)\n" );
-
        retval = g_list_append( retval, gdk_pixbuf_copy( pixbuf ) );
 
        if( gdk_pixbuf_animation_iter_on_currently_loading_frame( iter ) )
@@ -107,6 +94,24 @@ static GList *get_anim_list( char *name ) {
 
        g_time_val_add( &time, delay*1000 );
        gdk_pixbuf_animation_iter_advance( iter, &time );
+   }
+   return retval;
+}
+#endif
+
+static GList *get_anim_list( char *name ) {
+
+   GError *err = NULL;
+   GdkPixbuf *animation; 
+   GList *retval = NULL;
+   int x, w;
+
+   animation = gdk_pixbuf_new_from_file( name, &err );
+   w = gdk_pixbuf_get_width( animation );
+   
+   for(x=0; x<w; x+=KNOB_SIZE ) {
+       GdkPixbuf *pixbuf = gdk_pixbuf_new_subpixbuf( animation, x, 0, KNOB_SIZE, KNOB_SIZE );
+       retval = g_list_append( retval, pixbuf );
    }
    return retval;
 }
@@ -141,7 +146,8 @@ static void gtk_knob_class_init (GtkKnobClass *class) {
   GtkObjectClass *object_class;
   GtkWidgetClass *widget_class;
 
-  animation = get_anim_list( PIXMAPDIRIFY("knob.gif") );
+  //animation = get_anim_list( PIXMAPDIRIFY("knob.gif") );
+  animation = get_anim_list( PIXMAPDIRIFY("new-knob02.png") );
   object_class = (GtkObjectClass*) class;
   widget_class = (GtkWidgetClass*) class;
 
@@ -323,9 +329,6 @@ static gint gtk_knob_expose(GtkWidget *widget, GdkEventExpose *event) {
 
   gdk_window_clear_area(widget->window, 0, 0, widget->allocation.width, widget->allocation.height);
 
-  //gdk_draw_pixmap(widget->window, widget->style->bg_gc[widget->state], knob->pixmap,
-  //		  0, 0, 0, 0, KNOB_SIZE, KNOB_SIZE);
-  //
   dx = knob->adjustment->value - knob->adjustment->lower;
   dy = knob->adjustment->upper - knob->adjustment->lower;
   framelist = knob->anim_list;
@@ -334,20 +337,13 @@ static gint gtk_knob_expose(GtkWidget *widget, GdkEventExpose *event) {
     GdkPixbuf *pixbuf;
 
     dx = MIN(MAX(dx / dy, 0), 1);
-    dx = (1-dx) * (g_list_length( framelist )-0.5) * 0.75 + 0.125 * g_list_length( framelist );
+    //dx = (1-dx) * (g_list_length( framelist )-0.5) * 0.75 + 0.125 * g_list_length( framelist );
+    dx = (dx) * (g_list_length( framelist ) - 1 );
 
     pixbuf = g_list_nth_data( framelist, (int) dx);
 
-    //tmpbuf = gdk_pixbuf_scale_simple( pixbuf, KNOB_SIZE, KNOB_SIZE, GDK_INTERP_TILES );
-
-    //gdk_pixbuf_render_to_drawable( pixbuf, widget->window, widget->style->bg_gc[widget->state], 
-    //    0, 0, 0, 0, gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), 0,0,0 );
-   //     0, 0, 0, 0, KNOB_SIZE-1, KNOB_SIZE-1, 0,0,0 );
-   //
     gdk_pixbuf_render_to_drawable_alpha( pixbuf, widget->window,
-	    0, 0, 0, 0, gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), GDK_PIXBUF_ALPHA_BILEVEL, 0, 0,0,0 );
-
-    //gdk_draw_line(widget->window, widget->style->white_gc, 16, 16, dx, dy);
+	    0, 0, 0, 0, gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), GDK_PIXBUF_ALPHA_FULL, 0, 0,0,0 );
   }
   
 

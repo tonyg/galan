@@ -410,24 +410,6 @@ PRIVATE int setup_input_handler( void ) {
   return 1;
 }
 
-PRIVATE int get_bytes_to_come( unsigned char midistatus ) {
-
-    switch( midistatus & 0xf0 ) {
-
-	case 0x80:
-	case 0x90:
-	case 0xa0:
-	case 0xb0:
-	case 0xe0:
-	    return 2;
-	case 0xc0:
-	case 0xd0:
-	    return 1;
-	    
-	default:
-	    return 0;
-    }
-}
 
 /*
  * This is the input callback....

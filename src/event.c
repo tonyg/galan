@@ -54,8 +54,12 @@ PRIVATE void aevent_copy( AEvent *src, AEvent *dst ) {
 		dst->d.string = safe_string_dup( src->d.string );
 		break;
 	    case AE_NUMARRAY:
-		dst->d.array.numbers = safe_malloc( sizeof(gdouble) * dst->d.array.len );
-		memcpy( dst->d.array.numbers, src->d.array.numbers, src->d.array.len * sizeof(gdouble) );
+		dst->d.array.numbers = safe_malloc( sizeof(SAMPLE) * dst->d.array.len );
+		memcpy( dst->d.array.numbers, src->d.array.numbers, src->d.array.len * sizeof(SAMPLE) );
+		break;
+	    case AE_DBLARRAY:
+		dst->d.darray.numbers = safe_malloc( sizeof(gdouble) * dst->d.darray.len );
+		memcpy( dst->d.darray.numbers, src->d.darray.numbers, src->d.darray.len * sizeof(gdouble) );
 		break;
 	    default:
 	    	break;
@@ -94,6 +98,10 @@ PRIVATE void eventq_free( EventQ *evq ) {
 	    case AE_NUMARRAY:
 		if( evq->e.d.array.numbers != NULL )
 		    safe_free( evq->e.d.array.numbers );
+		break;
+	    case AE_DBLARRAY:
+		if( evq->e.d.darray.numbers != NULL )
+		    safe_free( evq->e.d.darray.numbers );
 		break;
 	    default:
 	    	break;

@@ -29,7 +29,7 @@ plugin_LTLIBRARIES = \
 
 
 
-LDFLAGS = "-module" @GTK_LIBS@
+AM_LDFLAGS = "-module" @GTK_LIBS@
 LIBS = @GTK_LIBS@ @GTHREAD_LIBS@ $(srcdir)/../src/libgalan.la
 INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\" 
 
@@ -66,7 +66,7 @@ ladspa_la_LDFLAGS = @LRDF_LIBS@
 ladspa_la_INCLUDES = @LRDF_CFLAGS@
 
 fft_la_LDFLAGS= @FFTW_LIBS@
-ifftw_la_LDFLAGS= @FFTW_LIBS@
+ifft_la_LDFLAGS= @FFTW_LIBS@
 
 SUFFIXES= .la.c
 %.la.c: %.c

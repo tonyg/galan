@@ -26,6 +26,7 @@
 #include "global.h"
 #include "generator.h"
 #include "comp.h"
+#include "gencomp.h"
 #include "sheet.h"
 #include "msgbox.h"
 
@@ -150,6 +151,30 @@ PUBLIC Component *comp_new_component(ComponentClass *k, gpointer init_data,
   }
 
   return c;
+}
+
+PUBLIC Component *comp_clone( Component *c, Sheet *sheet ) {
+
+    Component *clone;
+ 
+    if (c->klass->clone_instance == NULL) {
+	g_warning("clone_instance == NULL in comp_clone of class %s",
+		c->klass->class_tag);
+	return NULL;
+    }
+ 
+    clone = c->klass->clone_instance( c, sheet );
+    if( sheet == c->sheet ) {
+	clone->x = c->x + 10;
+	clone->y = c->y + 10;
+    } else {
+	clone->x = c->x;
+	clone->y = c->y;
+    }
+
+    sheet_add_component( sheet, clone );
+
+    return clone;
 }
 
 
@@ -550,6 +575,48 @@ PUBLIC void comp_remove_connection(Connector *con, ConnectorReference *other) {
   free(node->data);
   con->refs = g_list_remove_link(con->refs, node);
   g_list_free_1(node);
+}
+
+PRIVATE void clone_connection( ConnectorReference src, ConnectorReference dst, GHashTable *clonemap ) {
+    src.c = g_hash_table_lookup( clonemap, src.c );
+    dst.c = g_hash_table_lookup( clonemap, dst.c );
+
+    if( src.c && dst.c )
+	comp_link( &src, &dst );
+}
+
+PUBLIC void comp_clone_list( GList *lst, Sheet *sheet ) {
+
+    GHashTable *clonemap = g_hash_table_new( g_direct_hash, g_direct_equal );
+    
+    GList *compX;
+
+    // Clone all components in list, and generate the map from src to clone
+    for( compX = lst; compX; compX = g_list_next( compX ) ) {
+
+	Component *c = compX->data;
+
+	Component *clone = comp_clone( c, sheet );
+	g_hash_table_insert( clonemap, c, clone );
+    }
+
+    // now read out all connections and connect the clones
+
+    for( compX = lst; compX; compX = g_list_next( compX ) ) {
+
+	Component *c = compX->data;
+	GList *connX;
+	for( connX = c->connectors; connX; connX = g_list_next( connX ) ) {
+	    Connector *con = connX->data;
+
+	    GList *refX;
+	    for( refX=con->refs; refX; refX = g_list_next( refX ) ) {
+		ConnectorReference *ref = refX->data;
+
+		clone_connection( con->ref, *ref, clonemap );
+	    }
+	}
+    }
 }
 
 PUBLIC void init_comp(void) {

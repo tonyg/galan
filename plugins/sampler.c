@@ -76,8 +76,8 @@
 typedef struct Data {
 	/* state, to be pickled, unpickled */
   gint32 phase;
-  gdouble ysize; /* sizeof(intbuf) = ysize * SAMPLE_RATE */
-  gdouble xsize;
+  SAMPLE ysize; /* sizeof(intbuf) = ysize * SAMPLE_RATE */
+  SAMPLE xsize;
 
   gint32 loop_start, loop_end;
 

@@ -363,7 +363,7 @@ PRIVATE void init_all( Control *control ) {
 	gtk_widget_show( GTK_WIDGET( hb ) );
 	
 	control->widget = hb;
-	refresh_all( control );
+//	refresh_all( control );
 }
 
 PRIVATE void done_all(Control *control) {

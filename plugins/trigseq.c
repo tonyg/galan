@@ -56,6 +56,8 @@ typedef struct Data {
   gboolean pattern[NUM_PATTERNS][SEQUENCE_LENGTH];
 } Data;
 
+PRIVATE gboolean clipseq[SEQUENCE_LENGTH];
+
 PRIVATE int init_instance(Generator *g) {
   Data *data = safe_malloc(sizeof(Data));
   int i, j;
@@ -142,12 +144,138 @@ PRIVATE void toggled_handler(GtkWidget *widget, gpointer userdata) {
   }
 }
 
+PRIVATE void do_copy(Control *c, guint action, GtkWidget *widget) {
+  Data *data = c->g->data;
+  int i, end, offset;
+
+  switch( action ) {
+      case 0:
+	  i=0; end=SEQUENCE_LENGTH;
+	  break;
+      case 1:
+	  i=0; end=SEQUENCE_LENGTH/2;
+	  break;
+      case 2:
+	  i=SEQUENCE_LENGTH/2; end=SEQUENCE_LENGTH;
+	  break;
+      case 3:
+	  i=0; end=SEQUENCE_LENGTH/4;
+	  break;
+      case 4:
+	  i=SEQUENCE_LENGTH/4; end=SEQUENCE_LENGTH*2/4;
+	  break;
+      case 5:
+	  i=SEQUENCE_LENGTH*2/4; end=SEQUENCE_LENGTH*3/4;
+	  break;
+      case 6:
+	  i=SEQUENCE_LENGTH*3/4; end=SEQUENCE_LENGTH*4/4;
+	  break;
+      default:
+	  i=0; end=SEQUENCE_LENGTH;
+	  break;
+  }
+
+  for( offset=i; i<end; i++ ) {
+      clipseq[i-offset] = data->pattern[data->edit][i];
+  }
+}
+
+PRIVATE void do_paste(Control *c, guint action, GtkWidget *widget) {
+  Data *data = c->g->data;
+  int i, end, offset;
+
+  switch( action ) {
+      case 0:
+	  i=0; end=SEQUENCE_LENGTH;
+	  break;
+      case 1:
+	  i=0; end=SEQUENCE_LENGTH/2;
+	  break;
+      case 2:
+	  i=SEQUENCE_LENGTH/2; end=SEQUENCE_LENGTH;
+	  break;
+      case 3:
+	  i=0; end=SEQUENCE_LENGTH/4;
+	  break;
+      case 4:
+	  i=SEQUENCE_LENGTH/4; end=SEQUENCE_LENGTH*2/4;
+	  break;
+      case 5:
+	  i=SEQUENCE_LENGTH*2/4; end=SEQUENCE_LENGTH*3/4;
+	  break;
+      case 6:
+	  i=SEQUENCE_LENGTH*3/4; end=SEQUENCE_LENGTH*4/4;
+	  break;
+      default:
+	  i=0; end=SEQUENCE_LENGTH;
+	  break;
+  }
+
+  for( offset=i; i<end; i++ ) {
+      data->pattern[data->edit][i] = clipseq[i-offset];
+  }
+  if (c->events_flow) {
+    gen_update_controls(c->g, TRIGSEQ_CONTROL_PATTERN);
+  }
+}
+
+PRIVATE GtkItemFactoryEntry popup_items[] = {
+  /* Path, accelerator, callback, extra-numeric-argument, kind */
+  { "/Full",			NULL,	NULL,	    0,	"<Branch>" },
+  { "/Full/Copy",		NULL,	do_copy,    0,	NULL },
+  { "/Full/Paste",		NULL,	do_paste,   0,	NULL },
+  { "/1st Half",		NULL,	NULL,	    0,	"<Branch>" },
+  { "/1st Half/Copy",		NULL,	do_copy,    1,	NULL },
+  { "/1st Half/Paste",		NULL,	do_paste,   1,	NULL },
+  { "/2nd Half",		NULL,	NULL,	    0,	"<Branch>" },
+  { "/2nd Half/Copy",		NULL,	do_copy,    2,	NULL },
+  { "/2nd Half/Paste",		NULL,	do_paste,   2,	NULL },
+  { "/1st Quarter",		NULL,	NULL,	    0,	"<Branch>" },
+  { "/1st Quarter/Copy",	NULL,	do_copy,    3,	NULL },
+  { "/1st Quarter/Paste",	NULL,	do_paste,   3,	NULL },
+  { "/2nd Quarter",		NULL,	NULL,	    0,	"<Branch>" },
+  { "/2nd Quarter/Copy",	NULL,	do_copy,    4,	NULL },
+  { "/2nd Quarter/Paste",	NULL,	do_paste,   4,	NULL },
+  { "/3rd Quarter",		NULL,	NULL,	    0,	"<Branch>" },
+  { "/3rd Quarter/Copy",	NULL,	do_copy,    5,	NULL },
+  { "/3rd Quarter/Paste",	NULL,	do_paste,   5,	NULL },
+  { "/4th Quarter",		NULL,	NULL,	    0,	"<Branch>" },
+  { "/4th Quarter/Copy",	NULL,	do_copy,    6,	NULL },
+  { "/4th Quarter/Paste",	NULL,	do_paste,   6,	NULL },
+};
+
+PRIVATE void kill_popup(GtkWidget *popup, GtkItemFactory *ifact) {
+  gtk_object_unref(GTK_OBJECT(ifact));
+}
+
+PRIVATE GtkWidget *build_popup(Control *c) {
+  GtkItemFactory *ifact;
+  GtkWidget *result;
+  int nitems = sizeof(popup_items) / sizeof(popup_items[0]);
+
+  ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<trigseq-popup>", NULL);
+
+  gtk_item_factory_create_items(ifact, nitems, popup_items, c);
+  result = gtk_item_factory_get_widget(ifact, "<trigseq-popup>");
+
+  gtk_signal_connect(GTK_OBJECT(result), "destroy", GTK_SIGNAL_FUNC(kill_popup), ifact);
+  return result;
+}
+
+PRIVATE void popup_handler(GtkWidget *widget, Control *c) {
+  //Data *data = c->g->data;
+  GtkWidget *popup = build_popup(c);
+
+  gtk_menu_popup(GTK_MENU(popup), NULL, NULL, NULL, NULL, 1, 0);
+}
+
 PRIVATE void init_pattern(Control *control) {
   GtkWidget *hb;
   int i;
   GtkWidget **widgets = safe_malloc(sizeof(GtkWidget *) * SEQUENCE_LENGTH);
+  GtkWidget *menu;
 
-  hb = gtk_hbox_new(TRUE, 5);
+  hb = gtk_hbox_new(FALSE, 5);
 
   for (i = 0; i < SEQUENCE_LENGTH; i++) {
     GtkWidget *b = gtk_toggle_button_new();
@@ -158,6 +286,13 @@ PRIVATE void init_pattern(Control *control) {
     gtk_widget_show(b);
     widgets[i] = b;
   }
+  menu = gtk_button_new_with_label( "m" );
+
+  gtk_signal_connect( GTK_OBJECT(menu), "clicked",
+	GTK_SIGNAL_FUNC( popup_handler ), control );
+
+  gtk_box_pack_start(GTK_BOX(hb), menu, FALSE, FALSE, 0);
+  gtk_widget_show(menu);
 
   control->widget = hb;
   control->data = widgets;

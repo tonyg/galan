@@ -56,10 +56,54 @@ typedef enum AClockReason {
   CLOCK_MAX_REASON	/**< end-of-enum marker */
 } AClockReason;
 
+/**
+ * \brief This is the function type that is called on receive of an Event.
+ *
+ * \param recip The Generator receiving the event.
+ * \param event The AEvent to process.
+ */
+
 typedef void (*AEvent_handler_t)(Generator *recip, AEvent *event);
+
+
+/**
+ * \brief This is the function type that is called to turn an AClock on and off.
+ *
+ * \param clock The Clock receiving the event.
+ * \param reason one of CLOCK_ENABLE or CLOCK_DISABLE.
+ */
+
 typedef void (*AClock_handler_t)(AClock *clock, AClockReason reason);
+
+/**
+ * \brief This function type is an output Generator
+ * 
+ * \param source The Generator which generates the realtime signal.
+ * \param buffer where to put the signal.
+ * \param number of samples to generate.
+ *
+ * \return TRUE if the function generated data. A filter which receives FALSE when reading its input
+ *         should return FALSE also and do nothing.
+ */
+
 typedef gboolean (*AGenerator_t)(Generator *source, SAMPLE *buffer, int buflen);
+
+/**
+ * \brief This is function type used for pickle and unpickle.
+ *
+ * The generic part of the Generator is allready pickled/unpickled when this function is
+ * called. This is why this function also receives the ObjectStoreItem as a Parameter.
+ *
+ * \param gen The Generator which shall be pickled/unpickled.
+ * \param item The ObjectStoreItem associated with this Generator.
+ * \param db The ObjectStore used.
+ */
+
 typedef void (*AGenerator_pickle_t)(Generator *gen, ObjectStoreItem *item, ObjectStore *db);
+
+/**
+ * AEvent can have several types which must be handled by aevent_copy(), the other two...
+ */
 
 typedef enum AEventKind {
   AE_ANY = -1,		/**< wildcard, for matching all incoming evts */
@@ -72,6 +116,11 @@ typedef enum AEventKind {
   AE_LAST_EVENT_KIND	/**< end-of-enum marker */
 } AEventKind;
 
+
+/**
+ * \brief represents a link between 2 Generators.
+ */
+
 struct EventLink {
   int is_signal;		/**< true for signal link, false for event link */
   Generator *src;
@@ -81,8 +130,8 @@ struct EventLink {
 };
 
 typedef struct arr {
-	int len;
-	gdouble *numbers;
+    int len;
+    gdouble *numbers;
 } Array;
 
 struct AEvent {		/**< audio event */

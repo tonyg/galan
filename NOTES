@@ -16,3 +16,36 @@ Controllers:
 	- will probably need some kind of Controller-style mechanism
 	  to implement feedback from Generator's data to visible controls...
 
+[torbenh]
+
+graphen implementierung:
+ welche objekte stellt die core lib zur verfuegung ?
+  generator objekt.
+  ein plugin gibt in der Regel eine von Generator abgelittene Klasse zurueck.
+  einen Objektyp (das ist ja ne klasse :)
+
+  es gibt auch plugins die einen componenten typen abgeben.
+  das muss aber eigentlich nicht sein, da die inputs und outputs 
+  ueber generator methoden gemacht werden.
+
+  deswegen sind die emu components auch generatoren.
+  das sollte ich unbedingt aendern.
+
+  das wuerde ueber signal typen auszuschliessen sein,
+  dass es falsche verbindungen gibt.
+  
+  TODO:
+    - move the connection code for emu components to the generator implementation.
+  
+  what objects does core-lib provide ?
+   - Generator (is a base class)
+   - The GeneratorClass (the plugins implement this interface)
+   - it would be good to have a type system here.
+   - plugins could register a type ?
+     (hmmm types should be seperate plugins or implemented in the core.
+     first implement types in the core. types could come from the raptor rdf stuff
+   - the event stuff, the clock stuff.
+     
+   - there must be a method to connect with adding.
+     the connection algorithms 
+

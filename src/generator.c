@@ -29,7 +29,7 @@
 #include "msgbox.h"
 
 /**
- * \brief This is a hash mapping from string -> GenratorClass
+ * \brief This is a hash mapping from string -> GeneratorClass
  *
  * This is used when a Generator is unpickled to find the GeneratorClass from the name tag.
  */
@@ -65,7 +65,7 @@ PUBLIC void gen_init_aevent(AEvent *e, AEventKind kind,
 }
 
 /**
- * \brief Registers a new GenratorClass with the system.
+ * \brief Registers a new GeneratorClass with the system.
  *
  * \param name The Name Tag of the GenratorClass (This must be unique as it is used to find the GenratorClass on load)
  * \param prefer If a GenratorClass with the same name exists should this be overwritten.
@@ -632,9 +632,17 @@ PUBLIC void gen_update_controls(Generator *g, int index) {
 }
 
 /**
- * \brief put an input of Type SIG_FLAG_REALTIME into the \buffer.
+ * \brief read an input of Type SIG_FLAG_REALTIME into the \buffer.
  *
- * \param Generator 
+ * This function is used to get the realtime signal data.
+ * 
+ * \param g this Generator.
+ * \param index which input connector
+ * \param attachment_number which of the connected Generator s (should normally be -1 for all)
+ * \param buffer where to put the data.
+ * \param buflen how many samples should be read.
+ *
+ * \return TRUE if something was put into the \a buffer.
  */
 
 PUBLIC gboolean gen_read_realtime_input(Generator *g, gint index, int attachment_number,
@@ -680,6 +688,22 @@ PUBLIC gboolean gen_read_realtime_input(Generator *g, gint index, int attachment
   }
 }
 
+/**
+ * \brief read realtime output from a generator and cache it if its necessarry.
+ *
+ * I dont think someone would use this function. It is used by gen_read_realtime_input()
+ * to obtain the data from the individual Generator s and cache it if it will be read multiple
+ * times.
+ *
+ * \param g the Generator to be read out.
+ * \param index connector number.
+ * \param buffer where the data should be placed.
+ * \param buflen how many SAMPLE s should be read.
+ *
+ * \return TRUE if data could be read.
+ * 
+ */
+
 PUBLIC gboolean gen_read_realtime_output(Generator *g, gint index, SAMPLE *buffer, int buflen) {
   /* Sanity checks */
   g_return_val_if_fail(index < g->klass->out_sig_count && index >= 0, FALSE);
@@ -720,6 +744,18 @@ PUBLIC gboolean gen_read_realtime_output(Generator *g, gint index, SAMPLE *buffe
     return g->last_results[index];
   }
 }
+
+/**
+ * \brief Read output range for this Generator.
+ *
+ * This function should not be used by the user.
+ * it is called by gen_get_randomaccess_input_range().
+ *
+ * \param g Generator to read out.
+ * \param index number of output connector.
+ *
+ * \return the number of samples the randonacces provides.
+ */
 
 PUBLIC SAMPLETIME gen_get_randomaccess_output_range(Generator *g, gint index) {
   SAMPLETIME (*fn)(Generator *, OutputSignalDescriptor *);

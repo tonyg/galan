@@ -72,12 +72,13 @@ GdkPixbuf *get_empty_frame( GdkPixbufAnimation *anim ) {
 
 static GList *get_anim_list( char *name ) {
 
-   GError *err;
+   GError *err = NULL;
    GTimeVal time;
-   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name, &err );
+   GdkPixbufAnimation *animation; 
    GdkPixbufAnimationIter *iter;
    GList *retval = NULL;
 
+   animation = gdk_pixbuf_animation_new_from_file( name, &err );
    g_get_current_time( &time );
    iter = gdk_pixbuf_animation_get_iter( animation, &time );
    
@@ -103,57 +104,6 @@ static GList *get_anim_list( char *name ) {
    return retval;
 }
 
-/* XXX: How do i handle this ?
- * 
-GList *get_anim_list( char *name ) {
-
-   GError *err;
-   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name, &err );
-
-   GList *framelistX, *framelist = gdk_pixbuf_animation_get_frames( animation );
-   GdkPixbufFrame *firstframe = framelist->data;
-   GdkPixbuf *firstpixbuf = gdk_pixbuf_frame_get_pixbuf( firstframe );
-   GdkPixbuf *actpixbuf  = gdk_pixbuf_copy( firstpixbuf );
-   GList *retval = NULL;
-
-   retval= g_list_append( retval, gdk_pixbuf_copy( firstpixbuf ) );
-
-   for( framelistX = framelist; framelistX != NULL; framelistX = g_list_next( framelistX ) ) {
-       GdkPixbufFrame *frame = framelistX->data;
-       GdkPixbuf *framebuf = gdk_pixbuf_frame_get_pixbuf( frame );
-       int xo=gdk_pixbuf_frame_get_x_offset( frame ); 
-       int yo=gdk_pixbuf_frame_get_y_offset( frame ); 
-       int w=gdk_pixbuf_get_width( framebuf ); 
-       int h=gdk_pixbuf_get_height( framebuf ); 
-       GdkPixbuf *tmpbuf = gdk_pixbuf_copy( actpixbuf );
-
-       gdk_pixbuf_composite( framebuf, tmpbuf, xo,yo, w, h, xo, yo, 1,1, GDK_INTERP_NEAREST, 255 );  
-       
-       retval= g_list_append( retval, tmpbuf );
-
-       
-       switch( gdk_pixbuf_frame_get_action( frame ) ) {
-	   case GDK_PIXBUF_FRAME_RETAIN:
-	       gdk_pixbuf_unref( actpixbuf );
-	       actpixbuf = gdk_pixbuf_copy( tmpbuf );
-	       break;
-	   case GDK_PIXBUF_FRAME_DISPOSE:
-	       break;
-	   case GDK_PIXBUF_FRAME_REVERT:
-	       gdk_pixbuf_unref( actpixbuf );
-	       actpixbuf = gdk_pixbuf_copy( firstpixbuf );
-	       break;
-       }
-       
-   }
-
-    
-   gdk_pixbuf_unref( actpixbuf );
-   gdk_pixbuf_unref( firstpixbuf );
-
-   return retval;
-}
-*/
 void free_anim_list( GList *anim_list )
 {
     // g_list_foreach( anim_list, gdk_pixbuf_unref );

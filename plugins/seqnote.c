@@ -58,6 +58,9 @@ PRIVATE ControlDescriptor seqnote_controls[] = {
   { CONTROL_KIND_NONE, }
 };
 
+PRIVATE int clipseq[SEQUENCE_LENGTH];
+PRIVATE gboolean clipnote[SEQUENCE_LENGTH];
+
 typedef struct Data {
   int edit, play;
   int pattern[NUM_PATTERNS][SEQUENCE_LENGTH];
@@ -203,12 +206,35 @@ PRIVATE void toggle_changed_handler(GtkWidget *widget, gpointer userdata) {
   }
 }
 
+PRIVATE void paste_handler(GtkWidget *widget, Control *c) {
+  Data *data = c->g->data;
+  int i;
+
+  for( i=0; i<SEQUENCE_LENGTH; i++ ) {
+      data->pattern[data->edit][i] = clipseq[i];
+      data->note[data->edit][i] = clipnote[i];
+  }
+  if (c->events_flow) {
+    gen_update_controls(c->g, SEQNOTE_CONTROL_PATTERN);
+  }
+}
+
+PRIVATE void copy_handler(GtkWidget *widget, Control *c) {
+  Data *data = c->g->data;
+  int i;
+
+  for( i=0; i<SEQUENCE_LENGTH; i++ ) {
+      clipseq[i] = data->pattern[data->edit][i];
+      clipnote[i] = data->note[data->edit][i];
+  }
+}
 PRIVATE void init_pattern(Control *control) {
   GtkWidget *hb;
   int i;
   GtkWidget **widgets = safe_malloc(sizeof(GtkWidget *) * (SEQUENCE_LENGTH * 2 + 1));
   Data *data = control->g->data;
-  GtkWidget *label;
+  GtkWidget *label, *copybutton, *pastebutton;
+  GtkWidget *rightvb;
 
   hb = gtk_hbox_new(FALSE, 5);
 
@@ -250,10 +276,26 @@ PRIVATE void init_pattern(Control *control) {
     gtk_box_pack_start(GTK_BOX(hb), vb, FALSE, FALSE, 0);
     gtk_widget_show(vb);
   }
+  rightvb = gtk_vbox_new( FALSE, 5 );
 
   label = gtk_label_new("--");
-  gtk_box_pack_start(GTK_BOX(hb), label, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(rightvb), label, FALSE, FALSE, 0);
+  pastebutton = gtk_button_new_with_label( "PASTE" );
+  copybutton = gtk_button_new_with_label( "COPY" );
+  gtk_box_pack_start(GTK_BOX(rightvb), pastebutton, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(rightvb), copybutton, FALSE, FALSE, 0);
+
+
+  gtk_signal_connect( GTK_OBJECT(copybutton), "clicked",
+	GTK_SIGNAL_FUNC( copy_handler ), control );
+  gtk_signal_connect( GTK_OBJECT(pastebutton), "clicked",
+	GTK_SIGNAL_FUNC( paste_handler ), control );
+
+  gtk_box_pack_start(GTK_BOX(hb), rightvb, FALSE, FALSE, 0);
   gtk_widget_show(label);
+  gtk_widget_show(pastebutton);
+  gtk_widget_show(copybutton);
+  gtk_widget_show(rightvb);
   widgets[SEQUENCE_LENGTH * 2] = label;
 
   control->widget = hb;
@@ -278,6 +320,7 @@ PRIVATE void refresh_pattern(Control *control) {
 }
 
 PRIVATE void setup_class(void) {
+  int i;
   GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE, 3, 2,
 					     NULL, NULL, seqnote_controls,
 					     init_instance, destroy_instance,
@@ -290,6 +333,11 @@ PRIVATE void setup_class(void) {
   gen_configure_event_output(k, EVT_NOTE_OUT, "Note");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
+
+  for( i=0; i<SEQUENCE_LENGTH; i++ ) {
+      clipseq[i] = NOTE_A4;
+      clipnote[i] = FALSE;
+  }
 }
 
 PUBLIC void init_plugin_seqnote(void) {

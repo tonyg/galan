@@ -5,7 +5,8 @@ EXTRA_DIST = *.c
 plugindir = $(pkglibdir)/plugins
 
 if compileGL
-plugin_PROGRAMS = gldisplay.so triangle.so gltranslate.so glrotate.so cube.so glscale.so gluniscale.so lwo.so plane.so
+plugin_PROGRAMS = gldisplay.so triangle.so gltranslate.so glrotate.so cube.so glscale.so gluniscale.so lwo.so\
+		  plane.so prio.so light.so
 endif
 
 

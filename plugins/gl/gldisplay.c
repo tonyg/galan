@@ -39,7 +39,7 @@
 
 
 #define GENERATOR_CLASS_NAME	"gldisplay"
-#define GENERATOR_CLASS_PATH	"Misc/gldisplay"
+#define GENERATOR_CLASS_PATH	"GL/gldisplay"
 
 #define SIG_INPUT		1
 
@@ -88,17 +88,45 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 PRIVATE gint init(GtkWidget *widget)
 {
   /* OpenGL functions can be called only if make_current returns true */
-  if (gtk_gl_area_make_current(GTK_GL_AREA(widget)))
-    {
+  if (gtk_gl_area_make_current(GTK_GL_AREA(widget))) {
+
+      int i;
+
       glViewport(0,0, widget->allocation.width, widget->allocation.height);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       //glOrtho(0,100, 100,0, -1,1);
-      glFrustum( -10,10, 10,-10, 20, 40 );
+      glFrustum( -1,1, 1,-1, 2, 40 );
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
+      glDepthFunc( GL_LESS );
       glEnable(GL_DEPTH_TEST);
-    }
+      /* remove back faces */
+      glDisable(GL_CULL_FACE);
+      glCullFace(GL_FRONT);
+
+      /* speedups */
+      glEnable(GL_DITHER);
+      glShadeModel(GL_SMOOTH);
+      //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+      //glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+
+      /* light */
+      //glLightfv(GL_LIGHT0, GL_POSITION, light0_pos);
+      //glLightfv(GL_LIGHT0, GL_DIFFUSE,  light0_color);  
+      //glLightfv(GL_LIGHT1, GL_POSITION, light1_pos);
+      //glLightfv(GL_LIGHT1, GL_DIFFUSE,  light1_color);
+      //glEnable(GL_LIGHT0);
+      //glEnable(GL_LIGHT1);
+      glEnable(GL_LIGHTING);
+
+      for( i=0; i<8; i++ )
+	  glDisable( GL_LIGHT0 + i );
+
+      glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+      glEnable(GL_COLOR_MATERIAL);  
+  }
+
   return TRUE;
 }
 
@@ -116,6 +144,7 @@ PRIVATE gint draw(GtkWidget *widget, GdkEventExpose *event)
       Control *control = gtk_object_get_data( GTK_OBJECT(widget), "Control" );
       
       glClearColor(0,0,0,1);
+      glClearDepth( 1 );
       glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
       /* call the render inputs */

@@ -51,7 +51,6 @@ PRIVATE ControlDescriptor trigseq_controls[] = {
 
 typedef struct Data {
   int play;
-  GList *diode;
 } Data;
 
 PRIVATE GdkPixmap *on_pixmap;
@@ -59,39 +58,51 @@ PRIVATE GdkBitmap *on_mask;
 PRIVATE GdkPixmap *off_pixmap;
 PRIVATE GdkBitmap *off_mask;
 
+PRIVATE GList *lget_anim_list( char *name ) {
 
-PRIVATE GList *get_anim_list( char *name ) {
+   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name );
 
-   GError *err;
-   GTimeVal time;
-   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name, &err );
-   GdkPixbufAnimationIter *iter;
+   GList *framelistX, *framelist = gdk_pixbuf_animation_get_frames( animation );
+   GdkPixbufFrame *firstframe = framelist->data;
+   GdkPixbuf *firstpixbuf = gdk_pixbuf_frame_get_pixbuf( firstframe );
+   GdkPixbuf *actpixbuf  = gdk_pixbuf_copy( firstpixbuf );
    GList *retval = NULL;
 
-   RETURN_VAL_UNLESS( animation != NULL, NULL );
+   retval= g_list_append( retval, gdk_pixbuf_copy( firstpixbuf ) );
 
-   g_get_current_time( &time );
-   iter = gdk_pixbuf_animation_get_iter( animation, &time );
-   
-   while(1) {
-       GdkPixbuf *pixbuf = gdk_pixbuf_animation_iter_get_pixbuf(iter);
-       int delay = gdk_pixbuf_animation_iter_get_delay_time( iter );
-       gboolean update;
+   for( framelistX = framelist; framelistX != NULL; framelistX = g_list_next( framelistX ) ) {
+       GdkPixbufFrame *frame = framelistX->data;
+       GdkPixbuf *framebuf = gdk_pixbuf_frame_get_pixbuf( frame );
+       int xo=gdk_pixbuf_frame_get_x_offset( frame ); 
+       int yo=gdk_pixbuf_frame_get_y_offset( frame ); 
+       int w=gdk_pixbuf_get_width( framebuf ); 
+       int h=gdk_pixbuf_get_height( framebuf ); 
+       GdkPixbuf *tmpbuf = gdk_pixbuf_copy( actpixbuf );
+
+       gdk_pixbuf_composite( framebuf, tmpbuf, xo,yo, w, h, xo, yo, 1,1, GDK_INTERP_NEAREST, 255 );  
        
-       retval = g_list_append( retval, gdk_pixbuf_copy( pixbuf ) );
+       retval= g_list_append( retval, tmpbuf );
 
-       if( gdk_pixbuf_animation_iter_on_currently_loading_frame( iter ) )
-	   return retval;
-
-       if( delay == -1 )
-	   return retval;
-       // Need to check for length explicitly here.
-       if( g_list_length( retval ) > 3 )
-	   return retval;
-
-       g_time_val_add( &time, delay*1000 );
-       update = gdk_pixbuf_animation_iter_advance( iter, &time );
+       
+       switch( gdk_pixbuf_frame_get_action( frame ) ) {
+	   case GDK_PIXBUF_FRAME_RETAIN:
+	       gdk_pixbuf_unref( actpixbuf );
+	       actpixbuf = gdk_pixbuf_copy( tmpbuf );
+	       break;
+	   case GDK_PIXBUF_FRAME_DISPOSE:
+	       break;
+	   case GDK_PIXBUF_FRAME_REVERT:
+	       gdk_pixbuf_unref( actpixbuf );
+	       actpixbuf = gdk_pixbuf_copy( firstpixbuf );
+	       break;
+       }
+       
    }
+
+    
+   gdk_pixbuf_unref( actpixbuf );
+   gdk_pixbuf_unref( firstpixbuf );
+
    return retval;
 }
 
@@ -189,11 +200,9 @@ PRIVATE void setup_class(void) {
 
 PUBLIC void init_plugin_lights(void) {
 
-  GList *diode = get_anim_list( PIXMAPDIRIFY( "diode.gif" ) );
-  GdkPixbuf *on_pixbuf = g_list_nth_data( diode, 1 );
+  GList *diode = lget_anim_list( PIXMAPDIRIFY( "diode.gif" ) );
+  GdkPixbuf *on_pixbuf = g_list_nth_data( diode, 2 );
   GdkPixbuf *off_pixbuf = g_list_nth_data( diode, 0 );
-
-  RETURN_UNLESS( diode != NULL );
 
   gdk_pixbuf_render_pixmap_and_mask( on_pixbuf, &on_pixmap, &on_mask, 255 );
   gdk_pixbuf_render_pixmap_and_mask( off_pixbuf, &off_pixmap, &off_mask, 255 );

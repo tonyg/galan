@@ -336,8 +336,6 @@ extern void gen_send_realtime_fns(AEvent *e);
 extern gint gen_mainloop_once(void);
 extern void gen_advance_clock(gint delta);
 
-extern void gen_mainloop_do_checks(void);
-
 /*=======================================================================*/
 /* Master clock system (most of these externs are in clock.c) */
 
@@ -354,7 +352,8 @@ extern void gen_select_clock(AClock *clock);
 extern void gen_stop_clock(void);	/* useful? who knows. */
 
 extern void gen_clock_mainloop(void);
-extern void gen_clock_mainloop_have_remaining(gint remaining);
+
+extern GHashTable *get_generator_classes( void );
 
 /*=======================================================================*/
 /* Module setup/shutdown */
@@ -364,5 +363,4 @@ extern void done_generator(void);
 extern void init_clock(void);
 extern void done_clock(void);
 
-extern void init_event(void);
 #endif

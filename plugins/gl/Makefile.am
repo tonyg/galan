@@ -5,19 +5,18 @@ EXTRA_DIST = *.c
 plugindir = $(pkglibdir)/plugins
 
 if compileGL
-plugin_PROGRAMS = gldisplay.so triangle.so gltranslate.so glrotate.so cube.so glscale.so gluniscale.so lwo.so\
-		  plane.so prio.so light.so
+plugin_LTLIBRARIES = gldisplay.la triangle.la gltranslate.la glrotate.la cube.la glscale.la gluniscale.la lwo.la\
+		  plane.la prio.la light.la
 endif
 
 
-LDFLAGS = -shared
-LDADD = @GTK_LIBS@ @GTKGL_LIBS@
+LDFLAGS = "-module" @GTK_LIBS@ @GTKGL_LIBS@
 INCLUDES = -I.. -I$(srcdir)/../../include @GTKGL_CFLAGS@ @GDK_PIXBUF_CFLAGS@ @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DPIC -fPIC
 CLEANFILES=*.so.c
 
-lwo_so_SOURCES = lw.c lwo.c
+lwo_la_SOURCES = lw.c lwo.c
 
-SUFFIXES= .so.c
-%.so.c: %.c
+SUFFIXES= .la.c
+%.la.c: %.c
 	ln -s $< $@
 

@@ -45,6 +45,7 @@ typedef signed short OUTPUTSAMPLE;
 
 typedef struct Data {
   int audiofd;
+  gboolean preread;
 } Data;
 
 PRIVATE int instance_count = 0;
@@ -89,6 +90,7 @@ PRIVATE gboolean init_instance(Generator *g) {
 
   data->audiofd = open_audiofd();
 
+  data->preread = FALSE;
   if (data->audiofd < 0) {
     free(data);
     popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
@@ -117,6 +119,11 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   Data *data = g->data;
   int i;
   gint16 samp[MAXIMUM_REALTIME_STEP];
+
+  if( ! data->preread ) {
+    data->preread = TRUE;
+    return FALSE;
+  }
 
   if (read(data->audiofd, samp, sizeof(gint16) * buflen) < sizeof(gint16) * buflen) {
     printf("."); fflush(stdout);

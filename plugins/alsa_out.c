@@ -36,6 +36,8 @@
 #include "gencomp.h"
 #include "msgbox.h"
 #include "prefs.h"
+
+#define ALSA_PCM_OLD_HW_PARAMS_API
 #include "alsa/asoundlib.h"
 
 #define SIG_LEFT_CHANNEL	0

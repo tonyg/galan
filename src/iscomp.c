@@ -122,8 +122,8 @@ PRIVATE void iscomp_resize(Component *c) {
   resize_connectors(c, out_count, 1, 0, body_horiz, body_vert);
   resize_connectors(c, out_sig_count, 1, 1, body_horiz, body_vert);
 
-  c->width = body_horiz + 2 * ISCOMP_BORDER_WIDTH;
-  c->height = body_vert + 2 * ISCOMP_BORDER_WIDTH;
+  c->width = body_horiz + 2*ISCOMP_BORDER_WIDTH + 1;
+  c->height = body_vert + 2*ISCOMP_BORDER_WIDTH + 1;
 }
 
 PRIVATE int iscomp_initialize(Component *c, gpointer init_data) {

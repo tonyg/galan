@@ -329,15 +329,15 @@ static void gtk_slider_realize(GtkWidget *widget) {
   attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
   widget->window = gdk_window_new(widget->parent->window, &attributes, attributes_mask);
 
-  widget->style = gtk_style_attach(widget->style, widget->window);
+  widget->style = gtk_style_attach(widget->parent->style, widget->window);
 
   gdk_window_set_user_data(widget->window, widget);
 
   slider->pixmap = gdk_pixmap_create_from_xpm_d(widget->window, &mask,
-					      &widget->style->bg[GTK_STATE_ACTIVE],
+					      &widget->style->bg[GTK_STATE_NORMAL],
 					      slider_xpm);
 
-  gtk_style_set_background(widget->style, widget->window, GTK_STATE_ACTIVE);
+  gtk_style_set_background(widget->style, widget->window, GTK_STATE_NORMAL);
 }
 
 static void gtk_slider_size_request (GtkWidget *widget, GtkRequisition *requisition) {
@@ -377,8 +377,8 @@ static gint gtk_slider_expose(GtkWidget *widget, GdkEventExpose *event) {
 
   gdk_window_clear_area(widget->window, 0, 0, widget->allocation.width, widget->allocation.height);
 
-  gdk_draw_rectangle(widget->window, widget->style->bg_gc[widget->state], TRUE,
-		     0, 0, widget->allocation.width, widget->allocation.height);
+//  gdk_draw_rectangle(widget->window, widget->style->bg_gc[widget->state], TRUE,
+//		     0, 0, widget->allocation.width, widget->allocation.height);
 
   gdk_draw_line(widget->window, widget->style->black_gc,
 		SLIDER_WIDTH>>1, SLIDER_GAP, SLIDER_WIDTH>>1, SLIDER_GAP + slider->size);

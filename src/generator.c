@@ -43,7 +43,7 @@ PUBLIC void gen_init_aevent(AEvent *e, AEventKind kind,
   e->time = time;
 }
 
-PUBLIC GeneratorClass *gen_new_generatorclass(char *name, gboolean prefer,
+PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 					      gint count_event_in, gint count_event_out,
 					      InputSignalDescriptor *input_sigs,
 					      OutputSignalDescriptor *output_sigs,
@@ -128,7 +128,7 @@ PUBLIC void gen_kill_generatorclass(GeneratorClass *g) {
 }
 
 PUBLIC void gen_configure_event_input(GeneratorClass *g, gint index,
-				      char *name, AEvent_handler_t handler) {
+				      const char *name, AEvent_handler_t handler) {
   if (g->in_names[index] != NULL)
     g_warning("Event input already configured: class %s, index %d, name %s, existing name %s",
 	      g->name, index, name, g->in_names[index]);
@@ -137,7 +137,7 @@ PUBLIC void gen_configure_event_input(GeneratorClass *g, gint index,
   g->in_handlers[index] = handler;
 }
 
-PUBLIC void gen_configure_event_output(GeneratorClass *g, gint index, char *name) {
+PUBLIC void gen_configure_event_output(GeneratorClass *g, gint index, const char *name) {
   if (g->out_names[index] != NULL)
     g_warning("Event output already configured: class %s, index %d, name %s, existing name %s",
 	      g->name, index, name, g->out_names[index]);

@@ -31,16 +31,46 @@
 #include "msgbox.h"
 #include "control.h"
 #include "prefs.h"
+#include "shcomp.h"
 
 /*=======================================================================*/
 /* Variables for GTK gui */
 
 PRIVATE GtkWidget *mainwin;
 PRIVATE GtkWidget *mainmenu;
+PRIVATE GtkWidget *mainnotebook;
 
 PRIVATE char *current_filename = NULL;
 PRIVATE guint timeout_tag;
 PRIVATE AClock *gui_default_clock = NULL;
+
+PRIVATE GList *sheets = NULL;
+
+/*=======================================================================*/
+/* Helper Functions */
+
+PRIVATE Sheet *gui_get_active_sheet( void ) {
+
+    int activepagenum = gtk_notebook_get_current_page( GTK_NOTEBOOK(mainnotebook) );
+    GtkWidget *scrollwin = gtk_notebook_get_nth_page( GTK_NOTEBOOK(mainnotebook), activepagenum );
+    Sheet *s = gtk_object_get_user_data( GTK_OBJECT( scrollwin ) );
+
+    return s;
+}
+
+PUBLIC GList *get_sheet_list( void ) {
+    return sheets;
+}
+
+PUBLIC void gui_register_sheet( struct sheet *sheet ) {
+
+    gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, gtk_label_new( sheet->name ) );
+    g_list_append( sheets, sheet );
+}
+
+PUBLIC void update_sheet_name( struct sheet *sheet ) {
+    gtk_notebook_set_tab_label_text( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, sheet->name );
+}
 
 /*=======================================================================*/
 /* GTK gui Callbacks */
@@ -55,6 +85,7 @@ PRIVATE void about_callback(void) {
   popup_msgbox("About gAlan", MSGBOX_OK, 0, MSGBOX_OK,
 	       "gAlan %s\n"
 	       "Copyright Tony Garnock-Jones (C) 1999\n"
+	       "Copyright Torben Hohn (C) 2002\n"
 	       "A modular sound-processing tool\n(Graphical Audio LANguage)\n"
 	       "\n"
 	       "gAlan comes with ABSOLUTELY NO WARRANTY; for details, see the file\n"
@@ -75,7 +106,7 @@ PRIVATE void file_new_callback(gpointer userdata, guint action, GtkWidget *widge
     free(current_filename);
     current_filename = NULL;
   }
-  sheet_clear();
+  sheet_clear( gui_get_active_sheet() );
 }
 
 PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
@@ -84,7 +115,8 @@ PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
 
   f = fopen(newname, "rb");
 
-  if (f == NULL || !sheet_loadfrom(f)) {
+      
+  if (f == NULL || !(sheet_loadfrom( NULL , f))) {
     popup_msgbox("Error Loading File", MSGBOX_OK, 120000, MSGBOX_OK,
 		 "File not found, or file format error: %s",
 		 newname);
@@ -119,7 +151,7 @@ PRIVATE void save_file_to(char *filename) {
   if (f == NULL)
     return;
 
-  sheet_saveto(f);
+  sheet_saveto( gui_get_active_sheet() , f);
   fclose(f);
 }
 
@@ -153,6 +185,35 @@ PRIVATE void save_file(gpointer userdata, guint action, GtkWidget *widget) {
   } else
     save_file_to(current_filename);
 }
+
+PRIVATE void new_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
+
+    Sheet *sheet = create_sheet();
+    gui_register_sheet( sheet );
+}
+
+PRIVATE void open_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
+}
+
+PRIVATE void del_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
+
+    int pagenum;
+    Sheet *sheet = gui_get_active_sheet();
+
+    sheet_clear( sheet );
+    g_list_remove( sheets, sheet );
+    pagenum = gtk_notebook_get_current_page( GTK_NOTEBOOK( mainnotebook ) );
+    gtk_notebook_remove_page( GTK_NOTEBOOK( mainnotebook ), pagenum );
+}
+
+
+PRIVATE void reg_sheet2( gpointer userdata, guint action, GtkWidget *widget ) {
+
+    Sheet *sheet = gui_get_active_sheet();
+    shcomp_register_sheet( sheet );
+}
+
+
 
 PRIVATE void select_master_clock(gpointer userdata, guint action, GtkWidget *widget) {
   GtkWidget *contents;
@@ -202,6 +263,12 @@ PRIVATE GtkItemFactoryEntry mainmenu_items[] = {
   { "/File/Save _As...",	NULL,		save_file, 1,		NULL },
   { "/File/sep2",		NULL,		NULL, 0,		"<Separator>" },
   { "/File/E_xit",		"<control>Q",	(GtkItemFactoryCallback) exit_request, 0,	NULL },
+  { "/_Sheet",			NULL,		NULL, 0,		"<Branch>" },
+  { "/Sheet/_New",		NULL,		new_sheet, 0,		NULL },
+//  { "/Sheet/_Open",		NULL,		open_sheet, 0,		NULL },
+  { "/Sheet/_Remove",		NULL,		del_sheet, 0,		NULL },
+  { "/Sheet/R_egister",		NULL,		reg_sheet2, 0,		NULL },
+//  { "/Sheet/Re_name",		NULL,		ren_sheet, 0,		NULL },
   { "/_Edit",			NULL,		NULL, 0,		"<Branch>" },
   { "/Edit/_Preferences...",	"<control>P",	prefs_edit_prefs, 0,	NULL },
   { "/_Window",			NULL,		NULL, 0,		"<Branch>" },
@@ -233,8 +300,8 @@ PRIVATE GtkWidget *build_mainmenu(void) {
 PRIVATE void create_mainwin(void) {
   GtkWidget *vb;
   GtkWidget *hb;
-  /* GtkWidget *pb; */
-  /* GtkWidget *hs; */
+
+  Sheet *s1;
 
   mainwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_usize(mainwin, 500, 500);
@@ -257,32 +324,12 @@ PRIVATE void create_mainwin(void) {
   gtk_widget_show(mainmenu);
   gtk_container_add(GTK_CONTAINER(hb), mainmenu);
 
-  /*
-  hb = gtk_hbox_new(FALSE, 0);
-  gtk_widget_show(hb);
-  gtk_box_pack_start(GTK_BOX(vb), hb, FALSE, TRUE, 0);
-  */
+  s1 = create_sheet();
 
-  /*
-  pb = gtk_toggle_button_new_with_label("Play");
-  gtk_widget_show(pb);
-  gtk_box_pack_end(GTK_BOX(hb), pb, FALSE, TRUE, 0);
-  gtk_signal_connect(GTK_OBJECT(pb), "toggled", GTK_SIGNAL_FUNC(do_master_play), NULL);
-  */
-
-  /*
-  pb = gtk_combo_new();
-  gtk_widget_show(pb);
-  gtk_box_pack_start(GTK_BOX(hb), pb, TRUE, TRUE, 10);
-  */
-
-  /*
-  hs = gtk_hseparator_new();
-  gtk_widget_show(hs);
-  gtk_box_pack_start(GTK_BOX(vb), hs, FALSE, TRUE, 0);
-  */
-
-  create_sheet(GTK_BOX(vb));
+  mainnotebook = gtk_notebook_new();
+  gtk_box_pack_start(GTK_BOX(vb), mainnotebook, TRUE, TRUE, 0);
+  gtk_widget_show( mainnotebook );
+  gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), s1->scrollwin, NULL );
 }
 
 PRIVATE gint timeout_handler(gpointer data) {

@@ -32,7 +32,7 @@
 #include "msgbox.h"
 
 #define GENERATOR_CLASS_NAME	"sigctrl"
-#define GENERATOR_CLASS_PATH	"Signal Control"
+#define GENERATOR_CLASS_PATH	"Controls/Signal Control"
 
 #define EVT_VALUE 0
 #define SIG_OUTPUT 0

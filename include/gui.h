@@ -19,6 +19,11 @@
 #ifndef Gui_H
 #define Gui_H
 
+struct sheet;
+extern void gui_register_sheet( struct sheet *sheet );
+extern GList *get_sheet_list( void );
+extern void update_sheet_name( struct sheet *sheet );
+
 extern void init_gui(void);
 extern void done_gui(void);
 

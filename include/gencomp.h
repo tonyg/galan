@@ -22,8 +22,23 @@
 #define PIXMAPDIRIFY(filename) \
 		(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
 
+typedef struct GenCompData GenCompData;
+typedef struct GenCompInitData GenCompInitData;
 typedef void (*PropertiesCallback)(Component *c, Generator *g);
 
+struct GenCompData {
+  Generator *g;
+  GdkPixmap *icon;
+  PropertiesCallback propgen;
+};
+
+struct GenCompInitData {
+  GeneratorClass *k;
+  char *iconpath;
+  PropertiesCallback propgen;
+};
+
+extern ComponentClass GeneratorComponentClass;
 extern void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer,
 					    char *menupath, char *iconpath,
 					    PropertiesCallback propgen);

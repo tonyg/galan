@@ -32,7 +32,7 @@
 #include "msgbox.h"
 
 #define GENERATOR_CLASS_NAME	"ctrl"
-#define GENERATOR_CLASS_PATH	"Control"
+#define GENERATOR_CLASS_PATH	"Controls/Control"
 
 #define EVT_VALUE 0
 #define EVT_OUTPUT 0

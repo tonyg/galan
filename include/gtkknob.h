@@ -22,10 +22,14 @@
 #include <gdk/gdk.h>
 #include <gtk/gtkadjustment.h>
 #include <gtk/gtkwidget.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define PIXMAPDIRIFY(filename) \
+		(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
 
 #define GTK_KNOB(obj)		GTK_CHECK_CAST(obj, gtk_knob_get_type(), GtkKnob)
 #define GTK_KNOB_CLASS(klass)	GTK_CHECK_CLASS_CAST(klass, gtk_knob_get_type(), GtkKnobClass)
@@ -48,7 +52,9 @@ struct _GtkKnob {
   guint32 timer;
 
   /* Pixmap for knob */
-  GdkPixmap *pixmap;
+  GdkPixbuf *pixbuf;
+  /* Animation for knob... from animated gif */
+  GList *anim_list;
 
   /* Old values from adjustment stored so we know when something changes */
   gfloat old_value;

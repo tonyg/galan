@@ -19,18 +19,34 @@
 #ifndef Sheet_H
 #define Sheet_H
 
-extern GtkWidget *create_sheet(GtkBox *parent);
+typedef struct sheet {
 
-extern void sheet_build_new_component(ComponentClass *k, gpointer init_data);
-extern void sheet_delete_component(Component *c);
-extern void sheet_queue_redraw_component(Component *c);
+    int sheetmode;
+    gdouble saved_x, saved_y;
+    ConnectorReference saved_ref;
 
-extern GdkWindow *sheet_get_window(void);
-extern GdkColor *sheet_get_transparent_color(void);
-extern int sheet_get_textwidth(char *text);
+    GtkWidget *scrollwin;
+    GtkWidget *drawingwidget;
+    GList *components;
 
-extern void sheet_clear(void);
-extern gboolean sheet_loadfrom(FILE *f);
-extern void sheet_saveto(FILE *f);
+    GeneratorClass *sheetklass;
+    gchar *name;
+} Sheet;
 
+extern Sheet *create_sheet();
+
+extern void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer init_data);
+extern void sheet_delete_component(Sheet *sheet, Component *c);
+extern void sheet_queue_redraw_component(Sheet *sheet, Component *c);
+
+extern GdkWindow *sheet_get_window(Sheet *sheet);
+extern GdkColor *sheet_get_transparent_color(Sheet *sheet);
+extern int sheet_get_textwidth(Sheet *sheet, char *text);
+
+extern void sheet_register_component_class( Sheet *sheet );
+extern void sheet_clear(Sheet *sheet);
+extern Sheet *sheet_loadfrom(Sheet *sheet, FILE *f);
+extern void sheet_saveto(Sheet *sheet, FILE *f);
+extern Sheet *sheet_unpickle( ObjectStoreItem *item, Sheet *sheet );
+extern ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db );
 #endif

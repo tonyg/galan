@@ -54,7 +54,7 @@
     return (val);						\
   }; }G_STMT_END
 
-extern char *safe_string_dup(char *str);
+extern char *safe_string_dup(const char *str);
 extern void *safe_malloc(size_t size);
 extern void *safe_calloc(int nelems, size_t size);
 

@@ -37,23 +37,8 @@
 #define GENCOMP_CONNECTOR_WIDTH	10
 #define GENCOMP_BORDER_WIDTH	(GENCOMP_CONNECTOR_WIDTH + GENCOMP_CONNECTOR_SPACE)
 
-typedef struct GenCompData GenCompData;
-typedef struct GenCompInitData GenCompInitData;
-
-struct GenCompData {
-  Generator *g;
-  GdkPixmap *icon;
-  PropertiesCallback propgen;
-};
-
-struct GenCompInitData {
-  GeneratorClass *k;
-  char *iconpath;
-  PropertiesCallback propgen;
-};
 
 PRIVATE int next_component_number = 1;
-PRIVATE ComponentClass GeneratorComponentClass;	/* forward reference */
 
 PRIVATE GHashTable *generatorclasses = NULL;
 
@@ -103,7 +88,7 @@ PRIVATE void gencomp_resize(Component *c) {
   body_horiz =
     GENCOMP_CONNECTOR_WIDTH
     + MAX((d->icon ? GENCOMP_ICONLENGTH : 0) + 2,
-	  MAX(sheet_get_textwidth(g->name),
+	  MAX(sheet_get_textwidth(c->sheet, g->name),
 	      MAX(k->in_count * GENCOMP_CONNECTOR_WIDTH,
 		  k->out_count * GENCOMP_CONNECTOR_WIDTH)));
 
@@ -134,9 +119,9 @@ PRIVATE int gencomp_initialize(Component *c, gpointer init_data) {
   }
 
   d->icon =
-    id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(),
+    id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(c->sheet),
 					      &mask,
-					      sheet_get_transparent_color(),
+					      sheet_get_transparent_color(c->sheet),
 					      id->iconpath)
     : NULL;
 
@@ -217,9 +202,9 @@ PRIVATE void gencomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *
   id = g_hash_table_lookup(generatorclasses, d->g->klass->name);
 
   d->icon =
-    id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(),
+    id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(c->sheet),
 					      &mask,
-					      sheet_get_transparent_color(),
+					      sheet_get_transparent_color(c->sheet),
 					      id->iconpath)
     : NULL;
 
@@ -414,6 +399,7 @@ PRIVATE void rename_controls(Control *c, Generator *g) {
 }
 
 PRIVATE GtkWidget *rename_text_widget = NULL;
+
 PRIVATE void rename_handler(MsgBoxResponse action_taken, Component *c) {
   if (action_taken == MSGBOX_OK) {
     GenCompData *d = c->data;
@@ -422,9 +408,9 @@ PRIVATE void rename_handler(MsgBoxResponse action_taken, Component *c) {
 
     g_list_foreach(d->g->controls, (GFunc) rename_controls, d->g);
 
-    sheet_queue_redraw_component(c);	/* to 'erase' the old size */
+    sheet_queue_redraw_component(c->sheet, c);	/* to 'erase' the old size */
     gencomp_resize(c);
-    sheet_queue_redraw_component(c);	/* to 'fill in' the new size */
+    sheet_queue_redraw_component(c->sheet, c);	/* to 'fill in' the new size */
   }
 }
 
@@ -454,7 +440,7 @@ PRIVATE void do_props(Component *c, guint action, GtkWidget *widget) {
 }
 
 PRIVATE void do_delete(Component *c, guint action, GtkWidget *widget) {
-  sheet_delete_component(c);
+  sheet_delete_component(c->sheet, c);
 }
 
 PRIVATE GtkItemFactoryEntry popup_items[] = {
@@ -518,7 +504,7 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
   return result;
 }
 
-PRIVATE ComponentClass GeneratorComponentClass = {
+PUBLIC ComponentClass GeneratorComponentClass = {
   "gencomp",
 
   gencomp_initialize,

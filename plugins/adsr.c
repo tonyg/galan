@@ -61,6 +61,11 @@ typedef struct Data {
   SAMPLE *env;
 } Data;
 
+typedef struct AllData {
+	GtkObject *att, *dec, *sus, *rel, *lev;
+	
+} AllData;
+
 PRIVATE void precalc_data(Data *d) {
   int i;
   int state;
@@ -179,27 +184,192 @@ PRIVATE gboolean output_generator(Generator *g, OutputSignalDescriptor *sig,
 PRIVATE void evt_attack_time_handler(Generator *g, AEvent *event) {
   ((Data *) g->data)->attack = event->d.number;
   precalc_data((Data *) g->data);
+  gen_update_controls( g, -1 );
 }
 
 PRIVATE void evt_decay_halftime_handler(Generator *g, AEvent *event) {
   ((Data *) g->data)->decay = event->d.number;
   precalc_data((Data *) g->data);
+  gen_update_controls( g, -1 );
 }
 
 PRIVATE void evt_sustain_time_handler(Generator *g, AEvent *event) {
   ((Data *) g->data)->sustain = event->d.number;
   precalc_data((Data *) g->data);
+  gen_update_controls( g, -1 );
 }
 
 PRIVATE void evt_release_time_handler(Generator *g, AEvent *event) {
   ((Data *) g->data)->release = event->d.number;
   precalc_data((Data *) g->data);
+  gen_update_controls( g, -1 );
 }
 
 PRIVATE void evt_sustain_level_handler(Generator *g, AEvent *event) {
   ((Data *) g->data)->sustain_level = event->d.number;
   precalc_data((Data *) g->data);
+  gen_update_controls( g, -1 );
 }
+
+PRIVATE void all_emit(Control *c, int queue_number, gdouble number) {
+  AEvent e;
+
+  if (!c->events_flow)
+    return;
+
+  gen_init_aevent(&e, AE_NUMBER, NULL, 0, c->g, queue_number, gen_get_sampletime());
+  e.d.number = number;
+
+  if (c->desc->is_dst_gen)
+    gen_post_aevent(&e);	/* send to c->g as dest */
+  else
+    gen_send_events(c->g, queue_number, -1, &e);	/* send *from* c->g */
+}
+
+PRIVATE void attack_change_handler(GtkWidget *adj, Control *c) {
+//	Data *dat;
+//
+//	dat = ((Data *) c->g->data);
+//	dat->attack = GTK_ADJUSTMENT(adj)->value;
+//	precalc_data( dat );
+
+	all_emit( c, EVT_ATTACK_TIME, GTK_ADJUSTMENT(adj)->value );
+}
+
+PRIVATE void decay_change_handler(GtkWidget *adj, Control *c) {
+//	Data *dat;
+//
+//	dat = ((Data *) c->g->data);
+//	dat->decay = GTK_ADJUSTMENT(adj)->value;
+//	precalc_data( dat );
+	all_emit( c, EVT_DECAY_HALFTIME, GTK_ADJUSTMENT(adj)->value );
+}
+
+PRIVATE void sustain_change_handler(GtkWidget *adj, Control *c) {
+//	Data *dat;
+//
+//	dat = ((Data *) c->g->data);
+//	dat->sustain = GTK_ADJUSTMENT(adj)->value;
+//	precalc_data( dat );
+	all_emit( c, EVT_SUSTAIN_TIME, GTK_ADJUSTMENT(adj)->value );
+}
+
+PRIVATE void release_change_handler(GtkWidget *adj, Control *c) {
+//	Data *dat;
+//
+//	dat = ((Data *) c->g->data);
+//	dat->release = GTK_ADJUSTMENT(adj)->value;
+//	precalc_data( dat );
+	all_emit( c, EVT_RELEASE_TIME, GTK_ADJUSTMENT(adj)->value );
+}
+
+PRIVATE void level_change_handler(GtkWidget *adj, Control *c) {
+//	Data *dat;
+//
+//	dat = ((Data *) c->g->data);
+//	dat->sustain_level = GTK_ADJUSTMENT(adj)->value;
+//	precalc_data( dat );
+	all_emit( c, EVT_SUSTAIN_LEVEL, GTK_ADJUSTMENT(adj)->value );
+}
+
+
+PRIVATE GtkWidget *makeKnob( Control *control, char *label, GtkSignalFunc func,
+		double lower, double upper, double step, double page )
+{
+	GtkWidget *vb, *la;
+	GtkKnob	  *kn;
+	GtkAdjustment *adj;
+
+	vb = gtk_vbox_new( FALSE, 0 );
+	la = gtk_label_new( label );
+	gtk_widget_show( GTK_WIDGET( vb ) );
+	gtk_widget_show( GTK_WIDGET( la ) );
+
+	kn = (GtkKnob *) gtk_knob_new(NULL);
+	g_assert( kn != NULL );
+	adj = gtk_knob_get_adjustment( GTK_KNOB( kn ) );
+
+	gtk_signal_connect( GTK_OBJECT(adj), "value_changed", func, control );
+	gtk_widget_show( GTK_WIDGET(kn) );
+	gtk_box_pack_start( GTK_BOX(vb), GTK_WIDGET(kn), FALSE, FALSE, 0 );
+	gtk_box_pack_start( GTK_BOX(vb), GTK_WIDGET(la), FALSE, FALSE, 0 );
+
+	adj->lower = lower;
+	adj->upper = upper;
+	adj->step_increment = step;
+	adj->page_increment = page;
+	gtk_signal_emit_by_name(GTK_OBJECT(adj), "changed");
+	
+	gtk_object_set_user_data( GTK_OBJECT( vb ), kn );
+
+	return vb;
+}
+
+
+PRIVATE void refresh_knob(GtkObject *knoblabel, gdouble val) {
+	GtkKnob *kn;
+	GtkAdjustment *adj;
+
+	kn = gtk_object_get_user_data( knoblabel );
+	adj = gtk_knob_get_adjustment( kn );
+	adj->value = val;
+	gtk_signal_emit_by_name( GTK_OBJECT( adj ), "value_changed" );
+}
+
+PRIVATE void refresh_all(Control *control) {
+	Data *data = control->g->data;
+
+	refresh_knob( ((AllData *)control->data)->att, data->attack );
+	refresh_knob( ((AllData *)control->data)->dec, data->decay );
+	refresh_knob( ((AllData *)control->data)->sus, data->sustain );
+	refresh_knob( ((AllData *)control->data)->rel, data->release );
+	refresh_knob( ((AllData *)control->data)->lev, data->sustain_level );
+}
+
+PRIVATE void init_all( Control *control ) {
+
+	/* FIXME: die Knoepfe sind direkt mit den Werten in der Data Struktur verbunden
+	 * 	  Das geht aber nicht. Wenn ich ein altes Control da raus hole werden die
+	 * 	  Werte nicht in das all Control uebernommen und andersrum. Ausserdem werden
+	 * 	  die Regler beim laden nicht richtig gesetzt.
+	 *
+	 * 	  Es sollte einen richtigen Mechanismus zum zusammenfassen von mehreren Controls
+	 * 	  geben. Aber der gehoert nicht hier hin. Und dann muessen auch Komponenten moeglich
+	 * 	  sein. bla bla bla...   Also immer schoen weiter machen.
+	 */
+
+	GtkWidget *hb, *knoblabel;
+	control->data = safe_malloc( sizeof( AllData ) );
+
+	hb = gtk_hbox_new( FALSE, 0 );
+	g_assert( hb != NULL );
+
+	knoblabel = makeKnob( control, "att", GTK_SIGNAL_FUNC( attack_change_handler ), 0, 0.5, 0.001, 0.001 ); 	
+	((AllData *)control->data)->att = GTK_OBJECT( knoblabel );
+	gtk_box_pack_start( GTK_BOX(hb), knoblabel, FALSE, FALSE, 0 );
+	knoblabel = makeKnob( control, "dec", GTK_SIGNAL_FUNC( decay_change_handler ), 0, 0.5, 0.001, 0.001 ); 	
+	((AllData *)control->data)->dec = GTK_OBJECT( knoblabel );
+	gtk_box_pack_start( GTK_BOX(hb), knoblabel, FALSE, FALSE, 0 );
+	knoblabel = makeKnob( control, "sus", GTK_SIGNAL_FUNC( sustain_change_handler ), 0, 1, 0.001, 0.001 ); 	
+	((AllData *)control->data)->sus = GTK_OBJECT( knoblabel );
+	gtk_box_pack_start( GTK_BOX(hb), knoblabel, FALSE, FALSE, 0 );
+	knoblabel = makeKnob( control, "rel", GTK_SIGNAL_FUNC( release_change_handler ), 0, 0.5, 0.001, 0.001 ); 	
+	((AllData *)control->data)->rel = GTK_OBJECT( knoblabel );
+	gtk_box_pack_start( GTK_BOX(hb), knoblabel, FALSE, FALSE, 0 );
+	knoblabel = makeKnob( control, "lev", GTK_SIGNAL_FUNC( level_change_handler ), 0, 1, 0.01, 0.01 ); 	
+	((AllData *)control->data)->lev = GTK_OBJECT( knoblabel );
+	gtk_box_pack_start( GTK_BOX(hb), knoblabel, FALSE, FALSE, 0 );
+
+	gtk_widget_show( GTK_WIDGET( hb ) );
+	
+	control->widget = hb;
+	refresh_all( control );
+}
+
+PRIVATE void done_all(Control *control) {
+}
+
+
 
 PRIVATE InputSignalDescriptor input_sigs[] = {
   { NULL, }
@@ -223,6 +393,7 @@ PRIVATE ControlDescriptor controls[] = {
     NULL,NULL, control_double_updater, (gpointer) offsetof(Data, release) },
   { CONTROL_KIND_KNOB, "level", 0,1,0.01,0.01, 0,TRUE, TRUE,EVT_SUSTAIN_LEVEL,
     NULL,NULL, control_double_updater, (gpointer) offsetof(Data, sustain_level) },
+  { CONTROL_KIND_USERDEF, "all", 0,0,0,0, 0,FALSE, TRUE,0, init_all, done_all, refresh_all, NULL },
   { CONTROL_KIND_NONE, }
 };
 

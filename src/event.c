@@ -40,11 +40,56 @@ PRIVATE GList *rtfuncs = NULL;	/* list of event_callbacks */
 
 PUBLIC SAMPLETIME gen_current_sampletime = 0;	/* current time */
 
+
+PRIVATE void aevent_copy( AEvent *src, AEvent *dst ) {
+
+    if( dst && src ) {
+
+	*dst = *src;
+	switch( src->kind ) {
+	    case AE_STRING:
+		dst->d.string = safe_string_dup( src->d.string );
+		break;
+	    default:
+	}
+    }
+	
+}
+
+PRIVATE void aevent_free( AEvent *e ) {
+
+    if( e ) {
+	switch( e->kind ) {
+	    case AE_STRING:
+		if( e->d.string != NULL )
+		    free( e->d.string );
+		break;
+	    default:
+	}
+	free( e );
+    }
+}
+
+PRIVATE void eventq_free( EventQ *evq ) {
+
+    if( evq ) {
+	switch( evq->e.kind ) {
+	    case AE_STRING:
+		if( evq->e.d.string != NULL )
+		    free( evq->e.d.string );
+		break;
+	    default:
+	}
+	free( evq );
+    }
+}
+
 PUBLIC void gen_post_aevent(AEvent *e) {
   EventQ *q = safe_malloc(sizeof(EventQ));
   EventQ *prev = NULL, *curr = event_q;
 
-  q->e = *e;
+  //q->e = *e;
+  aevent_copy( e, &(q->e) );
 
   while (curr != NULL) {
     if (q->e.time < curr->e.time)
@@ -74,7 +119,31 @@ PUBLIC void gen_purge_event_queue_refs(Generator *g) {
       else
 	prev->next = next;
 
-      free(curr);
+      //free(curr);
+      eventq_free( curr );
+      curr = next;
+      continue;
+    }
+
+    prev = curr;
+    curr = next;
+  }
+}
+
+PUBLIC void gen_purge_inputevent_queue_refs(Generator *g) {
+  EventQ *prev = NULL, *curr = event_q;
+
+  while (curr != NULL) {
+    EventQ *next = curr->next;
+
+    if (curr->e.dst == g) {
+      if (prev == NULL)
+	event_q = next;
+      else
+	prev->next = next;
+
+      //free(curr);
+      eventq_free( curr );
       curr = next;
       continue;
     }
@@ -142,16 +211,10 @@ PUBLIC gint gen_mainloop_once(void) {
       return delta;
     }
 
-#if 0
-    printf("%d\t%d\t%s --> (%.6g) --> %s\n", e->e.time, gen_get_sampletime(),
-	   e->e.src?e->e.src->name:"",
-	   e->e.d.number,
-	   e->e.dst?e->e.dst->name:"");
-#endif
-
     event_q = e->next;
     e->e.dst->klass->in_handlers[e->e.dst_q](e->e.dst, &e->e);
-    free(e);
+    //free(e);
+    eventq_free( e );
   }
 }
 

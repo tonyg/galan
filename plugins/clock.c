@@ -35,6 +35,7 @@
 
 enum EVT_INPUTS {
   EVT_FREQ = 0,
+  EVT_RESET,
   EVT_TRIGGER,
 
   NUM_EVT_INPUTS
@@ -48,7 +49,8 @@ enum EVT_OUTPUTS {
 
 typedef struct Data {
   gdouble freq;
-  int period;
+  gint period;
+  gint lasttrigger;
 } Data;
 
 PRIVATE gboolean init_instance(Generator *g) {
@@ -56,6 +58,7 @@ PRIVATE gboolean init_instance(Generator *g) {
   g->data = data;
 
   data->period = 0;
+  data->lasttrigger = 0;
 
   return TRUE;
 }
@@ -69,6 +72,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   g->data = data;
 
   data->period = objectstore_item_get_integer(item, "clock_period", 0);
+  data->lasttrigger = gen_get_sampletime();
 
   if (data->period != 0) {
     AEvent event;
@@ -88,14 +92,17 @@ PRIVATE void evt_freq_handler(Generator *g, AEvent *event) {
 
   data->freq = event->d.number;
 
-  gen_purge_event_queue_refs(g);
+  gen_purge_inputevent_queue_refs(g);
   if (event->d.number < 0.0001)
     data->period = 0;
   else
     data->period = SAMPLE_RATE / event->d.number;
 
   if (data->period != 0) {
-    gen_init_aevent(event, AE_NUMBER, NULL, 0, g, EVT_TRIGGER, event->time);
+      if( (event->time - data->lasttrigger) > data->period )
+	  gen_init_aevent(event, AE_NUMBER, NULL, 0, g, EVT_TRIGGER, event->time);
+      else
+	  gen_init_aevent(event, AE_NUMBER, NULL, 0, g, EVT_TRIGGER, data->lasttrigger + data->period);
     gen_post_aevent(event);
   }
 }
@@ -103,15 +110,34 @@ PRIVATE void evt_freq_handler(Generator *g, AEvent *event) {
 PRIVATE void evt_trigger_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
 
+      
   if (data->period != 0) {
-    gen_init_aevent(event, AE_NUMBER, NULL, 0, g, EVT_TRIGGER, event->time + data->period);
-    gen_post_aevent(event);
-  }
 
+      data->lasttrigger = event->time;
+      gen_init_aevent(event, AE_NUMBER, NULL, 0, g, EVT_TRIGGER, event->time + data->period);
+      gen_post_aevent(event);
+  }
   gen_init_aevent(event, AE_NUMBER, NULL, 0, NULL, 0, event->time);
   event->d.number = 0;
   gen_send_events(g, EVT_CLOCK, -1, event);
 }
+
+PRIVATE void evt_reset_handler(Generator *g, AEvent *event) {
+  Data *data = g->data;
+
+  gen_purge_inputevent_queue_refs(g);
+  if (data->period != 0) {
+
+    gen_init_aevent(event, AE_NUMBER, NULL, 0, g, EVT_TRIGGER, event->time );
+    gen_post_aevent(event);
+  }
+
+//  gen_init_aevent(event, AE_NUMBER, NULL, 0, NULL, 0, event->time);
+//  event->d.number = 0;
+//  gen_send_events(g, EVT_CLOCK, -1, event);
+}
+
+
 
 PRIVATE ControlDescriptor controls[] = {
   { CONTROL_KIND_KNOB, "rate", 0,500,1,1, 0,TRUE, TRUE,EVT_FREQ,
@@ -127,6 +153,7 @@ PRIVATE void setup_class(void) {
 					     unpickle_instance, pickle_instance);
 
   gen_configure_event_input(k, EVT_FREQ, "Freq", evt_freq_handler);
+  gen_configure_event_input(k, EVT_RESET, "Reset", evt_reset_handler);
   gen_configure_event_input(k, EVT_TRIGGER, "Trigger", evt_trigger_handler);
   gen_configure_event_output(k, EVT_CLOCK, "Clock");
 

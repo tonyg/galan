@@ -95,8 +95,11 @@ PRIVATE gboolean output_generator(Generator *g, OutputSignalDescriptor *sig,
 				   offset*data->factor, tmpbuf, buflen*data->factor + 1))
     return FALSE;
 
-  for (i = 0, o = 0; i < buflen; i++, o += data->factor)
-    buf[i] = tmpbuf[(int) o];
+  for (i = 0, o = 0; i < buflen; i++, o += data->factor) {
+    int oi = floor(o);
+    gdouble fract = o - oi;
+    buf[i] = ( tmpbuf[oi]*(1-fract) + tmpbuf[oi+1]*fract ) / 2;
+  }
 
   return TRUE;
 }

@@ -457,7 +457,6 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
   data->inevents[event->dst_q] = event->d.number;
 
-  gen_update_controls( g, event->dst_q );
 }
 
 
@@ -570,8 +569,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	    controls[i].step = 1.0;
 	    controls[i].page = 1.0;
 	} else {
-	    controls[i].step = 0.01;
-	    controls[i].page = 0.01;
+	    controls[i].page = controls[i].step = (controls[i].max - controls[i].min) / 200;
 	}
 
 	controls[i].size = 0;

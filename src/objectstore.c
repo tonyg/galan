@@ -880,6 +880,7 @@ PUBLIC GList *objectstore_extract_list_of_items(ObjectStoreDatum *array, ObjectS
   int i, len;
   GList *result = NULL;
 
+  RETURN_VAL_UNLESS(array != NULL, NULL);
   len = objectstore_datum_array_length(array);
   for (i = 0; i < len; i++) {
     ObjectStoreDatum *elt = objectstore_datum_array_get(array, i);

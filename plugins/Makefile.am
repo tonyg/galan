@@ -10,8 +10,11 @@ plugindir = $(pkglibdir)/plugins
 # empty) whitespace-separated list of names from the list just
 # below. (The optional plugins HAVE to be defined in EXTRA_PROGRAMS -
 # see the infopages for automake.)
+
+LDFLAGS = "-module" @GTK_LIBS@
+
 EXTRA_LTLIBRARIES = esd_output.la pcm_out.la ogg_ra.la emu10k1.la alsa_out.la alsa_midi.la sndfile_in.la sndfile_out.la \
-		 alsa_out_callback.la jack.la voice.la
+		 alsa_out_callback.la jack.la voice.la 
 
 plugin_LTLIBRARIES = \
 	osc.la oss_output.la random.la rart.la ctrl.la gain.la \
@@ -21,12 +24,12 @@ plugin_LTLIBRARIES = \
 	evtcomp.la evtgate.la evttimer.la evtsum.la evtpower.la evtnotetofreq.la evtabs.la evtinteger.la\
 	evtsgn.la strcombo.la filerequester.la midi_seq_clock.la  midiclock.la sqrt.la \
 	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
-	integrate.la diff.la notetofreq.la fbdelay.la\
+	integrate.la diff.la notetofreq.la fbdelay.la fft.la powerspectrum.la\
+	arrwindow.la\
 	@OPTIONAL_PLUGINS@
 
 
 
-LDFLAGS = "-module" @GTK_LIBS@
 
 INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\" 
 
@@ -61,6 +64,8 @@ emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
 ladspa_la_SOURCES = ladspa.c ladspa-load.c
 ladspa_la_LDFLAGS = @LRDF_LIBS@
 ladspa_la_INCLUDES = @LRDF_CFLAGS@
+
+fft_la_LDFLAGS= -ldrfftw -ldfftw
 
 SUFFIXES= .la.c
 %.la.c: %.c

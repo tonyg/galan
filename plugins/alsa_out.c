@@ -20,9 +20,9 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/soundcard.h>
+//#include <sys/types.h>
+//#include <sys/ioctl.h>
+//#include <sys/soundcard.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -36,7 +36,7 @@
 #include "gencomp.h"
 #include "msgbox.h"
 #include "prefs.h"
-#include "sys/asoundlib.h"
+#include "alsa/asoundlib.h"
 
 #define SIG_LEFT_CHANNEL	0
 #define SIG_RIGHT_CHANNEL	1

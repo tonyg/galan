@@ -51,7 +51,6 @@ PRIVATE ControlDescriptor trigseq_controls[] = {
 
 typedef struct Data {
   int play;
-  GList *diode;
 } Data;
 
 PRIVATE GdkPixmap *on_pixmap;
@@ -59,8 +58,7 @@ PRIVATE GdkBitmap *on_mask;
 PRIVATE GdkPixmap *off_pixmap;
 PRIVATE GdkBitmap *off_mask;
 
-
-PRIVATE GList *get_anim_list( char *name ) {
+PRIVATE GList *lget_anim_list( char *name ) {
 
    GError *err;
    GTimeVal time;
@@ -189,8 +187,10 @@ PRIVATE void setup_class(void) {
 
 PUBLIC void init_plugin_lights(void) {
 
-  GList *diode = get_anim_list( PIXMAPDIRIFY( "diode.gif" ) );
+  GList *diode = lget_anim_list( PIXMAPDIRIFY( "diode.gif" ) );
   GdkPixbuf *on_pixbuf = g_list_nth_data( diode, 1 );
+  //GdkPixbuf *on_pixbuf = g_list_nth_data( diode, 2 );
+
   GdkPixbuf *off_pixbuf = g_list_nth_data( diode, 0 );
 
   RETURN_UNLESS( diode != NULL );

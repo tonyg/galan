@@ -249,8 +249,8 @@ PRIVATE void setup_class(void) {
 					     unpickle_instance, pickle_instance);
 
   gen_configure_event_input(k, EVT_TRIGGER, "Trigger", evt_trigger_handler);
-  gen_configure_event_input(k, EVT_YSCALE, "YSize", evt_yscale_handler);
-  gen_configure_event_input(k, EVT_XSCALE, "XSize", evt_xscale_handler);
+  gen_configure_event_input(k, EVT_YSCALE, "Time", evt_yscale_handler);
+  gen_configure_event_input(k, EVT_XSCALE, "YScale", evt_xscale_handler);
   //gen_configure_event_output(k, EVT_OUTPUT, "Output");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,

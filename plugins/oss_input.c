@@ -51,6 +51,7 @@ typedef struct Data {
 PRIVATE int instance_count = 0;
 PRIVATE char dspname[256];
 PRIVATE int audio_fragment_exponent = DEFAULT_FRAGMENT_EXPONENT;
+PRIVATE gboolean eightbit_in = FALSE;
 
 PRIVATE int open_audiofd(void) {
   int i;
@@ -66,13 +67,14 @@ PRIVATE int open_audiofd(void) {
   i = (4 << 16) | audio_fragment_exponent;	/* 4 buffers */
   RETURN_VAL_UNLESS(ioctl(audiofd, SNDCTL_DSP_SETFRAGMENT, &i) != -1, -1);
 
-  i = AFMT_S16_LE;
+  i = eightbit_in ? AFMT_S8 : AFMT_S16_NE;
+
   RETURN_VAL_UNLESS(ioctl(audiofd, SNDCTL_DSP_SETFMT, &i) != -1, -1);
 
   i = 0;
   RETURN_VAL_UNLESS(ioctl(audiofd, SNDCTL_DSP_STEREO, &i) != -1, -1);
 
-  i = 44100;
+  i = SAMPLE_RATE;
   RETURN_VAL_UNLESS(ioctl(audiofd, SNDCTL_DSP_SPEED, &i) != -1, -1);
 
   return audiofd;
@@ -118,19 +120,39 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   Data *data = g->data;
   int i;
-  gint16 samp[MAXIMUM_REALTIME_STEP];
 
-  if( ! data->preread ) {
-    data->preread = TRUE;
-    return FALSE;
+  if( eightbit_in )
+  {
+	  gint8 samp[MAXIMUM_REALTIME_STEP];
+
+	  if( ! data->preread ) {
+		  data->preread = TRUE;
+		  return FALSE;
+	  }
+
+	  if (read(data->audiofd, samp, sizeof(gint8) * buflen) < sizeof(gint8) * buflen) {
+		  printf("."); fflush(stdout);
+	  }
+
+	  for (i = 0; i < buflen; i++)
+		  buf[i] = samp[i] / 128.0;
   }
+  else
+  {
+	  gint16 samp[MAXIMUM_REALTIME_STEP];
 
-  if (read(data->audiofd, samp, sizeof(gint16) * buflen) < sizeof(gint16) * buflen) {
-    printf("."); fflush(stdout);
+	  if( ! data->preread ) {
+		  data->preread = TRUE;
+		  return FALSE;
+	  }
+
+	  if (read(data->audiofd, samp, sizeof(gint16) * buflen) < sizeof(gint16) * buflen) {
+		  printf("."); fflush(stdout);
+	  }
+
+	  for (i = 0; i < buflen; i++)
+		  buf[i] = samp[i] / 32768.0;
   }
-
-  for (i = 0; i < buflen; i++)
-    buf[i] = samp[i] / 32768.0;
 
   return TRUE;
 }
@@ -177,6 +199,17 @@ PRIVATE void setup_class(void) {
   prefs_register_option("input_oss_fragment_size", "14");
   prefs_register_option("input_oss_fragment_size", "15");
   prefs_register_option("input_oss_fragment_size", "16");
+
+  {
+    char *num_bits = prefs_get_item("input_oss_bits");
+
+    if (num_bits == NULL || ( strcmp( num_bits, "16" ) && strcmp( num_bits, "8" ) ) )
+	    eightbit_in = FALSE;
+    else
+	    eightbit_in = strcmp(num_bits, "8" ) ? FALSE : TRUE;
+  }
+  prefs_register_option("input_oss_bits", "16");
+  prefs_register_option("input_oss_bits", "8");
 
   k = gen_new_generatorclass("audio_in", prefer, 0, 0,
 			     NULL, output_sigs, NULL,

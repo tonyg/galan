@@ -20,7 +20,7 @@
 #define ISComp_H
 
 #define PIXMAPDIRIFY(filename) \
-		(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
+		(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
 
 
 typedef struct ISCompData ISCompData;

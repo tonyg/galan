@@ -110,7 +110,7 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   int i;
 
   if (!gen_read_realtime_input(g, SIG_INPUT, -1, buf, buflen))
-    return FALSE;
+      memset(buf, 0, buflen * sizeof(SAMPLE));
 
   for (i = 0; i < buflen; i++) {
     buf[i] = data->a * data->d1 + data->b * data->d2 + data->c * buf[i];

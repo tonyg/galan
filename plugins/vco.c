@@ -122,7 +122,7 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   for (i = 0; i < buflen; i++) {
     buf[i] = d->sample_table[(int) d->phase];
     d->phase += MAX(freqbuf[i], 0);
-    if (d->phase >= SAMPLE_RATE)
+    while (d->phase >= SAMPLE_RATE)
       d->phase -= SAMPLE_RATE;
   }
 

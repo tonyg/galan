@@ -82,7 +82,7 @@ PRIVATE int open_audiofd(void) {
   i = (4 << 16) | audio_fragment_exponent;	/* 4 buffers */
   RETURN_VAL_UNLESS(ioctl(audiofd, SNDCTL_DSP_SETFRAGMENT, &i) != -1, -1);
 
-  i = AFMT_S16_LE;
+  i = AFMT_S16_NE;
   RETURN_VAL_UNLESS(ioctl(audiofd, SNDCTL_DSP_SETFMT, &i) != -1, -1);
 
   i = 1;

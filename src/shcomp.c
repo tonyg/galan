@@ -42,7 +42,7 @@
 #include "gui.h"
 
 /* %%% Win32: dirent.h seems to conflict with glib-1.3, so ignore dirent.h */
-#ifndef NATIVE_WIN32
+#ifndef G_PLATFORM_WIN32
 #include <dirent.h>
 #endif
 
@@ -50,6 +50,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #define SHCOMP_ICONLENGTH	48
 #define SHCOMP_TITLEHEIGHT	15
 #define SHCOMP_CONNECTOR_SPACE	5
@@ -226,18 +227,21 @@ PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
   return 1;
 }
 
+
 PRIVATE int fileshcomp_initialize(Component *c, gpointer init_data) {
   FileShCompInitData *id = (FileShCompInitData *) init_data;
+  int retval;
 
-  ShCompInitData *shcid = g_alloca( sizeof( ShCompInitData ) );
+  ShCompInitData *shcid = safe_malloc( sizeof( ShCompInitData ) );
   //printf( "hi %s\n", id->filename );
   FILE *f = fopen( id->filename, "rb" );
 
   shcid->sheet = sheet_loadfrom( NULL, f );
   fclose( f );
-  return shcomp_initialize( c, shcid );
+  retval =  shcomp_initialize( c, shcid );
+  free(shcid);
+  return retval;
 }
-
 
 PRIVATE void shcomp_destroy(Component *c) {
   ShCompData *d = c->data;
@@ -688,87 +692,90 @@ PRIVATE ComponentClass FileSheetComponentClass = {
 };
 
 
+// Code for the Sheet Library
+// nice and compact :)
+
 PRIVATE void add_gsheet(char *plugin, char *leafname) {
 
-  FileShCompInitData *id = safe_malloc( sizeof( FileShCompInitData ) );
-  char *menuname = safe_malloc(strlen( "Lib/" ) + strlen( leafname ) + 1 );
-  
+    FileShCompInitData *id = safe_malloc( sizeof( FileShCompInitData ) );
 
-  id->filename = safe_malloc( strlen(plugin) + 1);
-  strcpy(id->filename, plugin);
+    id->filename = g_strdup_printf( "%s", plugin );
 
-  strcpy(menuname, "Lib/" );
-  strcat(menuname, leafname );
-
-  comp_add_newmenu_item( menuname, &FileSheetComponentClass, id );
+    comp_add_newmenu_item( leafname, &FileSheetComponentClass, id );
 }
 
-PRIVATE void load_all_gsheets(char *dir);	/* forward decl */
+PRIVATE void load_all_gsheets(char *dir, char *menupos );	/* forward decl */
 
-PRIVATE int check_gsheet_validity(char *name) {
-  struct stat sb;
+PRIVATE int check_gsheet_validity(char *name, char *menupos, char *dirname ) {
+    struct stat sb;
 
-  if( strlen(name) < 8 || strcmp(name+(strlen(name)-7), ".gsheet" ) )
-    return 0;
+    if (stat(name, &sb) == -1)
+	return 0;
 
-  if (stat(name, &sb) == -1)
-    return 0;
+    if (S_ISDIR(sb.st_mode)) {
+	// XXX: how do i get this name nicely ?
+	//      dont care now works....
 
-  if (S_ISDIR(sb.st_mode))
-    load_all_gsheets(name);
+	char *newmenupos = g_strdup_printf( "%s/%s", menupos, dirname );
+	load_all_gsheets(name, newmenupos );
+	free( newmenupos );
+    }
 
-  return S_ISREG(sb.st_mode);
+    if( strlen(name) < 8 || strcmp(name+(strlen(name)-7), ".gsheet" ) )
+	return 0;
+
+    return S_ISREG(sb.st_mode);
 }
 
+PRIVATE void load_all_gsheets(char *dir, char *menupos) {
+    DIR *d = opendir(dir);
+    struct dirent *de;
 
-PRIVATE void load_all_gsheets(char *dir) {
-  DIR *d = opendir(dir);
-  struct dirent *de;
+    if (d == NULL)
+	/* the plugin directory cannot be read */
+	return;
 
-  if (d == NULL)
-    /* the plugin directory cannot be read */
-    return;
+    while ((de = readdir(d)) != NULL) {
+	char *fullname;
 
-  while ((de = readdir(d)) != NULL) {
-    char *fullname;
+	if (de->d_name[0] == '.')
+	    /* Don't load 'hidden' files or directories */
+	    continue;
 
-    if (de->d_name[0] == '.')
-      /* Don't load 'hidden' files or directories */
-      continue;
+	fullname = g_strdup_printf( "%s%s%s", dir, G_DIR_SEPARATOR_S, de->d_name ); 
 
-    fullname = safe_malloc(strlen(dir) + strlen(de->d_name) + 2);	/* "/" and the NUL byte */
+	if (check_gsheet_validity(fullname, menupos, de->d_name)) {
+	    char *menuname = g_strdup_printf( "%s/%s", menupos, de->d_name );
+	    add_gsheet(fullname, menuname);
+	    free( menuname );
+	}
 
-    strcpy(fullname, dir);
-    strcat(fullname, G_DIR_SEPARATOR_S);
-    strcat(fullname, de->d_name);
+	free(fullname);
+    }
 
-    if (check_gsheet_validity(fullname))
-      add_gsheet(fullname, de->d_name);
-
-    free(fullname);
-  }
-
-  closedir(d);
+    closedir(d);
 }
 
 PRIVATE void scan_library_dir( void ) {
-	char *sheetdir = getenv("GALAN_SHEET_DIR");
+    char *sheetdir = getenv("GALAN_SHEET_DIR");
 
-	if( sheetdir )
-		load_all_gsheets( sheetdir );
-	
-	load_all_gsheets(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "sheets");
+    if( sheetdir )
+	load_all_gsheets( sheetdir, "Lib" );
+
+    load_all_gsheets(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "sheets", "Lib" );
 }
 
 
 PUBLIC void shcomp_register_sheet( Sheet *sheet ) {
 
     ShCompInitData *initdata = safe_malloc( sizeof( ShCompInitData ) );
-    gchar *str = safe_malloc( sizeof("Sheets/") + strlen( sheet->name ) );
-    sprintf( str, "Sheets/%s", sheet->name );
+
+    gchar *str = g_strdup_printf( "Sheets/%s", sheet->name );
 
     initdata->sheet = sheet;
     comp_add_newmenu_item( str, &SheetComponentClass, initdata );
+
+    g_free( str );
 }
 
 PUBLIC void init_shcomp(void) {
@@ -779,6 +786,5 @@ PUBLIC void init_shcomp(void) {
 }
 
 PUBLIC void done_shcomp(void) {
-  //g_hash_table_destroy(generatorclasses);
-  //generatorclasses = NULL;
 }
+

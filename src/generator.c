@@ -148,7 +148,7 @@ PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 	  k->in_names = safe_calloc(count_event_in, sizeof(char *));
 	  k->in_handlers = safe_calloc(count_event_in, sizeof(AEvent_handler_t));
   }
-  if( count_event_out > 0 ) {
+  if( count_event_out > 0 ) 
 	  k->out_names = safe_calloc(count_event_out, sizeof(char *));
 
   k->initialize_instance = initializer;
@@ -172,7 +172,7 @@ PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 }
 
 /**
- * \brief Free Memory used by a GenratorClass
+ * \brief Free Memory used by a GeneratorClass
  *
  * If you have some Instances of this GenratorClass in your Memory and kill the Class
  * expect Segfaults.
@@ -259,6 +259,8 @@ PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
   g->out_events = make_event_list(k->out_count);
   g->in_signals = make_event_list(k->in_sig_count);
   g->out_signals = make_event_list(k->out_sig_count);
+
+  //g->input_events = NULL;
 
   g->last_sampletime = 0;
   g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
@@ -860,6 +862,32 @@ PUBLIC gboolean gen_read_realtime_input(Generator *g, gint index, int attachment
  * \param buflen how many SAMPLE s should be read.
  *
  * \return TRUE if data could be read.
+ *
+ * XXX: the event processing will be moved into this function i think.
+ *      then we can do local buffer splitting which should improve
+ *      performance very much... (i hope at least)
+ *
+ *      now to the other stuff :)
+ *      how about those pure event processors ?
+ *      shall we really switch to the XAP process() semantics ?
+ *
+ *      events could very well be processed through the chains until they
+ *      get stuck on a realtime component.
+ *
+ *      and the plugins can still get their realtime callbacks for event
+ *      emission.
+ *
+ *      hmm... lets see where this will take us...
+ *
+ *      how about queuing some events locally and queueing the others 
+ *      globally ?
+ *
+ *      if plugin has realtime ins or outs it can process events from
+ *      local queue. if not use the global queue for now....
+ *
+ *      cool... nice migration path... make it so.
+ *
+ *
  * 
  */
 
@@ -1124,6 +1152,10 @@ PUBLIC void gen_send_events(Generator *g, gint index, int attachment_number, AEv
       gen_post_aevent(e);
     }
   }
+}
+
+PUBLIC GHashTable *get_generator_classes( void ) {
+  return generatorclasses;
 }
 
 PUBLIC void init_generator(void) {

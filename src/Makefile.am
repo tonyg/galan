@@ -14,4 +14,4 @@ galan_SOURCES = buffer.c clock.c comp.c control.c event.c galan.c gencomp.c \
 galan_LDFLAGS = "-dlopen self" # $(gnome_libs)
 galan_LDADD = @GTK_LIBS@ @GTHREAD_LIBS@ -ldl
 
-INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ @GTHREAD_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" # $(gnome-cflags)
+INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ @GTHREAD_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\"

@@ -2,7 +2,7 @@
 
 SUBDIRS = gl
 
-EXTRA_DIST = Makefile.w32 TEMPLATE.c dllinit.c win_output.c *.c
+EXTRA_DIST = Makefile.w32 TEMPLATE.c dllinit.c win_output.c *.c emu10k1-lib emu10k1-include
 
 plugindir = $(pkglibdir)/plugins
 
@@ -21,13 +21,15 @@ plugin_LTLIBRARIES = \
 	evtcomp.la evtgate.la evttimer.la evtsum.la evtpower.la evtnotetofreq.la evtabs.la evtinteger.la\
 	evtsgn.la strcombo.la filerequester.la midi_seq_clock.la  midiclock.la sqrt.la \
 	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
-	integrate.la diff.la\
+	integrate.la diff.la notetofreq.la fbdelay.la\
 	@OPTIONAL_PLUGINS@
 
 
 
 LDFLAGS = "-module" @GTK_LIBS@
-INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\"
+
+INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\" 
+
 CLEANFILES=*.la.c
 
 esd_output_la_INCLUDES=`esd-config --cflags`
@@ -57,6 +59,8 @@ ogg_ra_la_INCLUDES= @GTHREAD_CFLAGS@
 
 emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
 ladspa_la_SOURCES = ladspa.c ladspa-load.c
+ladspa_la_LDFLAGS = @LRDF_LIBS@
+ladspa_la_INCLUDES = @LRDF_CFLAGS@
 
 SUFFIXES= .la.c
 %.la.c: %.c

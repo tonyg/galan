@@ -35,6 +35,20 @@
 #include "control.h"
 #include "gencomp.h"
 
+#ifdef HAVE_LRDF
+#include <lrdf.h>
+#endif
+
+/* %%% Win32: dirent.h seems to conflict with glib-1.3, so ignore dirent.h */
+#ifndef NATIVE_WIN32
+#include <dirent.h>
+#endif
+
+/* On Win32, these headers seem to need to follow glib.h */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #define GENERATOR_CLASS_NAME	"ladspatest1"
 #define GENERATOR_CLASS_PATH	"Misc/LADSPA"
 #define GENERATOR_CLASS_PIXMAP	"template.xpm"
@@ -73,8 +87,9 @@ typedef struct Data {
 PRIVATE GHashTable *DescriptorIndex = NULL;
 PRIVATE GHashTable *LPluginIndex = NULL;
 
-
-
+#ifdef HAVE_LRDF
+PRIVATE GRelation *PathIndex = NULL;
+#endif
 
 PRIVATE void run_plugin( Generator *g, int buflen ) {
   Data *data = g->data;
@@ -570,8 +585,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	    controls[i].step = 1.0;
 	    controls[i].page = 1.0;
 	} else {
-	    controls[i].step = 0.01;
-	    controls[i].page = 0.01;
+	    controls[i].page = controls[i].step = (controls[i].max - controls[i].min) / 200;
 	}
 
 	controls[i].size = 0;
@@ -591,6 +605,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
     
     controls[i].kind = CONTROL_KIND_NONE;
    
+    //printf( "Menu : %s\n", get_lrdf_menuname( psDescriptor->UniqueID ) );
     k = gen_new_generatorclass( psDescriptor->Label, FALSE,
 				g_list_length( plugindata->inevent ), g_list_length( plugindata->outevent ),
 				inputdescr, outputdescr, controls,
@@ -618,10 +633,40 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
     g_hash_table_insert(LPluginIndex, (char *)psDescriptor->Label, plugindata);
 
 	
+#ifdef HAVE_LRDF
+    {
+	guint uid = psDescriptor->UniqueID;
+	//printf( "uid=%d\n", uid );
+    	GTuples *paths = g_relation_select( PathIndex, &uid, 0 );
+	if( paths == NULL || paths->len == 0 ) {
+		generatorpath = safe_malloc( strlen("LADSPA00/")+strlen( psDescriptor->Name )+1 ); 
+		sprintf( generatorpath, "LADSPA%2d/%s", (plugin_count++) / 20, psDescriptor->Name );
+		//strcpy( generatorpath, "LADSPA/" );
+		//strcat( generatorpath, psDescriptor->Name );
+
+		gencomp_register_generatorclass(k, FALSE, generatorpath,
+				PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
+				NULL);
+
+		free( generatorpath );
+	} else {
+		int i;
+		for( i=0; i<paths->len; i++ ) {
+			char *genname = g_strdup_printf( "%s/%s", (char *) g_tuples_index( paths, i, 1 ), psDescriptor->Name );
+			gencomp_register_generatorclass(k, FALSE, genname,
+					PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
+					NULL);
+			g_free( genname );
+		}
+	}	
+
+    }
+#else
     generatorpath = safe_malloc( strlen("LADSPA00/")+strlen( psDescriptor->Name )+1 ); 
     sprintf( generatorpath, "LADSPA%2d/%s", (plugin_count++) / 20, psDescriptor->Name );
     //strcpy( generatorpath, "LADSPA/" );
     //strcat( generatorpath, psDescriptor->Name );
+
 
 
     gencomp_register_generatorclass(k, FALSE, generatorpath,
@@ -629,7 +674,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	    NULL);
 	
     free( generatorpath );
-
+#endif
     
     //printf("Plugin Name: \"%s\"\n", psDescriptor->Name);
     //printf("Plugin Label: \"%s\"\n", psDescriptor->Label);
@@ -671,8 +716,137 @@ PRIVATE void init_one_plugin( const char *filename, void *handle, LADSPA_Descrip
   }
 }
 
+#ifdef HAVE_LRDF
+
+void decend(char *uri, char *base)
+{
+	lrdf_uris *uris;
+	unsigned int i;
+	char *newbase;
+	char *label;
+
+	uris = lrdf_get_instances(uri);
+
+	if (uris != NULL) {
+		for (i = 0; i < uris->count; i++) {
+			guint *uid = safe_malloc( sizeof( guint ) );
+			char *basedup = safe_string_dup( base );
+
+			*uid = lrdf_get_uid( uris->items[i] );
+			
+
+			//printf("%s/[%d]\n", base, *uid );
+			
+			g_relation_insert( PathIndex, uid, basedup ); 
+			//printf( "selct: %d\n", g_relation_count( PathIndex, uid, 0 ) );
+		}
+		lrdf_free_uris(uris);
+	}
+
+	uris = lrdf_get_subclasses(uri);
+
+	if (uris != NULL) {
+		for (i = 0; i < uris->count; i++) {
+			label = lrdf_get_label(uris->items[i]);
+			newbase = malloc(strlen(base) + strlen(label) + 2);
+			sprintf(newbase, "%s/%s", base, label);
+			//printf("%s\n", newbase);
+			decend(uris->items[i], newbase);
+			free(newbase);
+		}
+		lrdf_free_uris(uris);
+	}
+}
+
+//
+// taken from jack rack
+// get the path stuff done....
+//
+
+static void
+load_dir_uris ( const char * dir)
+{
+  DIR * dir_stream;
+  struct dirent * dir_entry;
+  char * file_name;
+  int err;
+  size_t dirlen;
+  char * extension;
+  
+  dir_stream = opendir (dir);
+  if (!dir_stream)
+    return;
+  
+  dirlen = strlen (dir);
+  
+  while ( (dir_entry = readdir (dir_stream)) )
+    {
+      /* check if it's a .rdf or .rdfs */
+      extension = strrchr (dir_entry->d_name, '.');
+      if (!extension)
+        continue;
+      if (strcmp (extension, ".rdf") != 0 &&
+          strcmp (extension, ".rdfs") != 0)
+        continue;
+  
+      file_name = g_malloc (dirlen + 1 + strlen (dir_entry->d_name) + 1 + 7);
+    
+      strcpy (file_name, "file://");
+      strcpy (file_name + 7, dir);
+      if ((file_name + 7)[dirlen - 1] == '/')
+        strcpy (file_name + 7 + dirlen, dir_entry->d_name);
+      else
+        {
+          (file_name + 7)[dirlen] = '/';
+          strcpy (file_name + 7 + dirlen + 1, dir_entry->d_name);
+        }
+    
+       lrdf_read_file( file_name );
+       g_free( file_name );
+    }
+  
+  err = closedir (dir_stream);
+  if (err)
+    fprintf (stderr, "error closing directory what the xxxx\n" );
+}
+
+static void
+plugin_mgr_load_path_uris (void)
+{
+  char * lrdf_path, * dir;
+  
+  lrdf_path = g_strdup (getenv ("LADSPA_RDF_PATH"));
+  if (!lrdf_path)
+    lrdf_path = g_strdup ("/usr/local/share/ladspa/rdf:/usr/share/ladspa/rdf");
+  
+  dir = strtok (lrdf_path, ":");
+  do
+    load_dir_uris ( dir);
+  while ((dir = strtok (NULL, ":")));
+
+  g_free (lrdf_path);
+}
+
+PRIVATE void setup_lrdf( void ) {
+
+// const char *files[] = {"file:/home/torbenh/test/liblrdf-0.2.2/examples/ladspa.rdfs",
+// 			"file:/usr/share/ladspa/rdf/swh-plugins.rdf" , NULL };
+
+ lrdf_init( );
+ //lrdf_read_files( files );
+ plugin_mgr_load_path_uris();
+
+ PathIndex = g_relation_new(2);
+ g_relation_index(PathIndex, 0, g_int_hash, g_int_equal);
+ decend(LADSPA_BASE "Plugin", "LADSPA");
+}
+#endif // HAVE_LRDF
 
 PRIVATE void setup_all( void ) {
+
+#ifdef HAVE_LRDF  
+  setup_lrdf();
+#endif
     LADSPAPluginSearch(init_one_plugin);
 }
 

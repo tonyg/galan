@@ -232,6 +232,22 @@ PRIVATE gboolean output_generator_ch3(Generator *g, OutputSignalDescriptor *sig,
     return output_generator( g,sig,offset,buf,buflen,3);
 }
 
+PRIVATE void evt_name_handler( Generator *g, AEvent *event ) {
+
+    Data *data = g->data;
+    if( event->kind != AE_STRING ) {
+	g_warning( "not a string event when setting name !!!" );
+	return;
+    }
+
+    if( try_load( g, event->d.string, FALSE ) ) {
+    	    if( data->filename )
+	    	g_free( data->filename );
+	    data->filename = safe_string_dup( event->d.string );
+    }
+}
+
+
 PRIVATE void load_new_sample(GtkWidget *widget, GtkWidget *fs) {
   Generator *g = gtk_object_get_data(GTK_OBJECT(fs), "Generator");
   GtkWidget *label = gtk_object_get_data(GTK_OBJECT(fs), "FilenameLabel");
@@ -324,10 +340,12 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
 };
 
 PRIVATE void setup_class(void) {
-  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, TRUE, 0, 0,
+  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, TRUE, 1, 0,
 					     NULL, output_sigs, NULL,
 					     init_instance, destroy_instance,
 					     unpickle_instance, pickle_instance);
+
+  gen_configure_event_input(k, 0, "Filename", evt_name_handler);
 
   gencomp_register_generatorclass(k, TRUE, GENERATOR_CLASS_PATH, NULL, propgen);
 }

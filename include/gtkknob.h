@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #define PIXMAPDIRIFY(filename) \
-		(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
+		(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
 
 #define GTK_KNOB(obj)		GTK_CHECK_CAST(obj, gtk_knob_get_type(), GtkKnob)
 #define GTK_KNOB_CLASS(klass)	GTK_CHECK_CLASS_CAST(klass, gtk_knob_get_type(), GtkKnobClass)

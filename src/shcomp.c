@@ -322,7 +322,8 @@ PRIVATE void shcomp_paint(Component *c, GdkRectangle *area,
 		 SHCOMP_CONNECTOR_WIDTH,
 		 SHCOMP_CONNECTOR_WIDTH,
 		 0, FULLCIRCLE_DEGREES_NUMBER);
-    gdk_draw_arc(drawable, style->white_gc, FALSE,
+    gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
+    gdk_draw_arc(drawable, gc, FALSE,
 		 con->x + c->x - (SHCOMP_CONNECTOR_WIDTH>>1),
 		 con->y + c->y - (SHCOMP_CONNECTOR_WIDTH>>1),
 		 SHCOMP_CONNECTOR_WIDTH,
@@ -341,7 +342,7 @@ PRIVATE void shcomp_paint(Component *c, GdkRectangle *area,
 	    : con->y + (SHCOMP_CONNECTOR_WIDTH>>1))
 	 : con->y) + c->y;
 
-    gdk_draw_line(drawable, style->white_gc,
+    gdk_draw_line(drawable, gc,
 		  x, y,
 		  (con->ref.kind == COMP_SIGNAL_CONNECTOR ? x + SHCOMP_CONNECTOR_SPACE : x),
 		  (con->ref.kind == COMP_SIGNAL_CONNECTOR ? y : y + SHCOMP_CONNECTOR_SPACE));
@@ -361,12 +362,14 @@ PRIVATE void shcomp_paint(Component *c, GdkRectangle *area,
 		     c->y + SHCOMP_BORDER_WIDTH,
 		     c->width - 2 * SHCOMP_BORDER_WIDTH - 1,
 		     c->height - 2 * SHCOMP_BORDER_WIDTH - 1);
-  gdk_gc_set_foreground(gc, &style->black);
 
-  gdk_draw_text(drawable, style->font, style->white_gc,
+  gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
+  gdk_draw_text(drawable, style->font, gc,
 		c->x + SHCOMP_BORDER_WIDTH + (SHCOMP_CONNECTOR_WIDTH>>1),
 		c->y + SHCOMP_BORDER_WIDTH + SHCOMP_TITLEHEIGHT - 3,
 		d->sheet->name, strlen(d->sheet->name));
+
+  gdk_gc_set_foreground(gc, &style->black);
 
   if (NULL != NULL)
     gdk_draw_pixmap(drawable, gc, NULL, 0, 0,

@@ -29,6 +29,7 @@ typedef enum ComponentColors {
   COMP_COLOR_BLUE,
   COMP_COLOR_YELLOW,
   COMP_COLOR_VIOLET,
+  COMP_COLOR_CYAN,
 
   COMP_NUM_COLORS
 } ComponentColors;

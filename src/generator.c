@@ -28,7 +28,28 @@
 #include "control.h"
 #include "msgbox.h"
 
+/**
+ * \brief This is a hash mapping from string -> GenratorClass
+ *
+ * This is used when a Generator is unpickled to find the GeneratorClass from the name tag.
+ */
+
 PRIVATE GHashTable *generatorclasses = NULL;
+
+/**
+ * \brief Initialize an AEvent.
+ * 
+ * Fills in the fields of an AEvent.
+ *
+ * \param e AEvent to fill.
+ * \param kind kind of the AEvent.
+ * \param src Where the event comes from.
+ * \param src_q The Connector number the AEvent comes from.
+ * \param dst The Generator which is to receive the AEvent.
+ * \param dst_q The Connector number which receives the event.
+ * \param time The SAMPLETIME when the event shall be processed.
+ *
+ */
 
 PUBLIC void gen_init_aevent(AEvent *e, AEventKind kind,
 			    Generator *src, int src_q,
@@ -42,6 +63,23 @@ PUBLIC void gen_init_aevent(AEvent *e, AEventKind kind,
   e->dst_q = dst_q;
   e->time = time;
 }
+
+/**
+ * \brief Registers a new GenratorClass with the system.
+ *
+ * \param name The Name Tag of the GenratorClass (This must be unique as it is used to find the GenratorClass on load)
+ * \param prefer If a GenratorClass with the same name exists should this be overwritten.
+ * \param count_event_in Number of Input AEvents the GenratorClass will have.
+ * \param count_event_out Number of Output AEvents the GenratorClass will have.
+ * \param input_sigs An Array of InputSignalDescriptor describing the Input Signals. (Can be NULL)
+ * \param output_sigs An Array of OutputSignalDescriptor describing the Output Signals. (Can be NULL)
+ * \param controls An Array of ControlDescriptor describing the Controls of the GenratorClass. (Can bu NULL)
+ * \param initializer The Constructor Function for the GeneratorClass specific initialisation. (Can be NULL)
+ * \param destructor The Destructor Function for the GeneratorClass specific destruction. (Can be NULL)
+ * \param unpickle_instance Unpickle Function
+ * \param pickle_instance Pickle Function
+ *
+ */
 
 PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
 					      gint count_event_in, gint count_event_out,
@@ -108,6 +146,15 @@ PUBLIC GeneratorClass *gen_new_generatorclass(const char *name, gboolean prefer,
   return k;
 }
 
+/**
+ * \brief Free Memory used by a GenratorClass
+ *
+ * If you have some Instances of this GenratorClass in your Memory and kill the Class
+ * expect Segfaults.
+ *
+ * \param g GenratorClass to free.
+ */
+
 PUBLIC void gen_kill_generatorclass(GeneratorClass *g) {
   int i;
 
@@ -127,6 +174,15 @@ PUBLIC void gen_kill_generatorclass(GeneratorClass *g) {
   free(g);
 }
 
+/**
+ * \brief Setup EventInput \a index on GenratorClass \a g.
+ *
+ * \param g GenratorClass you want to setup.
+ * \param index Number of EventInput you want to setup.
+ * \param name The Name of the Input Connector which will show up in the application.
+ * \param handler When an Event is received on the input this function will be called.
+ */
+
 PUBLIC void gen_configure_event_input(GeneratorClass *g, gint index,
 				      const char *name, AEvent_handler_t handler) {
   if (g->in_names[index] != NULL)
@@ -137,6 +193,14 @@ PUBLIC void gen_configure_event_input(GeneratorClass *g, gint index,
   g->in_handlers[index] = handler;
 }
 
+/**
+ * \brief Setup EventOutput \a index on GenratorClass \a g.
+ *
+ * \param g GenratorClass you want to setup.
+ * \param index Number of EventInput you want to setup.
+ * \param name The Name of the Output Connector which will show up in the application.
+ *
+ */
 PUBLIC void gen_configure_event_output(GeneratorClass *g, gint index, const char *name) {
   if (g->out_names[index] != NULL)
     g_warning("Event output already configured: class %s, index %d, name %s, existing name %s",
@@ -149,6 +213,14 @@ PRIVATE GList **make_event_list(gint count) {
   GList **l = safe_calloc(count, sizeof(GList *));
   return l;
 }
+
+/**
+ * \brief Instantiate a new Genrator.
+ *
+ * \param k The GenratorClass of the Generator.
+ * \param name The name of the new instance.
+ * \return The New Generator. 
+ */
 
 PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
   Generator *g = safe_malloc(sizeof(Generator));
@@ -203,6 +275,12 @@ PRIVATE void empty_all_connections(gint count, GList **array, int is_signal, int
   for (i = 0; i < count; i++)
     empty_link_list(array[i], is_signal, outbound);
 }
+
+/**
+ * \brief Free Memory of Genrator \a g
+ *
+ * \param g The Genrator to be freed.
+ */
 
 PUBLIC void gen_kill_generator(Generator *g) {
   int i;
@@ -272,6 +350,13 @@ PRIVATE void unpickle_eventlink_list_array(ObjectStoreDatum *array, ObjectStore 
     }
   }
 }
+
+/**
+ * \brief unpickles a Genrator from the ObjectStoreItem \a item
+ *
+ * \param ObjectStoreItem representing the Generator
+ * \return The Generator.
+ */
 
 PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
   Generator *g = objectstore_get_object(item);
@@ -349,6 +434,13 @@ PRIVATE ObjectStoreDatum *pickle_eventlink_list_array(ObjectStore *db, GList **a
   return array;
 }
 
+/**
+ * \brief Pickle the Generator \a g into ObjectStore \a db
+ *
+ * \param g The Generator to be pickled.
+ * \param db The ObjectStore into which the Generator will be inserted.
+ */
+
 PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
   ObjectStoreItem *item = objectstore_get_item(db, g);
 
@@ -371,6 +463,18 @@ PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
 
   return item;
 }
+
+/**
+ * \brief Setup a Link between 2 Genrators.
+ *
+ * \param is_signal TRUE if a Signal Link is to be established, FALSE for an event Link.
+ * \param src The Source Generator.
+ * \param src_q The Connector number of the Source.
+ * \param dst The Destination Genrator.
+ * \param dst_q The Connector number at the Destination.
+ *
+ * \return The EventLink representing this Connection.
+ */
 
 PUBLIC EventLink *gen_link(int is_signal, Generator *src, gint32 src_q, Generator *dst, gint32 dst_q) {
   EventLink *el = gen_find_link(is_signal, src, src_q, dst, dst_q);
@@ -417,6 +521,18 @@ PUBLIC EventLink *gen_link(int is_signal, Generator *src, gint32 src_q, Generato
   return el;
 }
 
+/**
+ * \brief find a Link between 2 Generators.
+ *
+ * \param is_signal TRUE if a Signal Link is to be found, FALSE for an event Link.
+ * \param src The Source Generator.
+ * \param src_q The Connector number of the Source.
+ * \param dst The Destination Genrator.
+ * \param dst_q The Connector number at the Destination.
+ *
+ * \return The EventLink representing this Connection.
+ */
+
 PUBLIC EventLink *gen_find_link(int is_signal,
 				Generator *src, gint32 src_q,
 				Generator *dst, gint32 dst_q) {
@@ -441,6 +557,13 @@ PUBLIC EventLink *gen_find_link(int is_signal,
   return NULL;
 }
 
+/**
+ * \brief Unlink 2 Generators
+ *
+ * \param el The EventLink which is to be deleted. Use gen_find_link if you have not saved the EventLink
+ *           from the gen_link.
+ */
+
 PUBLIC void gen_unlink(EventLink *el) {
   GList **outq;
   GList **inq;
@@ -456,13 +579,40 @@ PUBLIC void gen_unlink(EventLink *el) {
   free(el);
 }
 
+/** \brief Tells the Generator that it has a new Control
+ * 
+ * \param g The Generator.
+ * \param c The Control.
+ */
+
 PUBLIC void gen_register_control(Generator *g, Control *c) {
   g->controls = g_list_prepend(g->controls, c);
 }
 
+/** \brief Tells the Generator that a Control is no more.
+ * 
+ * \param g The Generator.
+ * \param c The Control.
+ */
+
 PUBLIC void gen_deregister_control(Generator *g, Control *c) {
   g->controls = g_list_remove(g->controls, c);
 }
+
+/**
+ * \brief Update all Control `s of the Generator.
+ *
+ * This Function calls control_update_value for every Control with the specified Type.
+ * This function should be called when an event is received which changes
+ * Control represented state. For example the value of a gain.
+ *
+ * \param g The Genrator which should update.
+ * \param index The number of the Control Type which should update.
+ *              or -1 for all Control Types.
+ *
+ * \note When implementing threads here has to be the gate to the audio thread.
+ *       
+ */
 
 PUBLIC void gen_update_controls(Generator *g, int index) {
   GList *cs = g->controls;
@@ -480,6 +630,12 @@ PUBLIC void gen_update_controls(Generator *g, int index) {
     cs = g_list_next(cs);
   }
 }
+
+/**
+ * \brief put an input of Type SIG_FLAG_REALTIME into the \buffer.
+ *
+ * \param Generator 
+ */
 
 PUBLIC gboolean gen_read_realtime_input(Generator *g, gint index, int attachment_number,
 					SAMPLE *buffer, int buflen) {

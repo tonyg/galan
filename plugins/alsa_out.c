@@ -70,8 +70,7 @@ snd_output_t *output = NULL;
  *   Underrun and suspend recovery
  */
  
-static int xrun_recovery(snd_pcm_t *handle, int err)
-{
+static int xrun_recovery(snd_pcm_t *handle, int err) {
     g_print( "xrun !!!....\n" );
 	if (err == -EPIPE) {	/* under-run */
 		err = snd_pcm_prepare(handle);
@@ -90,6 +89,7 @@ static int xrun_recovery(snd_pcm_t *handle, int err)
 	}
 	return err;
 }
+
 PRIVATE void audio_play_fragment(snd_pcm_t *handle, SAMPLE *left, SAMPLE *right, int length) {
   OUTPUTSAMPLE *outbuf;
   int buflen = length * sizeof(OUTPUTSAMPLE) * 2;
@@ -106,12 +106,15 @@ PRIVATE void audio_play_fragment(snd_pcm_t *handle, SAMPLE *left, SAMPLE *right,
     outbuf[(i<<1) + 1]	= (OUTPUTSAMPLE) MIN(MAX(right[i] * 32767, -32768), 32767);
   }
 
+
+again:
   err = snd_pcm_writei(handle, outbuf, length);
   if( err < 0 ) {
       if (xrun_recovery(handle, err) < 0) {
 	  printf("Write error: %s\n", snd_strerror(err));
 	  exit(EXIT_FAILURE);
       }
+      goto again;
   }
 
   //g_print( "len=%d, err=%d state=%d\n", length, err, snd_pcm_state(handle) );

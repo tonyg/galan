@@ -122,7 +122,7 @@ PRIVATE void add_option_to_optlist(gpointer key, gpointer value, gpointer user_d
   gtk_clist_append(list, texts);
 }
 
-PRIVATE void optlist_row_selected(GtkCList *optlist, gint row, gint column,
+PRIVATE gboolean optlist_row_selected(GtkCList *optlist, gint row, gint column,
 				  GdkEventButton *event, gpointer user_data) {
   GtkCombo *droplist = gtk_object_get_data(GTK_OBJECT(optlist), "droplist");
   PrefEntry *entry;
@@ -142,6 +142,7 @@ PRIVATE void optlist_row_selected(GtkCList *optlist, gint row, gint column,
     /* Reinstate it so that changes from now on take effect */
     gtk_object_set_data(GTK_OBJECT(droplist->entry), "option_name", option_name);
   }
+  return TRUE;
 }
 
 PRIVATE void droplist_entry_changed(GtkEntry *entry, gpointer data) {

@@ -114,6 +114,7 @@ PRIVATE void shcomp_resize(Component *c) {
 
 PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
 
+    gboolean warned = FALSE;
     GList *lst = sheet->components;
     InterSheetLinks *isl = safe_malloc( sizeof(InterSheetLinks) );
     isl->inputevents   = NULL;
@@ -153,7 +154,11 @@ PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
 			break;
 		}
 	    } else {
-		g_print( "unconnected InterSheet Component\n" );
+		if( !warned ) {
+		    warned = TRUE;
+		    popup_msgbox("Warning", MSGBOX_OK, 120000, MSGBOX_OK,
+			    "Unconnected Intersheet Component on Sheet %s..", sheet->name );
+		}
 	    }
 	}
 	lst = g_list_next(lst);

@@ -61,10 +61,13 @@
 #define EVT_TRIGGER		0
 #define EVT_YSCALE		1
 #define EVT_XSCALE		2
-#define NUM_EVENT_INPUTS	3
+#define EVT_LOOP_START		3
+#define EVT_LOOP_END		4
+#define NUM_EVENT_INPUTS	5
 
-#define EVT_OUTPUT		0
-#define NUM_EVENT_OUTPUTS	0
+#define EVT_LOOP_START_OUT	0
+#define EVT_LOOP_END_OUT	1
+#define NUM_EVENT_OUTPUTS	2
 
 
 typedef struct Data {
@@ -87,15 +90,6 @@ PRIVATE void setup_tables(void) {
 
 PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 
-    /* TODO: the EVENT contains event->d.integer samples.
-     *       i convert these samples to gint8 and put them
-     *       into data->intbuf[phase++] until phase >= ysize;
-     *       first i discard the old data.
-     *
-     *       when ysize is reached, i draw the buffer.
-     *
-     */
-
     Data *data = g->data;
 
     switch (event->kind)
@@ -108,7 +102,7 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 		SAMPLE *buf, *bufX;
 
 		int bufbytes    = event->d.integer * sizeof(SAMPLE);
-		int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->ysize);
+		int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->xsize);
 
 		buf    = safe_malloc(bufbytes);
 
@@ -118,7 +112,7 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 
 		for( bufX=buf,oldphase = data->phase; (data->phase-oldphase)<event->d.integer && (data->phase < intbufbytes); (data->phase)++,bufX++ )
 		{
-		    data->intbuf[data->phase]=CLIP_SAMPLE(*bufX * data->xsize)*127;
+		    data->intbuf[data->phase]=CLIP_SAMPLE(*bufX * data->ysize)*127;
 		    data->samplebuf[data->phase]=*bufX;
 		}
 
@@ -155,11 +149,15 @@ PRIVATE gboolean init_instance(Generator *g) {
 
   data->phase = 0;
   data->go = FALSE;
-  data->ysize = 0.1;
-  data->xsize = 1;
+  data->ysize = 1;
+  data->xsize = 0.1;
 
-  data->intbuf = safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->ysize+1));
-  data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->ysize+1));
+  data->intbuf = safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
+  data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
+
+  memset( data->intbuf, 0, sizeof(gint8)*(SAMPLE_RATE*data->xsize+1) );
+  memset( data->samplebuf, 0, sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1) );
+
   gen_register_realtime_fn(g, realtime_handler);
 
   return TRUE;
@@ -176,14 +174,27 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
 	
   Data *data = safe_malloc(sizeof(Data));
+  gint32 binarylength, i;
+  SAMPLE *samplebuf;
   g->data = data;
 
   data->go = FALSE;
   data->phase = objectstore_item_get_integer(item, "scope_phase", 0);
-  data->ysize = objectstore_item_get_double(item, "scope_ysize", 0.1);
-  data->xsize = objectstore_item_get_double(item, "scope_xsize", 1.0);
-  data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->ysize+1));
-  data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->ysize+1));
+  data->ysize = objectstore_item_get_double(item, "scope_ysize", 1);
+  data->xsize = objectstore_item_get_double(item, "scope_xsize", 0.1);
+  data->loop_start = objectstore_item_get_integer( item, "loop_start", 0 );
+  data->loop_end = objectstore_item_get_integer( item, "loop_end", data->xsize * SAMPLE_RATE - 1 );
+
+  data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
+  data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
+
+  binarylength = objectstore_item_get_binary(item, "sample_data", (void **) &samplebuf);
+  if( binarylength > 0 )
+      for( i=0; i<(binarylength/sizeof(SAMPLE)); i++ ) {
+	  data->samplebuf[i] = samplebuf[i];
+	  data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
+      }
+
   gen_register_realtime_fn(g, realtime_handler);
 }
 
@@ -192,6 +203,12 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
   objectstore_item_set_integer(item, "scope_phase", data->phase);
   objectstore_item_set_double(item, "scope_ysize", data->ysize);
   objectstore_item_set_double(item, "scope_xsize", data->xsize);
+  objectstore_item_set_double(item, "loop_start", data->loop_start);
+  objectstore_item_set_double(item, "loop_end", data->loop_end);
+
+  
+    objectstore_item_set(item, "sample_data",
+			 objectstore_datum_new_binary(data->xsize * SAMPLE_RATE * sizeof(SAMPLE), (void *) data->samplebuf));
 }
 
 PRIVATE SAMPLETIME output_range(Generator *g, OutputSignalDescriptor *sig) {
@@ -221,8 +238,22 @@ PRIVATE void loop_handler( SampleDisplay *s, int start, int end ) {
     Control *c = gtk_object_get_user_data( GTK_OBJECT( s ) );
     Data *data = c->g->data;
 
-    data->loop_start = start;
-    data->loop_end = end;
+    if( data->loop_start != start ) {
+	AEvent event;
+	data->loop_start = start;
+	
+	gen_init_aevent(&event, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime());
+	event.d.number = start;
+	gen_send_events( c->g, EVT_LOOP_START_OUT, -1, &event );
+    }
+    if( data->loop_end != end ) {
+	AEvent event;
+	data->loop_end = end;
+	
+	gen_init_aevent(&event, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime());
+	event.d.number = end;
+	gen_send_events( c->g, EVT_LOOP_END_OUT, -1, &event );
+    }
 }
 
 PRIVATE void loop_selection_handler( GtkWidget *b, Control *c ) {
@@ -247,7 +278,7 @@ PRIVATE void zoom_out_handler( GtkWidget *b, Control *c ) {
     SampleDisplay *sc = c->data;
 
     sample_display_set_window( sc, MAX( 0, sc->win_start - sc->win_length/2 ),
-	    MIN( data->ysize * SAMPLE_RATE - 1, sc->win_start + sc->win_length*2 ));
+	    MIN( data->xsize * SAMPLE_RATE - 1, sc->win_start + sc->win_length*2 ));
 }
 PRIVATE void zoom_in_handler( GtkWidget *b, Control *c ) {
 
@@ -259,6 +290,8 @@ PRIVATE void zoom_in_handler( GtkWidget *b, Control *c ) {
 PRIVATE void init_scope( Control *control ) {
 
 	GtkWidget *sc, *vb, *hb, *zoom_in, *zoom_out, *set_loop, *sel_loop;
+	Data *data = control->g->data;
+	gint32 intbufbytes = sizeof(gint8) * data->xsize * SAMPLE_RATE;
 
 	vb=gtk_vbox_new( 0,FALSE );
 	hb=gtk_hbox_new( 0,FALSE );
@@ -276,7 +309,9 @@ PRIVATE void init_scope( Control *control ) {
 	sc = sample_display_new(TRUE);
 	gtk_widget_set_usize( sc, 250, 100 );
 	gtk_object_set_user_data( GTK_OBJECT(sc), control );
+
 	gtk_signal_connect( GTK_OBJECT( sc ), "loop_changed", GTK_SIGNAL_FUNC( loop_handler ), NULL );
+
 
 	gtk_box_pack_start( GTK_BOX( hb ), zoom_in, TRUE, TRUE, 0 );
 	gtk_box_pack_start( GTK_BOX( hb ), zoom_out, TRUE, TRUE, 0 );
@@ -287,6 +322,10 @@ PRIVATE void init_scope( Control *control ) {
 	
 	gtk_widget_show_all( vb );
 	
+	sample_display_set_data_8( SAMPLE_DISPLAY(sc),
+		data->intbuf, intbufbytes, TRUE );
+	sample_display_set_loop( SAMPLE_DISPLAY(sc), 0, intbufbytes-1 );
+
 	control->widget = vb;
 	control->data = sc;
 }
@@ -307,7 +346,7 @@ PRIVATE void evt_trigger_handler(Generator *g, AEvent *event) {
   data->go = TRUE;
 }
 
-PRIVATE void evt_yscale_handler(Generator *g, AEvent *event) {
+PRIVATE void evt_xscale_handler(Generator *g, AEvent *event) {
   /* handle incoming events on queue EVT_YSCALE
    * when yscale changes need to resize buffer
    * first free, malloc, then be smart
@@ -320,21 +359,57 @@ PRIVATE void evt_yscale_handler(Generator *g, AEvent *event) {
   free( data->intbuf );
   free( data->samplebuf );
 
-  data->ysize = event->d.number;
-  data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->ysize+1));
-  data->samplebuf = (SAMPLE *)safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->ysize+1));
+  data->xsize = event->d.number;
+  data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->xsize+1));
+  data->samplebuf = (SAMPLE *)safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
   data->phase = 0; 
 }
+   
 
-PRIVATE void evt_xscale_handler(Generator *g, AEvent *event) {
+PRIVATE void evt_yscale_handler(Generator *g, AEvent *event) {
   /* handle incoming events on queue EVT_XSCALE
    * this only changes XSCALE factor which is only used for
    * generating the gint8[] so nothing special here
    */
   Data *data = g->data;
-  data->xsize = event->d.number;
+  data->ysize = event->d.number;
 }
 
+PRIVATE void evt_loop_start_handler(Generator *g, AEvent *event) {
+  /* handle incoming events on queue EVT_LOOP_START
+   * this only changes XSCALE factor which is only used for
+   * generating the gint8[] so nothing special here
+   */
+  Data *data = g->data;
+  GList *l;
+
+  data->loop_start = MAX( 0, event->d.number );
+  for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
+  {
+      Control *controlx = l->data;
+      g_assert( controlx->data != NULL );
+      sample_display_set_loop( (SampleDisplay *)controlx->data, data->loop_start, data->loop_end );
+  }
+  gen_send_events( g, EVT_LOOP_START_OUT, -1, event );
+}
+
+PRIVATE void evt_loop_end_handler(Generator *g, AEvent *event) {
+  /* handle incoming events on queue EVT_LOOP_START
+   * this only changes XSCALE factor which is only used for
+   * generating the gint8[] so nothing special here
+   */
+  Data *data = g->data;
+  GList *l;
+
+  data->loop_end = MIN( event->d.number, data->xsize * SAMPLE_RATE - 1 );
+  for( l=g_list_first(g->controls); l != NULL; l=g_list_next(l) )
+  {
+      Control *controlx = l->data;
+      g_assert( controlx->data != NULL );
+      sample_display_set_loop( (SampleDisplay *)controlx->data, data->loop_start, data->loop_end );
+  }
+  gen_send_events( g, EVT_LOOP_END_OUT, -1, event );
+}
 
 PRIVATE InputSignalDescriptor input_sigs[] = {
   { "Input", SIG_FLAG_REALTIME },
@@ -363,7 +438,11 @@ PRIVATE void setup_class(void) {
   gen_configure_event_input(k, EVT_TRIGGER, "Trigger", evt_trigger_handler);
   gen_configure_event_input(k, EVT_YSCALE, "YSize", evt_yscale_handler);
   gen_configure_event_input(k, EVT_XSCALE, "XSize", evt_xscale_handler);
-  //gen_configure_event_output(k, EVT_OUTPUT, "Output");
+  gen_configure_event_input(k, EVT_LOOP_START, "Loop Start", evt_loop_start_handler);
+  gen_configure_event_input(k, EVT_LOOP_END, "Loop End", evt_loop_end_handler);
+
+  gen_configure_event_output(k, EVT_LOOP_START_OUT, "Loop Start Out");
+  gen_configure_event_output(k, EVT_LOOP_END_OUT, "Loop End Out");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
 				  PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),

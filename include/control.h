@@ -45,13 +45,20 @@ enum ControlKind {
   CONTROL_MAX_KIND
 };
 
-typedef struct ControlPanel {
+struct ControlPanel {
     GtkWidget *scrollwin, *fixedwidget;
     char *name;
     gboolean visible;
     struct sheet *sheet;
     int w,h;
-} ControlPanel;
+    GtkWidget *sizer_ebox, *sizer_image;
+    int sizer_x, sizer_y;
+    int sizer_saved_x, sizer_saved_y;
+    int sizer_moving;
+    int sizer_visible;
+    char *current_bg;
+
+};
 
 struct ControlDescriptor {
   ControlKind kind;			/* kind of control */
@@ -75,10 +82,12 @@ struct Control {
   ControlDescriptor *desc;
   ControlPanel *panel;
   char *name;				/* overriding name. Set to NULL to use default. */
-  char *current_bg;
+  int testbg_active;
   gdouble min, max, step, page;		/* overrides desc's values */
-  gboolean folded;
-  gboolean discreet;
+
+  gboolean frame_visible;
+  gboolean entry_visible;
+  gboolean control_visible;
 
   int moving, saved_x, saved_y;		/* variables to implement drag-moving of controls */
   int x, y;				/* position within control window */
@@ -109,8 +118,11 @@ extern void control_update_names(Control *c);
 extern void control_update_range(Control *c);
 extern void control_update_value(Control *c);
 extern void control_set_value(Control *c, gfloat value);
+extern void control_moveto(Control *c, int x, int y);
+extern void control_update_bg(Control *c);
 
 extern void init_control(void);
+extern Control *control_clone( Control *c, Generator *g, ControlPanel *cp );
 
 extern void show_control_panel(void);
 extern void hide_control_panel(void);

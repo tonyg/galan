@@ -19,11 +19,11 @@
 #ifndef Prefs_H
 #define Prefs_H
 
-extern char *prefs_get_item(char *key);
-extern void prefs_set_item(char *key, char *value);
-extern void prefs_clear_item(char *key);
+extern char *prefs_get_item(const char *key);
+extern void prefs_set_item(const char *key, const char *value);
+extern void prefs_clear_item(const char *key);
 
-extern void prefs_register_option(char *key, char *value);
+extern void prefs_register_option(const char *key, const char *value);
 
 extern void prefs_edit_prefs(void);
 

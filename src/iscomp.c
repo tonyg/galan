@@ -136,6 +136,7 @@ PRIVATE int iscomp_initialize(Component *c, gpointer init_data) {
   d->ref = NULL;
 
   d->reftype = id->reftype;
+  d->poly = id->poly;
   switch( d->reftype ) {
       case EVTIN:
 	  build_connectors(c, 1, 0, 0);
@@ -169,44 +170,6 @@ PRIVATE void iscomp_destroy(Component *c) {
   free(d);
 }
 
-//PRIVATE GList *collect_connectors(GList *lst, Component *c, ConnectorKind kind,
-//				  gboolean is_output, int num_conns) {
-//  ConnectorReference ref;
-//  int i;
-//
-//  ref.c = c;
-//  ref.kind = kind;
-//  ref.is_output = is_output;
-//
-//  for (i = 0; i < num_conns; i++) {
-//    Connector *con;
-//
-//    ref.queue_number = i;
-//    con = comp_get_connector(&ref);
-//    if (con == NULL)
-//      con = comp_new_connector(c, kind, is_output, i, 0, 0);
-//    lst = g_list_prepend(lst, con);
-//  }
-//
-//  return lst;
-//}
-
-//PRIVATE void validate_connectors(Component *c) {
-//  ISCompData *d = c->data;
-//  GeneratorClass *k = d->g->klass;
-//  GList *lst, *temp;
-//
-//  lst = NULL;
-//  lst = collect_connectors(lst, c, COMP_EVENT_CONNECTOR, FALSE, k->in_count);
-//  lst = collect_connectors(lst, c, COMP_EVENT_CONNECTOR, TRUE, k->out_count);
-//  lst = collect_connectors(lst, c, COMP_SIGNAL_CONNECTOR, FALSE, k->in_sig_count);
-//  lst = collect_connectors(lst, c, COMP_SIGNAL_CONNECTOR, TRUE, k->out_sig_count);
-//
-//  temp = c->connectors;
-//  c->connectors = lst;
-//  g_list_free(temp);
-//}
-
 PRIVATE void iscomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *db) {
   ISCompData *d = safe_malloc(sizeof(ISCompData));
 
@@ -214,6 +177,7 @@ PRIVATE void iscomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *d
 
   d->name = safe_string_dup( objectstore_item_get_string(item, "name", "was geht denn hier ???" ) );
   d->reftype = objectstore_item_get_integer(item, "reftype", SIGIN );
+  d->poly = objectstore_item_get_integer(item, "poly", FALSE );
 
   if( objectstore_item_get_integer( item, "refvalid", 1 ) )
       d->ref = unpickle_connectorreference( d->ref, objectstore_item_get_object( item, "ref" ) );
@@ -228,10 +192,26 @@ PRIVATE void iscomp_pickle(Component *c, ObjectStoreItem *item, ObjectStore *db)
   ISCompData *d = c->data;
   objectstore_item_set_string(item, "name", d->name);
   objectstore_item_set_integer(item, "reftype", d->reftype);
+  objectstore_item_set_integer(item, "poly", d->poly);
   if( d->ref )
       objectstore_item_set_object( item, "ref", pickle_connectorreference( d->ref, db ) );
       
   objectstore_item_set_integer( item, "refvalid", (d->ref != NULL) );
+}
+
+PRIVATE Component *iscomp_clone( Component *c, Sheet *sheet ) {
+    ISCompInitData id;
+    ISCompData *srcdata = c->data;
+    Component *clone;
+
+    id.reftype = srcdata->reftype;
+    id.poly = srcdata->poly;
+    
+    clone = comp_new_component(  c->klass, &id, sheet, 0, 0 );
+    iscomp_resize(clone);
+    //sheet_queue_redraw_component( c->sheet, c );
+
+    return clone;
 }
 
 /* %%% Is this due to GTK changing from 1.2.x to 1.3.x, or is it a bug? */
@@ -306,7 +286,11 @@ PRIVATE void iscomp_paint(Component *c, GdkRectangle *area,
 		     c->y + ISCOMP_BORDER_WIDTH,
 		     c->width - 2 * ISCOMP_BORDER_WIDTH,
 		     c->height - 2 * ISCOMP_BORDER_WIDTH);
-  gdk_gc_set_foreground(gc, &colors[4]);
+  if( d->poly )
+      gdk_gc_set_foreground(gc, &colors[COMP_COLOR_YELLOW]);
+  else
+      gdk_gc_set_foreground(gc, &colors[4]);
+
   gdk_draw_rectangle(drawable, gc, FALSE,
 		     c->x + ISCOMP_BORDER_WIDTH,
 		     c->y + ISCOMP_BORDER_WIDTH,
@@ -545,6 +529,7 @@ PRIVATE ComponentClass InterSheetComponentClass = {
 
   iscomp_initialize,
   iscomp_destroy,
+  iscomp_clone,
 
   iscomp_unpickle,
   iscomp_pickle,
@@ -588,10 +573,14 @@ PRIVATE ComponentClass InterSheetComponentClass = {
 //    }
 //  }
 //}
-ISCompInitData id_sigin =  { SIGIN };
-ISCompInitData id_sigout = { SIGOUT };
-ISCompInitData id_evtin =  { EVTIN };
-ISCompInitData id_evtout = { EVTOUT };
+ISCompInitData id_sigin =  { SIGIN, FALSE };
+ISCompInitData id_sigout = { SIGOUT, FALSE };
+ISCompInitData id_evtin =  { EVTIN, FALSE };
+ISCompInitData id_evtout = { EVTOUT, FALSE };
+ISCompInitData id_poly_sigin =  { SIGIN, TRUE };
+ISCompInitData id_poly_sigout = { SIGOUT, TRUE };
+ISCompInitData id_poly_evtin =  { EVTIN, TRUE };
+ISCompInitData id_poly_evtout = { EVTOUT, TRUE };
 
 PUBLIC void init_iscomp(void) {
 //  generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
@@ -600,6 +589,10 @@ PUBLIC void init_iscomp(void) {
   comp_add_newmenu_item( "InterSheet/SigIN", &InterSheetComponentClass, &id_sigout );
   comp_add_newmenu_item( "InterSheet/EvtOUT", &InterSheetComponentClass, &id_evtin );
   comp_add_newmenu_item( "InterSheet/EvtIN", &InterSheetComponentClass, &id_evtout );
+  comp_add_newmenu_item( "InterSheet/SigOUT Poly", &InterSheetComponentClass, &id_poly_sigin );
+  comp_add_newmenu_item( "InterSheet/SigIN Poly", &InterSheetComponentClass, &id_poly_sigout );
+  comp_add_newmenu_item( "InterSheet/EvtOUT Poly", &InterSheetComponentClass, &id_poly_evtin );
+  comp_add_newmenu_item( "InterSheet/EvtIN Poly", &InterSheetComponentClass, &id_poly_evtout );
 }
 
 PUBLIC void done_iscomp(void) {

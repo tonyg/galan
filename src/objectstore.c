@@ -499,13 +499,25 @@ PUBLIC gpointer objectstore_get_object(ObjectStoreItem *item) {
  */
 
 PUBLIC void objectstore_set_object(ObjectStoreItem *item, gpointer object) {
-  if (item->object != NULL) {
-    g_warning("item->object != NULL in objectstore_set_object");
-    g_hash_table_remove(item->db->key_table, item->object);
-    item->object = NULL;
-  }
-  item->object = object;
-  g_hash_table_insert(item->db->key_table, item->object, (gpointer) item->key);
+
+    if( object == NULL ) {
+
+	if (item->object != NULL) {
+	    g_hash_table_remove(item->db->key_table, item->object);
+	    item->object = NULL;
+	}
+
+	return;
+    }
+
+    if (item->object != NULL) {
+	g_warning("item->object != NULL in objectstore_set_object");
+	g_hash_table_remove(item->db->key_table, item->object);
+	item->object = NULL;
+    }
+
+    item->object = object;
+    g_hash_table_insert(item->db->key_table, item->object, (gpointer) item->key);
 }
 
 /**

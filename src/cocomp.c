@@ -101,6 +101,15 @@ PRIVATE void cocomp_destroy(Component *c) {
   free(d);
 }
 
+PRIVATE Component *cocomp_clone( Component *c, Sheet *sheet ) {
+    COCompData *data = c->data;
+    Component *clone = comp_new_component( c->klass, NULL, sheet, 0, 0 );
+    COCompData *dstdata = clone->data;
+    
+    free( dstdata->name );
+    dstdata->name = safe_string_dup( data->name );
+    cocomp_resize( clone );
+}
 
 PRIVATE void cocomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *db) {
   COCompData *d = safe_malloc(sizeof(COCompData));
@@ -298,6 +307,7 @@ PRIVATE ComponentClass CommentComponentClass = {
 
   cocomp_initialize,
   cocomp_destroy,
+  cocomp_clone,
 
   cocomp_unpickle,
   cocomp_pickle,

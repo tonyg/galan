@@ -67,7 +67,8 @@ PRIVATE int output_fragment(SNDFILE *f, SAMPLE *l_buf, SAMPLE *r_buf, int length
     outbuf[(i<<1) + 1] = r_buf[i];
   }
 
-  i = sf_writef_double(f, outbuf, length);
+//  i = sf_writef_double(f, outbuf, length);
+  i = sf_writef_float(f, outbuf, length);
   return i;
 }
 
@@ -140,7 +141,7 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
   Generator *g = gtk_object_get_data(GTK_OBJECT(fs), "Generator");
   Data *data = g->data;
-  char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+  const char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
   FILE *f;
 
   f = fopen(filename, "rb");

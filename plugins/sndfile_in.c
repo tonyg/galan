@@ -71,7 +71,7 @@ PRIVATE void destroy_instance(Generator *g) {
   free(g->data);
 }
 
-PRIVATE gboolean try_load(Generator *g, char *filename, gboolean verbose) {
+PRIVATE gboolean try_load(Generator *g, const char *filename, gboolean verbose) {
   Data *data = g->data;
   SAMPLE *inbuf;
   gboolean success = FALSE;
@@ -103,7 +103,8 @@ PRIVATE gboolean try_load(Generator *g, char *filename, gboolean verbose) {
   }
 
   // XXX: if SAMPLE changes use another function.
-  if( sf_readf_double( f, inbuf, sfi.frames ) != sfi.frames )
+//  if( sf_readf_double( f, inbuf, sfi.frames ) != sfi.frames )
+  if( sf_readf_float( f, inbuf, sfi.frames ) != sfi.frames )
       g_print( "did not read all data !!!\n" );
   
 

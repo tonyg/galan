@@ -279,7 +279,7 @@ PRIVATE void update_list(GtkCList *list) {
 PRIVATE void add_entry(GtkWidget *widget, GtkEntry *entry) {
   Generator *g = gtk_object_get_user_data(GTK_OBJECT(entry));
   Data *data = g->data;
-  char *text = gtk_entry_get_text(entry);
+  const char *text = gtk_entry_get_text(entry);
   int num;
 
   if (sscanf(text, "%d", &num) != 1)

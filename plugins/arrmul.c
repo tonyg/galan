@@ -23,6 +23,7 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
+#include <glib.h>
 #include <gmodule.h>
 
 #include "global.h"
@@ -103,7 +104,7 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
 	    if( event->d.array.len != data->len )
 		
 		g_printf( "arrmul dimension mismatch (data->len, event->len ) = ( %d, %d )\n", data->len, event->d.array.len );
-	    else{
+	    else {
 
 		for( i=0; i<data->len; i++ )
 		    event->d.array.numbers[i] *= data->factor[i];

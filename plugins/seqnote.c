@@ -49,12 +49,14 @@
 
 /* Forward refs. */
 PRIVATE void init_pattern(Control *control);
+PRIVATE void init_2oct_pattern(Control *control);
 PRIVATE void done_pattern(Control *control);
 PRIVATE void refresh_pattern(Control *control);
 
 #define SEQNOTE_CONTROL_PATTERN		0
 PRIVATE ControlDescriptor seqnote_controls[] = {
   { CONTROL_KIND_USERDEF, "pattern", 0,0,0,0, 0,FALSE, 0,0, init_pattern, done_pattern, refresh_pattern },
+  { CONTROL_KIND_USERDEF, "2 Octaves Pattern", 0,0,0,0, 0,FALSE, 0,0, init_2oct_pattern, done_pattern, refresh_pattern },
   { CONTROL_KIND_NONE, }
 };
 
@@ -138,7 +140,7 @@ PRIVATE void evt_sel_edit_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
 
   data->edit = GEN_DOUBLE_TO_INT(event->d.number) % NUM_PATTERNS;
-  gen_update_controls(g, SEQNOTE_CONTROL_PATTERN);
+  gen_update_controls(g, -1);
 }
 
 PRIVATE void evt_sel_play_handler(Generator *g, AEvent *event) {
@@ -180,7 +182,7 @@ PRIVATE void value_changed_handler(GtkAdjustment *adj, gpointer userdata) {
     int note = 127 - adj->value;
     data->pattern[data->edit][step] = note;
     update_label(widgets[SEQUENCE_LENGTH * 2], note);
-    gen_update_controls(c->g, SEQNOTE_CONTROL_PATTERN);
+    gen_update_controls(c->g, -1);
   }
 }
 
@@ -202,7 +204,7 @@ PRIVATE void toggle_changed_handler(GtkWidget *widget, gpointer userdata) {
 
   if (c->events_flow) {
     data->note[data->edit][step] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-    gen_update_controls(c->g, SEQNOTE_CONTROL_PATTERN);
+    gen_update_controls(c->g, -1);
   }
 }
 
@@ -279,7 +281,7 @@ PRIVATE void do_paste(Control *c, guint action, GtkWidget *widget) {
       data->note[data->edit][i] = clipnote[i-offset];
   }
   if (c->events_flow) {
-    gen_update_controls(c->g, SEQNOTE_CONTROL_PATTERN);
+    gen_update_controls(c->g, -1);
   }
 }
 
@@ -356,6 +358,75 @@ PRIVATE void init_pattern(Control *control) {
     adj->page_increment = 1;
     adj->lower = 0;
     adj->upper = 127;
+    adj->value = 127 - data->pattern[data->edit][i];
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(t), data->note[data->edit][i]);
+
+    gtk_object_set_data(GTK_OBJECT(adj), "Control", control);
+    gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
+		       GTK_SIGNAL_FUNC(value_changed_handler), (gpointer) i);
+    gtk_signal_connect(GTK_OBJECT(b), "focus_in_event",
+		       GTK_SIGNAL_FUNC(focus_in_handler), control);
+    gtk_widget_set_usize(b, 12, 100);
+    gtk_box_pack_start(GTK_BOX(vb), b, FALSE, FALSE, 0);
+    gtk_widget_show(b);
+    widgets[i] = b;
+
+    gtk_object_set_data(GTK_OBJECT(t), "Control", control);
+    gtk_signal_connect(GTK_OBJECT(t), "toggled",
+		       GTK_SIGNAL_FUNC(toggle_changed_handler), (gpointer) i);
+    gtk_widget_set_usize(t, 12, 16);
+    gtk_box_pack_start(GTK_BOX(vb), t, FALSE, FALSE, 0);
+    gtk_widget_show(t);
+    widgets[i + SEQUENCE_LENGTH] = t;
+
+    gtk_box_pack_start(GTK_BOX(hb), vb, FALSE, FALSE, 0);
+    gtk_widget_show(vb);
+  }
+  rightvb = gtk_vbox_new( FALSE, 5 );
+
+  label = gtk_label_new("--");
+  gtk_box_pack_start(GTK_BOX(rightvb), label, FALSE, FALSE, 0);
+  menu = gtk_button_new_with_label( "M" );
+  gtk_box_pack_start(GTK_BOX(rightvb), menu, TRUE, FALSE, 0);
+
+
+  gtk_signal_connect( GTK_OBJECT(menu), "clicked",
+	GTK_SIGNAL_FUNC( popup_handler ), control );
+
+  gtk_box_pack_start(GTK_BOX(hb), rightvb, FALSE, FALSE, 0);
+  gtk_widget_show(label);
+  gtk_widget_show(menu);
+  gtk_widget_show(rightvb);
+  widgets[SEQUENCE_LENGTH * 2] = label;
+
+  control->widget = hb;
+  control->data = widgets;
+}
+
+PRIVATE void init_2oct_pattern(Control *control) {
+  GtkWidget *hb;
+  int i;
+  GtkWidget **widgets = safe_malloc(sizeof(GtkWidget *) * (SEQUENCE_LENGTH * 2 + 1));
+  Data *data = control->g->data;
+  GtkWidget *label, *menu;
+  GtkWidget *rightvb;
+
+  hb = gtk_hbox_new(FALSE, 5);
+
+  for (i = 0; i < SEQUENCE_LENGTH; i++) {
+    GtkWidget *vb = gtk_vbox_new(FALSE, 5);
+    GtkWidget *b = gtk_vscale_new(NULL);
+    GtkWidget *t = gtk_toggle_button_new();
+    GtkAdjustment *adj = gtk_range_get_adjustment(GTK_RANGE(b));
+
+    gtk_scale_set_draw_value(GTK_SCALE(b), FALSE);
+    gtk_scale_set_digits(GTK_SCALE(b), 2);
+
+    adj->step_increment = 1;
+    adj->page_increment = 1;
+    adj->lower = 127 - 48;
+    adj->upper = 127 - 24;
     adj->value = 127 - data->pattern[data->edit][i];
 
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(t), data->note[data->edit][i]);

@@ -349,7 +349,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 
 PRIVATE int init_instance(Generator *g) {
   ALSAData *data;
-  int err;
 
   instance_count++;
   if (instance_count > 1)

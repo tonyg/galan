@@ -71,7 +71,7 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 }
 
 PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
-  Data *data = g->data;
+  //Data *data = g->data;
   int i,len;
   SAMPLE *out, *in;
   AEvent send_ev;

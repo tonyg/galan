@@ -81,6 +81,7 @@ struct ComponentClass {
 
   int (*initialize_instance)(Component *c, gpointer init_data);
   void (*destroy_instance)(Component *c);
+  Component * (*clone_instance)(Component *c, struct sheet *sheet );
 
   void (*unpickle_instance)(Component *c, ObjectStoreItem *item, ObjectStore *db);
   void (*pickle_instance)(Component *c, ObjectStoreItem *item, ObjectStore *db);
@@ -134,6 +135,9 @@ extern ConnectorReference *unpickle_connectorreference(ConnectorReference *ref,
 extern gpointer unpickler_for_connectorreference(ObjectStoreItem *item);
 extern ObjectStoreItem *pickle_connectorreference(ConnectorReference *ref, ObjectStore *db);
 
+// Clone component on sheet
+extern Component *comp_clone( Component *c, struct sheet *sheet );
+
 /*=======================================================================*/
 /* Methods on Components */
 extern void comp_paint_connections(Component *c, GdkRectangle *area,
@@ -167,6 +171,8 @@ extern void comp_insert_connection(Connector *con, ConnectorReference *other);
 extern void comp_remove_connection(Connector *con, ConnectorReference *other);
 extern gint connectorreference_equal(ConnectorReference *r1, ConnectorReference *r2);
 
+// Clone a list of components and also their connections
+extern void comp_clone_list( GList *lst, struct sheet *sheet );
 /*=======================================================================*/
 /* Module setup/shutdown */
 extern void init_comp(void);

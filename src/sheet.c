@@ -747,6 +747,7 @@ PUBLIC Sheet *create_sheet( void ) {
   sheet->panel_control_active = FALSE;
   sheet->panel_control = NULL;
   sheet->referring_sheets = NULL;
+  sheet->visible = TRUE;
   sheet->highlight_ref.kind = COMP_NO_CONNECTOR;
 
   sheet->name = safe_malloc( sizeof( "sheet" ) + 20 );
@@ -754,6 +755,7 @@ PUBLIC Sheet *create_sheet( void ) {
 
   sheet->scrollwin = gtk_scrolled_window_new(NULL, NULL);
   gtk_widget_show(sheet->scrollwin);
+  gtk_widget_ref(sheet->scrollwin);
 
   eb = gtk_event_box_new();
   gtk_widget_show(eb);
@@ -807,13 +809,22 @@ PUBLIC Sheet *create_sheet( void ) {
  *  See comp_new_component() for details
  */
 
-PUBLIC void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer init_data) {
+PUBLIC Component *sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer init_data) {
   Component *c = comp_new_component(k, init_data, sheet, sheet->saved_x, sheet->saved_y);
 
   if (c != NULL) {
     sheet->components = g_list_prepend(sheet->components, c);
     gtk_widget_queue_draw(sheet->drawingwidget);
   }
+
+  return c;
+}
+
+PUBLIC void sheet_add_component( Sheet *sheet, Component *c ) {
+    if( c != NULL ) {
+	sheet->components = g_list_prepend(sheet->components, c);
+	gtk_widget_queue_draw(sheet->drawingwidget);
+    }
 }
 
 /**
@@ -936,9 +947,11 @@ PUBLIC void sheet_remove( Sheet *sheet ) {
 	control_panel_unregister_panel( sheet->control_panel );
 	//safe_free( sheet->control_panel );
     }
+    gtk_widget_unref( sheet->scrollwin );
     if( sheet->name )
 	safe_free( sheet->name );
     safe_free( sheet );
+    
 }
 
 PRIVATE GtkWidget *rename_text_widget=NULL;
@@ -1073,6 +1086,27 @@ PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
 
     }	
     return item;
+}
+
+
+PUBLIC Sheet *sheet_clone( Sheet *sheet ) {
+
+    Sheet *clone = create_sheet();
+
+    free( clone->name );
+    clone->name = safe_string_dup( sheet->name );
+    update_sheet_name( sheet );
+
+    ControlPanel *cp = clone->control_panel = control_panel_new( clone->name, TRUE, clone );
+    clone->visible = FALSE;
+    gtk_layout_move( GTK_LAYOUT( cp->fixedwidget ), cp->sizer_ebox, sheet->control_panel->sizer_x+16, sheet->control_panel->sizer_y+16 );
+    if( sheet->control_panel->current_bg ) {
+	cp->current_bg = safe_string_dup( sheet->control_panel->current_bg );
+	control_update_bg( sheet->panel_control );
+    }
+
+    comp_clone_list( sheet->components, clone );
+    return clone;
 }
 
 /**

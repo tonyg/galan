@@ -365,6 +365,9 @@ PRIVATE void empty_all_connections(gint count, GList **array, int is_signal, int
  *    BTW: i need to change the g_free() function to use the free_thread i will implement.
  *   
  *   then pass on to another thread which does the real destruction of the generator.
+ *
+ *   looks like i only need to change event_allocation functions. and event_free
+ *   normally event is only copied by the generator framework.
  */
 
 PUBLIC void gen_kill_generator(Generator *g) {
@@ -608,9 +611,16 @@ PUBLIC ObjectStoreItem *gen_pickle_without_el(Generator *g, ObjectStore *db) {
     objectstore_item_set_string(item, "class_name", g->klass->tag);
     objectstore_item_set_string(item, "name", g->name);
 
+    objectstore_item_set(item, "out_events",
+			 pickle_eventlink_list_array(db, g->out_events, 0));
+    objectstore_item_set(item, "out_signals",
+			 pickle_eventlink_list_array(db, g->out_signals, 0));
+
     if (g->klass->pickle_instance != NULL)
       g->klass->pickle_instance(g, item, db);
 
+    objectstore_item_set(item, "controls", objectstore_datum_new_array(0) );
+    
     // XXX: Controls should also be copied but they have a reference to
     //      the sheet so i would need a different unpickler.
     //      I wont do that now.
@@ -623,6 +633,35 @@ PUBLIC ObjectStoreItem *gen_pickle_without_el(Generator *g, ObjectStore *db) {
   return item;
 }
 
+
+/*
+ * \brief Clone the current generator.
+ *
+ * \param g The Generator to be cloned.
+ * \param cp ControlPanel where the generator resides.
+ * 
+ * the generator will be cloned. And its controls will be cloned also.
+ * they will then sit on the the new controlpanel.
+ */
+
+PUBLIC Generator *gen_clone( Generator *src, ControlPanel *cp ) {
+    ObjectStore *db = objectstore_new_objectstore();
+    ObjectStoreItem *it = gen_pickle_without_el( src, db );
+    Generator *dst;
+    GList *controlX;
+    
+    objectstore_set_object( it, NULL );
+    dst = gen_unpickle( it );
+
+    objectstore_kill_objectstore( db );
+
+    for( controlX = src->controls; controlX; controlX = g_list_next( controlX ) ) {
+	Control *c = controlX->data;
+	control_clone( c, dst, cp );
+    }
+
+    return dst;
+}
 
 /**
  * \brief Setup a Link between 2 Genrators.

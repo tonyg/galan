@@ -47,8 +47,10 @@ typedef struct sheet {
 } Sheet;
 
 extern Sheet *create_sheet();
+PUBLIC Sheet *sheet_clone( Sheet *sheet );
 
-extern void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer init_data);
+extern Component *sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer init_data);
+extern void sheet_add_component( Sheet *sheet, Component *c );
 extern void sheet_delete_component(Sheet *sheet, Component *c);
 extern void sheet_queue_redraw_component(Sheet *sheet, Component *c);
 
@@ -64,6 +66,10 @@ extern Sheet *sheet_loadfrom(Sheet *sheet, FILE *f);
 extern void sheet_saveto(Sheet *sheet, FILE *f, gboolean sheet_only);
 extern Sheet *sheet_unpickle( ObjectStoreItem *item );
 extern ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db );
+
+
+extern int sheet_get_textwidth(Sheet *sheet, char *text);
+extern int sheet_get_textheight(Sheet *sheet, char *text);
 
 extern void sheet_register_ref( Sheet *s, Component *comp );
 extern void sheet_unregister_ref( Sheet *s, Component *comp );

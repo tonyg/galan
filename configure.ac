@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(galan, 0.3.0_beta4, torbenh@users.sourceforge.net)
+AC_INIT(galan, 0.3.0_beta5, torbenh@users.sourceforge.net)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE
 

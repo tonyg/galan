@@ -123,7 +123,6 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
       memset(tmpbuf, 0, buflen * sizeof(SAMPLE));
 
     for (i = 0; i < buflen; i++) {
-      SAMPLE tmp;
 
       if (data->offset >= data->delay)
 	data->offset = 0;

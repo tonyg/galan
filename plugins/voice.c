@@ -75,7 +75,7 @@ PRIVATE void destroy_instance(Generator *g) {
   free(g->data);
 }
 
-PRIVATE gboolean try_load(Generator *g, char *filename, gboolean verbose) {
+PRIVATE gboolean try_load(Generator *g, const char *filename, gboolean verbose) {
   Data *data = g->data;
   gint16 *inbuf;
   int nsamples = 0;
@@ -278,7 +278,7 @@ PRIVATE void load_new_sample(GtkWidget *widget, GtkWidget *fs) {
   Generator *g = gtk_object_get_data(GTK_OBJECT(fs), "Generator");
   GtkWidget *label = gtk_object_get_data(GTK_OBJECT(fs), "FilenameLabel");
   Data *data = g->data;
-  char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+  const char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
 
   if (try_load(g, filename, TRUE)) {
     if (data->filename != NULL)

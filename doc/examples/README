@@ -1,0 +1,14 @@
+This directory contains simple examples of gAlan in action. To try them out,
+load the *.galan files using the File/Open menu.
+
+Some of the examples require samples to be assigned to the
+sample-players in the gAlan file: find all the "sampled voice"
+components (labeled voice1, voice2, ... or similar) and choose the
+"Properties..." option from their popup-menus. Select the sample file
+that you want that sample-player to play.
+
+Other examples may be found via the master website (see the README in
+the main distribution directory for the URL).
+
+Cheers,
+  Tony

@@ -1,0 +1,18 @@
+/* config.h for Win32 */
+
+/* Define if you have the ANSI C header files.  */
+#define STDC_HEADERS 1
+
+/* Set to 1 if you want to use floating-point internally for
+   all sample representation */
+#define WANT_FLOATING_POINT_SAMPLES 1
+
+/* Name of package */
+#define PACKAGE "galan"
+
+/* Version number of package */
+#define VERSION "0.2.2"
+
+/* Set to the maximum number of samples to process at once
+   in between event-triggers. */
+#define MAXIMUM_REALTIME_STEP 1024

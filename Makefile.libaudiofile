@@ -1,0 +1,21 @@
+# Handcrafted Makefile for Michael Pruett's audiofile-0.1.7 on Win32
+# Written 20 Sep 1999 by Tony Garnock-Jones
+#
+# You might have to change this if you have any version of libaudiofile
+# other than 0.1.7
+
+objects = audiofile.o error.o write.o bread.o bwrite.o byteorder.o \
+	util.o aupv.o \
+	aes.o instrument.o loop.o marker.o misc.o track.o query.o compression.o \
+	aiff.o aiffwrite.o extended.o \
+	au.o auwrite.o \
+	wave.o wavewrite.o \
+	ulaw.o g711.o
+
+CFLAGS = -Wall -DHAVE_CONFIG_H -I. -DNDEBUG
+
+libaudiofile.dll: $(objects) dllinit.o
+	dllwrap -g --export-all --output-def libaudiofile.def --output-lib libaudiofile.a -o $@ $(objects) dllinit.o
+
+%.o: %.c
+	gcc $(CFLAGS) -c $<

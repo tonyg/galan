@@ -1,0 +1,18 @@
+[[ These are just private implementation notes. They're probably
+   meaningless and/or out-of-date. Tony 16/9/99 ]]
+
+M - V - C
+
+Models:
+	- Generator (GeneratorClass)
+
+Views:
+	- Component (ComponentClass)
+	- Control (ControlDescriptor)
+
+Controllers:
+	- implicit...?
+	- it'd probably be cleaner with a formal separation.
+	- will probably need some kind of Controller-style mechanism
+	  to implement feedback from Generator's data to visible controls...
+

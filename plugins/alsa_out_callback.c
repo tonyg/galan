@@ -405,16 +405,16 @@ PRIVATE void setup_class(void) {
 
   {
     char *value = prefs_get_item("output_plugin");
-    prefer = value ? !strcmp(value, "ALSA") : FALSE;
+    prefer = value ? !strcmp(value, "ALSA Callback") : FALSE;
   }
-  prefs_register_option("output_plugin", "ALSA");
+  prefs_register_option("output_plugin", "ALSA Callback");
 
   {
-    char *name = prefs_get_item("output_alsa_device");
+    char *name = prefs_get_item("output_alsa_callback_device");
     sprintf(device, "%s", name ? name : "plughw:0,0");
   }
-  prefs_register_option("output_alsa_device", "hw:0,0");
-  prefs_register_option("output_alsa_device", "plughw:0,0");
+  prefs_register_option("output_alsa_callback_device", "hw:0,0");
+  prefs_register_option("output_alsa_callback_device", "plughw:0,0");
 
 
   k = gen_new_generatorclass("audio_out_cb", prefer, 0, 0,

@@ -60,7 +60,7 @@ PRIVATE GdkBitmap *off_mask;
 
 PRIVATE GList *lget_anim_list( char *name ) {
 
-   GError *err;
+   GError *err = NULL;
    GTimeVal time;
    GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name, &err );
    GdkPixbufAnimationIter *iter;

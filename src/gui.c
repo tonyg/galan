@@ -39,6 +39,7 @@
 PRIVATE GtkWidget *mainwin;
 PRIVATE GtkWidget *mainmenu;
 PRIVATE GtkWidget *mainnotebook;
+PRIVATE GtkWidget *statusbar;
 
 PRIVATE char *current_filename = NULL;
 PRIVATE guint timeout_tag;
@@ -79,6 +80,10 @@ PUBLIC void gui_unregister_sheet( struct sheet *sheet ) {
 
 PUBLIC void update_sheet_name( struct sheet *sheet ) {
     gtk_notebook_set_tab_label_text( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, sheet->name );
+}
+
+PUBLIC void gui_statusbar_push( char *msg ) {
+    gtk_label_set_text( GTK_LABEL(statusbar), msg );
 }
 
 /*=======================================================================*/
@@ -349,6 +354,7 @@ PRIVATE GtkWidget *build_mainmenu(void) {
 PRIVATE void create_mainwin(void) {
   GtkWidget *vb;
   GtkWidget *hb;
+  GtkWidget *frame, *statusbox;
 
   Sheet *s1;
 
@@ -379,6 +385,18 @@ PRIVATE void create_mainwin(void) {
   mainnotebook = gtk_notebook_new();
   gtk_box_pack_start(GTK_BOX(vb), mainnotebook, TRUE, TRUE, 0);
   gtk_widget_show( mainnotebook );
+
+  frame = gtk_frame_new( NULL );
+  gtk_frame_set_shadow_type( GTK_FRAME(frame), GTK_SHADOW_OUT );
+  statusbox = gtk_hbox_new( FALSE, 5 );
+  statusbar = gtk_label_new("");
+  gtk_box_pack_start( GTK_BOX(statusbox), statusbar, FALSE,FALSE, 0 );
+  gtk_container_add( GTK_CONTAINER(frame), statusbox );
+  gtk_box_pack_start(GTK_BOX(vb), frame, FALSE, FALSE, 0);
+  //gtk_widget_show( statusbar );
+  //gtk_widget_show( statusbox );
+  gtk_widget_show_all( frame );
+
   //gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), s1->scrollwin, NULL );
 
   gui_register_sheet( s1 );

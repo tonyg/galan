@@ -281,12 +281,12 @@ static void gtk_knob_realize(GtkWidget *widget) {
   attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
   widget->window = gdk_window_new(widget->parent->window, &attributes, attributes_mask);
 
-  widget->style = gtk_style_attach(widget->style, widget->window);
+  widget->style = gtk_style_attach(widget->parent->style, widget->window);
 
   gdk_window_set_user_data(widget->window, widget);
 
 
-  gtk_style_set_background(widget->style, widget->window, GTK_STATE_ACTIVE);
+  gtk_style_set_background(widget->style, widget->window, GTK_STATE_NORMAL);
 }
 
 static void gtk_knob_size_request (GtkWidget *widget, GtkRequisition *requisition) {

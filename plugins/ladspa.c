@@ -575,7 +575,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	if( LADSPA_IS_HINT_BOUNDED_ABOVE( psDescriptor->PortRangeHints[portindex].HintDescriptor ) )
 	    controls[i].max = psDescriptor->PortRangeHints[portindex].UpperBound;
 	else
-	    controls[i].max = 0.0;
+	    controls[i].max = 100.0;
 
 	if( LADSPA_IS_HINT_SAMPLE_RATE( psDescriptor->PortRangeHints[portindex].HintDescriptor ) ) {
 	    controls[i].min *= SAMPLE_RATE;
@@ -592,9 +592,6 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	controls[i].allow_direct_edit = TRUE;
 	controls[i].is_dst_gen = TRUE;
 	controls[i].queue_number = i;
-
-	// { CONTROL_KIND_KNOB, "attack", 0,5,0.01,0.01, 0,TRUE, TRUE,EVT_ATTACK_TIME,
-	//   NULL,NULL, control_double_updater, (gpointer) offsetof(Data, attack) },
 
 
 	controls[i].initialize = NULL;

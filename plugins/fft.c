@@ -30,7 +30,11 @@
 #include "control.h"
 #include "gencomp.h"
 
+#if FFTW_PREFIX == 1
 #include <drfftw.h>
+#else
+#include <rfftw.h>
+#endif
 
 #define GENERATOR_CLASS_NAME	"fftw"
 #define GENERATOR_CLASS_PATH	"Misc/FFT"

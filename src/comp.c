@@ -106,6 +106,7 @@ PUBLIC Component *comp_new_component(ComponentClass *k, gpointer init_data,
   c->sheet = sheet;
   c->x = x;
   c->y = y;
+  c->saved_x = c->saved_y = 0;
   c->width = c->height = 0;
   c->connectors = NULL;
   c->data = NULL;
@@ -218,6 +219,8 @@ PUBLIC Component *comp_unpickle(ObjectStoreItem *item) {
       comp->klass = k;
     }
     comp->data = NULL;
+
+    comp->saved_x = comp->saved_y = 0;
 
     shitem = objectstore_item_get_object( item, "sheet" );
     if( shitem == NULL )

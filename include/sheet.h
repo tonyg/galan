@@ -34,6 +34,7 @@ typedef struct sheet {
     gboolean panel_control_active;
     GtkWidget *drawingwidget;
     GList *components;
+    GList *selected_comps;
     GList *referring_sheets;
 
     GeneratorClass *sheetklass;

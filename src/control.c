@@ -34,7 +34,7 @@
 #include "msgbox.h"
 
 #define GAUGE_SIZE 32
-#define GRANULARITY 16
+#define GRANULARITY 8
 
 PRIVATE GtkWidget *control_panel = NULL;
 PRIVATE GtkWidget *fixed_widget = NULL;
@@ -310,10 +310,13 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g) {
     if (!GTK_WIDGET_REALIZED(eventbox))
       gtk_widget_realize(eventbox);
 
-    gdk_window_set_events(eventbox->window, GDK_ALL_EVENTS_MASK);
+    gdk_window_set_events(eventbox->window, 
+	    GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK  );
   }
 
   gen_register_control(c->g, c);
+  gen_update_controls( c->g, -1 );
+
 
   return c;
 }

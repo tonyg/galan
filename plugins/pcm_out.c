@@ -64,8 +64,7 @@ PRIVATE int output_fragment(AFfilehandle f, SAMPLE *l_buf, SAMPLE *r_buf, int le
   if (length <= 0)
     return 0;
 
-  outbuf = malloc(buflen);
-  RETURN_VAL_UNLESS(outbuf != NULL, 0);
+  outbuf = g_alloca(buflen);
 
   for (i = 0; i < length; i++) {
     outbuf[i<<1]       = (OUTPUTSAMPLE) MIN(MAX(l_buf[i] * 32767, -32768), 32767);
@@ -73,7 +72,6 @@ PRIVATE int output_fragment(AFfilehandle f, SAMPLE *l_buf, SAMPLE *r_buf, int le
   }
 
   i = afWriteFrames(f, AF_DEFAULT_TRACK, outbuf, length);
-  free(outbuf);
   return i;
 }
 
@@ -84,9 +82,10 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
     case AE_REALTIME: {
       SAMPLE *l_buf, *r_buf;
       int bufbytes = event->d.integer * sizeof(SAMPLE);
+      
 
-      l_buf = safe_malloc(bufbytes);
-      r_buf = safe_malloc(bufbytes);
+      l_buf = g_alloca(bufbytes);
+      r_buf = g_alloca(bufbytes);
 
       if (!gen_read_realtime_input(g, SIG_LEFT, -1, l_buf, event->d.integer))
 	memset(l_buf, 0, bufbytes);
@@ -100,8 +99,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 	  data->frames_recorded += written;
       }
 
-      free(l_buf);
-      free(r_buf);
       break;
     }
 
@@ -148,7 +145,7 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
   Generator *g = gtk_object_get_data(GTK_OBJECT(fs), "Generator");
   Data *data = g->data;
-  char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
+  const char *filename = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
   FILE *f;
 
   f = fopen(filename, "rb");

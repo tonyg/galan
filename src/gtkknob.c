@@ -70,9 +70,45 @@ GdkPixbuf *get_empty_frame( GdkPixbufAnimation *anim ) {
 	    gdk_pixbuf_animation_get_height( anim )      );
 }
 
+static GList *get_anim_list( char *name ) {
+
+   GError *err;
+   GTimeVal time;
+   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name, &err );
+   GdkPixbufAnimationIter *iter;
+   GList *retval = NULL;
+
+   g_get_current_time( &time );
+   iter = gdk_pixbuf_animation_get_iter( animation, &time );
+   
+   while(1) {
+       GdkPixbuf *pixbuf = gdk_pixbuf_animation_iter_get_pixbuf(iter);
+       int delay = gdk_pixbuf_animation_iter_get_delay_time( iter );
+       
+       //g_print( "Hallo :)\n" );
+
+       retval = g_list_append( retval, gdk_pixbuf_copy( pixbuf ) );
+
+       if( gdk_pixbuf_animation_iter_on_currently_loading_frame( iter ) )
+	   return retval;
+
+       if( delay == -1 )
+	   break;
+       if( g_list_length( retval ) > 300 )
+	   break;
+
+       g_time_val_add( &time, delay*1000 );
+       gdk_pixbuf_animation_iter_advance( iter, &time );
+   }
+   return retval;
+}
+
+/* XXX: How do i handle this ?
+ * 
 GList *get_anim_list( char *name ) {
 
-   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name );
+   GError *err;
+   GdkPixbufAnimation *animation = gdk_pixbuf_animation_new_from_file( name, &err );
 
    GList *framelistX, *framelist = gdk_pixbuf_animation_get_frames( animation );
    GdkPixbufFrame *firstframe = framelist->data;
@@ -117,7 +153,7 @@ GList *get_anim_list( char *name ) {
 
    return retval;
 }
-
+*/
 void free_anim_list( GList *anim_list )
 {
     // g_list_foreach( anim_list, gdk_pixbuf_unref );
@@ -134,8 +170,8 @@ guint gtk_knob_get_type(void) {
       sizeof (GtkKnobClass),
       (GtkClassInitFunc) gtk_knob_class_init,
       (GtkObjectInitFunc) gtk_knob_init,
-      (GtkArgSetFunc) NULL,
-      (GtkArgGetFunc) NULL,
+      NULL,
+      NULL,
     };
 
     knob_type = gtk_type_unique(gtk_widget_get_type(), &knob_info);
@@ -203,13 +239,15 @@ static void gtk_knob_destroy(GtkObject *object) {
 
   knob = GTK_KNOB(object);
 
-  if (knob->adjustment)
+  if (knob->adjustment) {
     gtk_object_unref(GTK_OBJECT(knob->adjustment));
+    knob->adjustment = NULL;
+  }
 
-  if (knob->pixbuf)
+  if (knob->pixbuf) {
     gdk_pixbuf_unref(knob->pixbuf);
-  if (knob->anim_list)
-    free_anim_list(knob->anim_list);
+    knob->pixbuf = NULL;
+  }
 
   if (GTK_OBJECT_CLASS(parent_class)->destroy)
     (*GTK_OBJECT_CLASS(parent_class)->destroy)(object);
@@ -240,6 +278,7 @@ void gtk_knob_set_adjustment(GtkKnob *knob, GtkAdjustment *adjustment) {
 
   knob->adjustment = adjustment;
   gtk_object_ref(GTK_OBJECT(knob->adjustment));
+  gtk_object_sink(GTK_OBJECT( knob->adjustment ) ); 
 
   gtk_signal_connect(GTK_OBJECT(adjustment), "changed",
 		     GTK_SIGNAL_FUNC(gtk_knob_adjustment_changed), (gpointer) knob);

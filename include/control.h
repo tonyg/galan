@@ -50,6 +50,7 @@ typedef struct ControlPanel {
     char *name;
     gboolean visible;
     struct sheet *sheet;
+    int w,h;
 } ControlPanel;
 
 struct ControlDescriptor {

@@ -59,6 +59,9 @@ PRIVATE int next_sheet_number = 1;  /**< This is a counter for sheet numbers.
 				     *   \note It should be adjusted when we load a new sheet. But normally sheets should be
 				     *         named correctly after instantiantion so this will be done later.
 				     */
+/**
+ * /brief Colors for normal Component drawing
+ */
 
 PRIVATE GdkColor comp_colors[COMP_NUM_COLORS] = {
   { 0, 0, 0, 0 },
@@ -71,6 +74,10 @@ PRIVATE GdkColor comp_colors[COMP_NUM_COLORS] = {
   { 0, 0, 65535, 65535 }
 };
 
+/**
+ * /brief Colors for selected  Component drawing
+ */
+
 PRIVATE GdkColor comp_sel_colors[COMP_NUM_COLORS] = {
   { 0, 0, 0, 0 },
   { 0, 32767, 32767, 32767 },
@@ -81,6 +88,18 @@ PRIVATE GdkColor comp_sel_colors[COMP_NUM_COLORS] = {
   { 0, 65535, 0, 65535 },
   { 0, 0, 65535, 65535 }
 };
+
+
+/**
+ * \brief process an expose event
+ *
+ * This traverses The list of components.
+ *  calls comp_paint() for all components if necessary.
+ *  also selects the colormap based on the list of selected components
+ *
+ * \param widget the sheets drawing area.
+ * \param ee The Expose Event containing the box which should be redrawn.
+ */
 
 PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
   GdkDrawable *drawable = widget->window;
@@ -135,6 +154,10 @@ PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
   return TRUE;
 }
 
+/**
+ * \brief process Motion event for sheet scrolling on middle mouse button
+ */
+
 PRIVATE void scroll_follow_mouse(Sheet *sheet, GdkEventMotion *me) {
   GtkAdjustment *ha = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(sheet->scrollwin));
   GtkAdjustment *va = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(sheet->scrollwin));
@@ -144,6 +167,12 @@ PRIVATE void scroll_follow_mouse(Sheet *sheet, GdkEventMotion *me) {
   sheet->saved_x = ha->value + me->x_root;
   sheet->saved_y = va->value + me->y_root;
 }
+
+/**
+ * \brief return first component containing \a x , \a y
+ *
+ * Traverse components list and call comp_contains_point()
+ */
 
 PRIVATE Component *find_component_at(Sheet *sheet, gint x, gint y) {
   GList *lst = sheet->components;
@@ -160,6 +189,10 @@ PRIVATE Component *find_component_at(Sheet *sheet, gint x, gint y) {
   return NULL;
 }
 
+/**
+ * \brief return all Component s containing \a x , \a y
+ */
+
 PRIVATE GList *find_components_at(Sheet *sheet, gint x, gint y) {
   GList *lst = sheet->components;
   GList *accum = NULL;
@@ -175,6 +208,10 @@ PRIVATE GList *find_components_at(Sheet *sheet, gint x, gint y) {
 
   return accum;
 }
+
+/**
+ * \brief Process GdkButtonEvent
+ */
 
 PRIVATE void process_click(GtkWidget *w, GdkEventButton *be) {
   Sheet *sheet = gtk_object_get_user_data( GTK_OBJECT(w) );
@@ -244,7 +281,9 @@ PRIVATE void disconnect_all_handler(GtkWidget *menuitem) {
   gtk_widget_queue_draw(sheet->drawingwidget);
 }
 
+
 #define DISCONNECT_STRING "Disconnect "
+
 PRIVATE void append_disconnect_menu(Sheet *sheet, Connector *con, GtkWidget *menu) {
   GtkWidget *submenu;
   GtkWidget *item;
@@ -305,19 +344,20 @@ PRIVATE void do_popup_menu(Sheet *sheet, GdkEventButton *be) {
     old_popup_menu = NULL;
   }
 
-  menu = gtk_menu_new();
 
   comps = find_components_at(sheet, be->x, be->y);
   if (comps != NULL) {
     ConnectorReference ref;
 
-    if (comp_find_connector(comps->data, be->x, be->y, &ref))
-      append_disconnect_menu(sheet, comp_get_connector(&ref), menu);
+    if (comp_find_connector(comps->data, be->x, be->y, &ref)) {
+	menu = gtk_menu_new();
+	append_disconnect_menu(sheet, comp_get_connector(&ref), menu);
+    }
     else
 	while (comps != NULL) {
 	    GList *tmp = g_list_next(comps);
 
-	    gtk_widget_unref(menu);
+	    //gtk_widget_unref(menu);
 	    menu=comp_get_popup(comps->data);
 
 	    g_list_free_1(comps);
@@ -326,7 +366,7 @@ PRIVATE void do_popup_menu(Sheet *sheet, GdkEventButton *be) {
 
   } else {
 
-      gtk_widget_unref(menu);
+      //gtk_widget_unref(menu);
       menu = comp_get_newmenu(sheet);
   }
 
@@ -335,6 +375,8 @@ PRIVATE void do_popup_menu(Sheet *sheet, GdkEventButton *be) {
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
 		 be->button, be->time);
 
+  g_object_ref( G_OBJECT( menu ) );
+  //g_object_sink( G_OBJECT( menu ) );
   old_popup_menu = menu;
 }
 
@@ -578,19 +620,45 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
   return FALSE;
 }
 
+/**
+ * \brief Register a component as a reference to this sheet
+ *
+ * \param sheet The Sheet Referenced by \a comp
+ * \param comp The compenent refering to \a sheet
+ */
 
 PUBLIC void sheet_register_ref( Sheet *s, Component *comp ) {
 
     s->referring_sheets = g_list_append( s->referring_sheets, comp );
 }
 
+/**
+ * \brief Unregister a component as a reference to this sheet
+ *
+ * \param sheet The Sheet Referenced by \a comp
+ * \param comp The compenent refering to \a sheet
+ */
+
+
 PUBLIC void sheet_unregister_ref( Sheet *s, Component *comp ) {
     s->referring_sheets = g_list_remove( s->referring_sheets, comp );
 }
 
+/**
+ * \brief Is the sheet referneced by a Component ?
+ *
+ * \param s Sheet to be queried
+ */
+
 PUBLIC gboolean sheet_has_refs( Sheet *s ) {
     return ( s->referring_sheets != NULL );
 }
+
+/**
+ * \brief kill all components which registered with this sheet
+ *
+ * \param s This sheet
+ */
 
 PUBLIC void sheet_kill_refs( Sheet *s ) {
     GList *compX = s->referring_sheets;
@@ -644,6 +712,12 @@ PRIVATE gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
 
    return FALSE;
 }
+
+/**
+ * \brief create an empty sheet
+ *
+ * \return A pointer to a Sheet struct 
+ */
 
 PUBLIC Sheet *create_sheet( void ) {
   GtkWidget *eb;
@@ -708,6 +782,17 @@ PUBLIC Sheet *create_sheet( void ) {
   return sheet;
 }
 
+/**
+ * \brief Create a new component and add that to the sheet
+ *
+ * \param sheet The sheet to add to
+ * \param k The Class of the Component
+ * \param init_data This is a pointer to a structure from which the comp
+ *                  constructor can initialise itself. 
+ *
+ *  See comp_new_component() for details
+ */
+
 PUBLIC void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer init_data) {
   Component *c = comp_new_component(k, init_data, sheet, sheet->saved_x, sheet->saved_y);
 
@@ -716,6 +801,13 @@ PUBLIC void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer 
     gtk_widget_queue_draw(sheet->drawingwidget);
   }
 }
+
+/**
+ * \brief delete a component from the sheet
+ *
+ * \param sheet Sheet to delete from
+ * \param c which component
+ */
 
 PUBLIC void sheet_delete_component(Sheet *sheet, Component *c) {
 
@@ -728,23 +820,58 @@ PUBLIC void sheet_delete_component(Sheet *sheet, Component *c) {
   gtk_widget_queue_draw(sheet->drawingwidget);
 }
 
+/**
+ * \brief Component changed and needs to be redrawn
+ *
+ * \param sheet The sheet on which the component is.
+ * \param c The component to be redrawn.
+ *
+ * This emits an expose event for the area of the component.
+ * Is there a possibility to only call comp_paint here ?
+ */
+
 PUBLIC void sheet_queue_redraw_component(Sheet *sheet, Component *c) {
   gtk_widget_queue_draw_area(sheet->drawingwidget, c->x, c->y, c->width, c->height);
 }
+
+/**
+ * \brief Get GdkWindow of sheet
+ *
+ * \param sheet The Sheet
+ */
 
 PUBLIC GdkWindow *sheet_get_window(Sheet *sheet) {
   return sheet->drawingwidget->window;
 }
 
+/**
+ * \brief Get the background color
+ */
+
 PUBLIC GdkColor *sheet_get_transparent_color(Sheet *sheet) {
   return &gtk_widget_get_style(sheet->drawingwidget)->bg[GTK_STATE_NORMAL];
 }
 
+/**
+ * \brief Get the width of string \a text
+ *
+ * \param sheet The Sheet
+ * \param text the string
+ *
+ * \return width of string in pixels
+ */
+
 PUBLIC int sheet_get_textwidth(Sheet *sheet, char *text) {
   GtkStyle *style = gtk_widget_get_style(sheet->drawingwidget);
 
-  return gdk_text_width(style->font, text, strlen(text));
+  return gdk_text_width(gtk_style_get_font(style), text, strlen(text));
 }
+
+/**
+ * \brief kill all components on sheet
+ *
+ * \param sheet Sheet to clear
+ */
 
 PUBLIC void sheet_clear(Sheet *sheet) {
 
@@ -763,17 +890,23 @@ PUBLIC void sheet_clear(Sheet *sheet) {
   reset_control_panel();
 }
 
+/**
+ * \brief free all memory allocated by sheet
+ * 
+ * \param sheet The Sheet
+ */
+
 PUBLIC void sheet_remove( Sheet *sheet ) {
     sheet_clear( sheet );
     gui_unregister_sheet( sheet );
 
     if( sheet->control_panel ) {
 	control_panel_unregister_panel( sheet->control_panel );
-	free( sheet->control_panel );
+	//safe_free( sheet->control_panel );
     }
     if( sheet->name )
-	free( sheet->name );
-    free( sheet );
+	safe_free( sheet->name );
+    safe_free( sheet );
 }
 
 PRIVATE GtkWidget *rename_text_widget=NULL;
@@ -804,6 +937,12 @@ PRIVATE void rename_handler(MsgBoxResponse action_taken, Sheet *s) {
     }
 }
 
+/**
+ * \brief popup Rename msgbox and rename sheet
+ *
+ * \param sheet The Sheet
+ */
+
 PUBLIC void sheet_rename(Sheet *sheet ) {
   GtkWidget *hb = gtk_hbox_new(FALSE, 5);
   GtkWidget *label = gtk_label_new("Rename Sheet:");
@@ -821,6 +960,14 @@ PUBLIC void sheet_rename(Sheet *sheet ) {
   popup_dialog("Rename", MSGBOX_OK | MSGBOX_CANCEL, 0, MSGBOX_OK, hb,
 	       (MsgBoxResponseHandler) rename_handler, sheet);
 }
+
+/**
+ * \brief unpickle a Sheet from ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem representing the Sheet
+ *
+ * \return A Sheet as it was saved
+ */
 
 PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
 
@@ -856,6 +1003,16 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
     return s;
 }
 
+
+/**
+ * \brief pickle a Sheet into ObjectStore
+ *
+ * \param sheet the Sheet to be pickled
+ * \param db ObjectStore into which the sheet should be pickled.
+ *
+ * \return The ObjectStoreItem representing this sheet (new one or the old one if it has already been created)
+ */
+
 PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
 
     ObjectStoreItem *item = objectstore_get_item( db, sheet );
@@ -879,6 +1036,17 @@ PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
     return item;
 }
 
+/**
+ * \brief load a sheet from a file
+ *
+ * \param sheet This was for the migration process (needs to be removed and is ignored)
+ * \param f The FILE * where the sheet is in
+ *
+ * \return The Sheet from the object store
+ *
+ * I Think this will be changed to have an ObjectStore as parameter.
+ */
+
 PUBLIC Sheet *sheet_loadfrom(Sheet *sheet, FILE *f) {
   ObjectStore *db = objectstore_new_objectstore();
   ObjectStoreItem *root;
@@ -897,6 +1065,14 @@ PUBLIC Sheet *sheet_loadfrom(Sheet *sheet, FILE *f) {
   reset_control_panel();
   return sheet;
 }
+
+/**
+ * \brief save sheet to FILE
+ *
+ * \param sheet The Sheet to save
+ * \param f The FILE * to save to
+ * \param sheet_only FALSE if all other sheets should be saved to.
+ */
 
 PUBLIC void sheet_saveto(Sheet *sheet, FILE *f, gboolean sheet_only ) {
   ObjectStore *db;

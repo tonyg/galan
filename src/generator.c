@@ -37,6 +37,28 @@
 PRIVATE GHashTable *generatorclasses = NULL;
 
 /**
+ * \brief This queue contains EventLinks which should be added to the system.
+ */
+
+PRIVATE GAsyncQueue *gen_link_queue;
+/**
+ * \brief This queue contains EventLinks which should be removed from the system.
+ */
+
+PRIVATE GAsyncQueue *gen_unlink_queue;
+
+/**
+ * \brief This queue contains Generator s which shall be killed.
+ *        These will be passed to a free thread but at the moment will only use safe_free.
+ */
+
+PRIVATE GAsyncQueue *gen_kill_queue;
+PRIVATE GAsyncQueue *gen_kill_queue_stage2;
+
+PRIVATE GThread *kill_thread;
+
+
+/**
  * \brief Initialize an AEvent.
  * 
  * Fills in the fields of an AEvent.
@@ -223,7 +245,9 @@ PRIVATE GList **make_event_list(gint count) {
  */
 
 PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
+    
   Generator *g = safe_malloc(sizeof(Generator));
+  int i;
 
   g->klass = k;
   g->name = safe_string_dup(name);
@@ -237,6 +261,9 @@ PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
   g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
   g->last_buflens = safe_calloc(k->out_sig_count, sizeof(int));
   g->last_results = safe_calloc(k->out_sig_count, sizeof(gboolean));
+
+  for( i=0; i<k->out_sig_count; i++ )
+      g->last_buffers[i] = safe_malloc( sizeof(SAMPLE) * MAXIMUM_REALTIME_STEP );
 
   g->controls = NULL;
 
@@ -277,50 +304,85 @@ PRIVATE void empty_all_connections(gint count, GList **array, int is_signal, int
 }
 
 /**
- * \brief Free Memory of Genrator \a g
+ * \brief Free Memory of Generator \a g
  *
  * \param g The Genrator to be freed.
+ *
+ * Make this function threadsafe:
+ *   pass \a g to the audio thread via GAsyncQueue 
+ *   in audio thread empty_all_connections() and gen_purge_event_queue_ref().
+ *   empty_all_connections() uses g_list_free_1() shit i must obtain the malloc lock for this.
+ *
+ *    BTW: i need to change the g_free() function to use the free_thread i will implement.
+ *   
+ *   then pass on to another thread which does the real destruction of the generator.
  */
 
 PUBLIC void gen_kill_generator(Generator *g) {
-  int i;
+    g_async_queue_push( gen_kill_queue, g );
+}
 
-  if (g->klass->destroy_instance != NULL)
-    g->klass->destroy_instance(g);
+PRIVATE void check_for_kills( void ) {
 
-  gen_purge_event_queue_refs(g);
+  Generator *g;
 
-  empty_all_connections(g->klass->in_count, g->in_events, 0, 0);
-  empty_all_connections(g->klass->out_count, g->out_events, 0, 1);
-  empty_all_connections(g->klass->in_sig_count, g->in_signals, 1, 0);
-  empty_all_connections(g->klass->out_sig_count, g->out_signals, 1, 1);
+  while( (g = g_async_queue_try_pop( gen_kill_queue )) != NULL ) {
+      gen_purge_event_queue_refs(g);
 
-  for (i = 0; i < g->klass->out_sig_count; i++)
-    if (g->last_buffers[i] != NULL)
-      free(g->last_buffers[i]);
+      empty_all_connections(g->klass->in_count, g->in_events, 0, 0);
+      empty_all_connections(g->klass->out_count, g->out_events, 0, 1);
+      empty_all_connections(g->klass->in_sig_count, g->in_signals, 1, 0);
+      empty_all_connections(g->klass->out_sig_count, g->out_signals, 1, 1);
 
-  if (g->controls != NULL) {
-    GList *c = g->controls;
-    g->controls = NULL;
-
-    while (c != NULL) {
-      GList *tmp = g_list_next(c);
-
-      control_kill_control(c->data);
-      g_list_free_1(c);
-      c = tmp;
-    }
+      //g_print( "Hello a kill \n" );
+      g_async_queue_push( gen_kill_queue_stage2, g );
   }
+}
 
-  free(g->name);
-  free(g->in_events);
-  free(g->out_events);
-  free(g->in_signals);
-  free(g->out_signals);
-  free(g->last_buffers);
-  free(g->last_buflens);
-  free(g->last_results);
-  free(g);
+PRIVATE gint gen_kill_generator_stage2_thread() {
+
+    Generator *g;
+    int i;
+    while( (g = g_async_queue_pop( gen_kill_queue_stage2 )) != NULL )
+    {
+	// i should lock here but you never know if glib is used in there.
+	// lock_malloc_lock() is evil this will be removed.
+	if (g->klass->destroy_instance != NULL)
+	    g->klass->destroy_instance(g);
+
+
+	for (i = 0; i < g->klass->out_sig_count; i++)
+	    if (g->last_buffers[i] != NULL)
+		safe_free(g->last_buffers[i]);
+
+	if (g->controls != NULL) {
+	    GList *c = g->controls;
+	    g->controls = NULL;
+
+	    while (c != NULL) {
+		GList *tmp = g_list_next(c);
+
+		gdk_threads_enter();
+		control_kill_control(c->data);
+		gdk_threads_leave();
+		g_list_free_1(c);
+		c = tmp;
+	    }
+	}
+
+	safe_free(g->name);
+	safe_free(g->in_events);
+	safe_free(g->out_events);
+	safe_free(g->in_signals);
+	safe_free(g->out_signals);
+	safe_free(g->last_buffers);
+	safe_free(g->last_buflens);
+	safe_free(g->last_results);
+	safe_free(g);
+
+	//unlock_malloc_lock();
+    }
+    return 0;
 }
 
 PRIVATE void unpickle_eventlink(ObjectStoreItem *item) {
@@ -352,7 +414,7 @@ PRIVATE void unpickle_eventlink_list_array(ObjectStoreDatum *array, ObjectStore 
 }
 
 /**
- * \brief unpickles a Genrator from the ObjectStoreItem \a item
+ * \brief unpickles a Generator from the ObjectStoreItem \a item
  *
  * \param ObjectStoreItem representing the Generator
  * \return The Generator.
@@ -361,6 +423,7 @@ PRIVATE void unpickle_eventlink_list_array(ObjectStoreDatum *array, ObjectStore 
 PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
   Generator *g = objectstore_get_object(item);
   GeneratorClass *k;
+  int i;
 
   if( item == NULL )
       return NULL;
@@ -395,6 +458,8 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
     g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
     g->last_buflens = safe_calloc(k->out_sig_count, sizeof(int));
     g->last_results = safe_calloc(k->out_sig_count, sizeof(gboolean));
+    for( i=0; i<k->out_sig_count; i++ )
+	g->last_buffers[i] = safe_malloc( sizeof(SAMPLE) * MAXIMUM_REALTIME_STEP );
 
     g->controls = NULL;
     g->data = NULL;
@@ -523,9 +588,8 @@ PUBLIC ObjectStoreItem *gen_pickle_without_el(Generator *g, ObjectStore *db) {
 
 PUBLIC EventLink *gen_link(int is_signal, Generator *src, gint32 src_q, Generator *dst, gint32 dst_q) {
   EventLink *el = gen_find_link(is_signal, src, src_q, dst, dst_q);
-  GList **outq;
-  GList **inq;
 
+  //g_print( "gen_link_s1_enter() \n" );
   if (el != NULL)
     return el;
 
@@ -557,13 +621,35 @@ PUBLIC EventLink *gen_link(int is_signal, Generator *src, gint32 src_q, Generato
   el->dst = dst;
   el->dst_q = dst_q;
 
-  outq = is_signal ? src->out_signals : src->out_events;
-  inq = is_signal ? dst->in_signals : dst->in_events;
+  /*
+   * all setup done now pass this structure to the
+   * realtime thread to actually establish the link.
+   */
 
-  outq[src_q] = g_list_prepend(outq[src_q], el);
-  inq[dst_q] = g_list_prepend(inq[dst_q], el);
+  g_async_queue_push( gen_link_queue, el );
 
+  //g_print( "gen_link_s1_exit() \n" );
   return el;
+}
+
+PRIVATE void check_for_gen_links() {
+    
+    EventLink *el;
+    while( (el = g_async_queue_try_pop( gen_link_queue )) != NULL ) {
+
+	GList **outq;
+	GList **inq;
+
+	//g_print( "Enter gen_link_audio \n" );
+	outq = el->is_signal ? el->src->out_signals : el->src->out_events;
+	inq = el->is_signal ? el->dst->in_signals : el->dst->in_events;
+
+	outq[el->src_q] = g_list_prepend(outq[el->src_q], el);
+	inq[el->dst_q] = g_list_prepend(inq[el->dst_q], el);
+
+	//g_print( "exit gen_link_audio()\n" );
+    }
+
 }
 
 /**
@@ -610,24 +696,47 @@ PUBLIC EventLink *gen_find_link(int is_signal,
  */
 
 PUBLIC void gen_unlink(EventLink *el) {
-  GList **outq;
-  GList **inq;
-
-  g_return_if_fail(el != NULL);
-
-  outq = (el->is_signal ? el->src->out_signals : el->src->out_events);
-  inq = (el->is_signal ? el->dst->in_signals : el->dst->in_events);
-
-  outq[el->src_q] = g_list_remove(outq[el->src_q], el);
-  inq[el->dst_q] = g_list_remove(inq[el->dst_q], el);
-
-  free(el);
+    g_async_queue_push( gen_unlink_queue, el );
 }
+
+PRIVATE void check_for_gen_unlinks( void ) {
+
+    EventLink *el;
+    
+    while( (el = g_async_queue_try_pop( gen_unlink_queue )) != NULL ) {
+
+	GList **outq;
+	GList **inq;
+
+	g_return_if_fail(el != NULL);
+
+	outq = (el->is_signal ? el->src->out_signals : el->src->out_events);
+	inq = (el->is_signal ? el->dst->in_signals : el->dst->in_events);
+
+	outq[el->src_q] = g_list_remove(outq[el->src_q], el);
+	inq[el->dst_q] = g_list_remove(inq[el->dst_q], el);
+
+	safe_free(el);
+    }
+}
+
+/**
+ * \brief Do the checks of the GAsyncQueues for destruction and gen_(un)link
+ */
+
+PUBLIC void gen_mainloop_do_checks( void ) {
+    check_for_gen_links();
+    check_for_gen_unlinks();
+    check_for_kills();
+}
+
 
 /** \brief Tells the Generator that it has a new Control
  * 
  * \param g The Generator.
  * \param c The Control.
+ *
+ * \note This needs to get thread_safe.
  */
 
 PUBLIC void gen_register_control(Generator *g, Control *c) {
@@ -638,6 +747,8 @@ PUBLIC void gen_register_control(Generator *g, Control *c) {
  * 
  * \param g The Generator.
  * \param c The Control.
+ *
+ * \note This needs to get thread_safe.
  */
 
 PUBLIC void gen_deregister_control(Generator *g, Control *c) {
@@ -655,7 +766,8 @@ PUBLIC void gen_deregister_control(Generator *g, Control *c) {
  * \param index The number of the Control Type which should update.
  *              or -1 for all Control Types.
  *
- * \note When implementing threads here has to be the gate to the audio thread.
+ * \note This function is threadsafe because control_update is.
+ *       Well the controls list is not mutexed. FIXME
  *       
  */
 
@@ -666,11 +778,8 @@ PUBLIC void gen_update_controls(Generator *g, int index) {
   while (cs != NULL) {
     Control *c = cs->data;
 
-    if (desc == NULL || c->desc == desc) {
-      c->events_flow = FALSE;	/* as already stated... not very elegant. */
-      control_update_value(c);
-      c->events_flow = TRUE;
-    }
+    if (desc == NULL || c->desc == desc)
+      control_update_value(c);  
 
     cs = g_list_next(cs);
   }
@@ -740,6 +849,8 @@ PUBLIC gboolean gen_read_realtime_input(Generator *g, gint index, int attachment
  * to obtain the data from the individual Generator s and cache it if it will be read multiple
  * times.
  *
+ * \note I must check this for malloc usage on initial call.
+ *
  * \param g the Generator to be read out.
  * \param index connector number.
  * \param buffer where the data should be placed.
@@ -760,25 +871,42 @@ PUBLIC gboolean gen_read_realtime_output(Generator *g, gint index, SAMPLE *buffe
   else {
     /* Cache for multiple outputs... you never know who'll be reading you, or how often */
     if (g->last_buffers[index] == NULL || g->last_sampletime < gen_get_sampletime()) {
+	
       /* Cache is not present, or expired */
-      if (g->last_buffers[index] != NULL)
-	free(g->last_buffers[index]);
-      g->last_buffers[index] = malloc(sizeof(SAMPLE) * buflen);
+	
+      /*
+       * why is this freed and malloced all the time ?
+       * should be malloced only if buflen > act_buflen
+       * or last_buflen if that has no side effects.
+       */
+	
+      //if (g->last_buffers[index] != NULL)
+	//free(g->last_buffers[index]);
+      //g->last_buffers[index] = malloc(sizeof(SAMPLE) * buflen);
+      //------------------------------------------------------------------
+
       g->last_buflens[index] = buflen;
       g->last_sampletime = gen_get_sampletime();
       g->last_results[index] =
 	g->klass->out_sigs[index].d.realtime(g, g->last_buffers[index], buflen);
     } else if (g->last_buflens[index] < buflen) {
       /* A small chunk was read. Fill it out. */
-      SAMPLE *newbuf = malloc(sizeof(SAMPLE) * buflen);
+      //SAMPLE *newbuf = malloc(sizeof(SAMPLE) * buflen);
       int oldlen = g->last_buflens[index];
 
-      if (g->last_results[index])
-	memcpy(newbuf, g->last_buffers[index], sizeof(SAMPLE) * g->last_buflens[index]);
-      else
-	memset(newbuf, 0, sizeof(SAMPLE) * g->last_buflens[index]);
-      free(g->last_buffers[index]);
-      g->last_buffers[index] = newbuf;
+      /*
+       * ooh... this is not necessarry at all.
+       * have one buffer sized MAX_REALTIME_STEP and all should be fine.
+       * handling of last_buflen must remaim.
+       * the buffers need to be allocated in gen_new_generator() and gen_unpickle()
+       */
+      
+      //if (g->last_results[index])
+	//memcpy(newbuf, g->last_buffers[index], sizeof(SAMPLE) * g->last_buflens[index]);
+      //else
+	//memset(newbuf, 0, sizeof(SAMPLE) * g->last_buflens[index]);
+      //free(g->last_buffers[index]);
+      //g->last_buffers[index] = newbuf;
       g->last_buflens[index] = buflen;
       g->last_results[index] = 
 	g->klass->out_sigs[index].d.realtime(g, &g->last_buffers[index][oldlen], buflen - oldlen);
@@ -976,6 +1104,7 @@ PRIVATE void send_one_event(EventLink *el, AEvent *e) {
  * I see no way to prevent you from making this error except forbidding this practise.
  * But its efficient so i dont forbid this.
  */
+
 PUBLIC void gen_send_events(Generator *g, gint index, int attachment_number, AEvent *e) {
   e->src = g;
   e->src_q = index;
@@ -995,10 +1124,26 @@ PUBLIC void gen_send_events(Generator *g, gint index, int attachment_number, AEv
 }
 
 PUBLIC void init_generator(void) {
-  generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
+
+    GError err;
+
+    gen_link_queue = g_async_queue_new();
+    gen_unlink_queue = g_async_queue_new();
+    gen_kill_queue = g_async_queue_new();
+    gen_kill_queue_stage2 = g_async_queue_new();
+
+    kill_thread = g_thread_create( gen_kill_generator_stage2_thread, NULL, TRUE, &err );
+
+    generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
 PUBLIC void done_generator(void) {
+    
   g_hash_table_destroy(generatorclasses);
   generatorclasses = NULL;
+  
+  g_async_queue_unref( gen_link_queue );
+  g_async_queue_unref( gen_unlink_queue );
+  g_async_queue_unref( gen_kill_queue );
+  g_async_queue_unref( gen_kill_queue_stage2 );
 }

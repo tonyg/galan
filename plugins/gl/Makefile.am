@@ -11,8 +11,9 @@ endif
 
 
 LDFLAGS = "-module" @GTK_LIBS@ @GTKGL_LIBS@
-INCLUDES = -I.. -I$(srcdir)/../../include @GTKGL_CFLAGS@ @GDK_PIXBUF_CFLAGS@ @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DPIC -fPIC
-CLEANFILES=*.so.c
+INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ @GTKGL_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\"
+CLEANFILES=*.la.c
+
 
 lwo_la_SOURCES = lw.c lwo.c
 

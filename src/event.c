@@ -38,6 +38,9 @@ struct EventQ {
 PRIVATE EventQ *event_q = NULL;	/* list of AEvents */
 PRIVATE GList *rtfuncs = NULL;	/* list of event_callbacks */
 
+PRIVATE GAsyncQueue *event_queue;
+PRIVATE GAsyncQueue *addrt_queue;
+
 PUBLIC SAMPLETIME gen_current_sampletime = 0;	/* current time */
 
 
@@ -55,6 +58,7 @@ PRIVATE void aevent_copy( AEvent *src, AEvent *dst ) {
 		memcpy( dst->d.array.numbers, src->d.array.numbers, src->d.array.len * sizeof(gdouble) );
 		break;
 	    default:
+	    	break;
 	}
     }
 	
@@ -66,15 +70,16 @@ PRIVATE void aevent_free( AEvent *e ) {
 	switch( e->kind ) {
 	    case AE_STRING:
 		if( e->d.string != NULL )
-		    free( e->d.string );
+		    safe_free( e->d.string );
 		break;
 	    case AE_NUMARRAY:
 		if( e->d.array.numbers != NULL )
-		    free( e->d.array.numbers );
+		    safe_free( e->d.array.numbers );
 		break;
 	    default:
+	    	break;
 	}
-	free( e );
+	safe_free( e );
     }
 }
 
@@ -84,40 +89,86 @@ PRIVATE void eventq_free( EventQ *evq ) {
 	switch( evq->e.kind ) {
 	    case AE_STRING:
 		if( evq->e.d.string != NULL )
-		    free( evq->e.d.string );
+		    safe_free( evq->e.d.string );
 		break;
 	    case AE_NUMARRAY:
 		if( evq->e.d.array.numbers != NULL )
-		    free( evq->e.d.array.numbers );
+		    safe_free( evq->e.d.array.numbers );
 		break;
 	    default:
+	    	break;
 	}
-	free( evq );
+	safe_free( evq );
     }
 }
 
+/**
+ * \brief Put an AEvent into the main event queue.
+ *
+ * \param e The Event which shall be copied into the EventQueue
+ *
+ * this would use an async queue to make this operation thread safe.
+ * the main event processor will pop all events from the queue and
+ * sort them into the main list.
+ *
+ * with this function threadsafe control_emit() gets threadsafe as well.
+ *
+ * i believe this is the problem XXX XXX
+ */
+
 PUBLIC void gen_post_aevent(AEvent *e) {
   EventQ *q = safe_malloc(sizeof(EventQ));
-  EventQ *prev = NULL, *curr = event_q;
 
-  //q->e = *e;
   aevent_copy( e, &(q->e) );
 
-  while (curr != NULL) {
-    if (q->e.time < curr->e.time)
-      break;
-
-    prev = curr;
-    curr = curr->next;
-  }
-
-  q->next = curr;
-
-  if (prev == NULL)
-    event_q = q;
-  else
-    prev->next = q;
+  g_async_queue_push( event_queue, q );
 }
+
+/**
+ * \brief sort in all posted aevents
+ */
+
+PRIVATE void gen_sortin_aevents(void) {
+  EventQ *q;
+
+  while( (q=g_async_queue_try_pop( event_queue )) != NULL )
+  {
+      EventQ *prev = NULL, *curr = event_q;
+
+      while (curr != NULL) {
+	  if (q->e.time < curr->e.time)
+	      break;
+
+	  prev = curr;
+	  curr = curr->next;
+      }
+
+      q->next = curr;
+
+      if (prev == NULL)
+	  event_q = q;
+      else
+	  prev->next = q;
+  }
+}
+/**
+ * \brief Remove all events for Generator \a g from the global queue
+ *
+ * \param g The Generator
+ *
+ * To make this function threadsafe i need to add a command queue.
+ * The mainloop will execute all commands in the queue when its time.
+ *
+ * the event insertion queue should be the same as the command queue.
+ * i also need commands for inserting and removing Eventlinks.
+ * 
+ * also a command for removing generators is needed because
+ * i dont know when the Removal of an EventLink occurs.
+ *
+ * At the Moment this function may only be called from the audiothread.
+ * This is ok for all current plugins.
+ *
+ */
 
 PUBLIC void gen_purge_event_queue_refs(Generator *g) {
   EventQ *prev = NULL, *curr = event_q;
@@ -165,6 +216,18 @@ PUBLIC void gen_purge_inputevent_queue_refs(Generator *g) {
   }
 }
 
+/**
+ * \brief insert a function into \a list
+ *
+ * \param list pointer to a GList *
+ * \param g The Generator which will be a paramter of \a func
+ *
+ * If this was threadsafe gen_register_realtime_fn() would be threadsafe
+ * also.
+ * 
+ * i need a Mutex for the rtfuncs struct.
+ */
+
 PRIVATE void insert_fn(GList **lst, Generator *g, AEvent_handler_t func) {
   event_callback *ec = safe_malloc(sizeof(event_callback));
 
@@ -174,6 +237,22 @@ PRIVATE void insert_fn(GList **lst, Generator *g, AEvent_handler_t func) {
   *lst = g_list_prepend(*lst, ec);
 }
 
+/**
+ * \brief insert an event_callback into \a list
+ *
+ * \param list pointer to a GList *
+ * \param ec pointer to the eventcallback.
+ *
+ * If this was threadsafe gen_register_realtime_fn() would be threadsafe
+ * also.
+ * 
+ * i need a Mutex for the rtfuncs struct.
+ */
+
+PRIVATE void insert_fn_ec(GList **lst, event_callback *ec) {
+
+  *lst = g_list_prepend(*lst, ec);
+}
 PRIVATE gint event_callback_cmp(event_callback *a, event_callback *b) {
   return !((a->g == b->g) && (a->fn == b->fn));
 }
@@ -193,24 +272,96 @@ PRIVATE void remove_fn(GList **lst, Generator *g, AEvent_handler_t func) {
   }
 }
 
+/**
+ * \brief Register a realtime function
+ *
+ * \param g The Genrator wishing to receive Realtime Events
+ * \param func The function which should be called on receive of a Realtime Event
+ *
+ * The Realtime functions are the entry points into the graph.
+ *
+ * this function is sometimes (scope, outputs) called by the init_instance()
+ * of a Generator to have it realtime_handler installed.
+ *
+ * This function must be threadsafe.
+ * an async queue is a good way to accomplish this.
+ *
+ * should the Destruction of an instance be threadsafe also ?
+ * it must be,,,
+ * 
+ */
+
 PUBLIC void gen_register_realtime_fn(Generator *g, AEvent_handler_t func) {
-  insert_fn(&rtfuncs, g, func);
+    event_callback *ec = safe_malloc( sizeof(event_callback) );
+    ec->g = g;
+    ec->fn = func;
+
+    g_async_queue_push( addrt_queue, ec );
+
+  //insert_fn(&rtfuncs, g, func);
 }
+
+/**
+ * \brief deregister a realtime function
+ *
+ * \param g The Generator
+ * \param func The callback that should be removed
+ */
 
 PUBLIC void gen_deregister_realtime_fn(Generator *g, AEvent_handler_t func) {
   remove_fn(&rtfuncs, g, func);
 }
 
-PRIVATE void send_rt_event(event_callback *ec, AEvent *rtevent) {
-  AEvent local_copy = *rtevent;
-  ec->fn(ec->g, &local_copy);
+PRIVATE void sortin_rtevents(void) {
+  event_callback *ec;
+
+  while( (ec=g_async_queue_try_pop( addrt_queue )) != NULL )
+      insert_fn_ec( &rtfuncs, ec );
 }
+
+PRIVATE void send_rt_event(event_callback *ec, AEvent *rtevent) {
+    // why a local copy ?
+    // warning this only works for REALTIME events.
+    AEvent local_copy = *rtevent;
+    ec->fn(ec->g, &local_copy);
+}
+
+/**
+ * \brief Call all Realtime functions which have registered themselves
+ *        with gen_register_realtime_fn()
+ *
+ * \param e an AEvent of type AE_REALTIME
+ *
+ * this is called when the eventprocessing is done
+ * and the data must be computed.
+ *
+ * needs to insert realtime functions from the queue
+ * deletion of functions will be done from the audio thread so
+ * it does not need to be safe.
+ */
 
 PUBLIC void gen_send_realtime_fns(AEvent *e) {
-  g_list_foreach(rtfuncs, (GFunc) send_rt_event, e);
+    sortin_rtevents();
+
+    g_list_foreach(rtfuncs, (GFunc) send_rt_event, e);
 }
 
+/**
+ * \brief process AEvents pending
+ *
+ * \return time until next event has to be processed
+ *         (At Maximum MAXIMUM_REALTIME_STEP)
+ *
+ * This Functions inserts all new aevents and then processes all
+ * pending events from the queue.
+ * it also calls do_checks to make the changes to the connection graph.
+ */
+
 PUBLIC gint gen_mainloop_once(void) {
+
+  gen_sortin_aevents();
+  gen_mainloop_do_checks();
+
   while (1) {
     EventQ *e = event_q;
 
@@ -227,9 +378,16 @@ PUBLIC gint gen_mainloop_once(void) {
     e->e.dst->klass->in_handlers[e->e.dst_q](e->e.dst, &e->e);
     //free(e);
     eventq_free( e );
+    gen_sortin_aevents();
   }
 }
 
 PUBLIC void gen_advance_clock(gint delta) {
   gen_current_sampletime += delta;
+}
+
+PUBLIC void init_event( void ) {
+    if (!g_thread_supported ()) g_thread_init (NULL);
+    event_queue = g_async_queue_new();
+    addrt_queue = g_async_queue_new();
 }

@@ -60,8 +60,7 @@ PRIVATE int output_fragment(SNDFILE *f, SAMPLE *l_buf, SAMPLE *r_buf, int length
   if (length <= 0)
     return 0;
 
-  outbuf = malloc(buflen);
-  RETURN_VAL_UNLESS(outbuf != NULL, 0);
+  outbuf = g_alloca(buflen);
 
   for (i = 0; i < length; i++) {
     outbuf[i<<1]       = l_buf[i];
@@ -69,7 +68,6 @@ PRIVATE int output_fragment(SNDFILE *f, SAMPLE *l_buf, SAMPLE *r_buf, int length
   }
 
   i = sf_writef_double(f, outbuf, length);
-  free(outbuf);
   return i;
 }
 
@@ -81,8 +79,8 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
       SAMPLE *l_buf, *r_buf;
       int bufbytes = event->d.integer * sizeof(SAMPLE);
 
-      l_buf = safe_malloc(bufbytes);
-      r_buf = safe_malloc(bufbytes);
+      l_buf = g_alloca(bufbytes);
+      r_buf = g_alloca(bufbytes);
 
       if (!gen_read_realtime_input(g, SIG_LEFT, -1, l_buf, event->d.integer))
 	memset(l_buf, 0, bufbytes);
@@ -96,8 +94,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 	  data->frames_recorded += written;
       }
 
-      free(l_buf);
-      free(r_buf);
       break;
     }
 

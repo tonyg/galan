@@ -57,5 +57,10 @@
 extern char *safe_string_dup(const char *str);
 extern void *safe_malloc(size_t size);
 extern void *safe_calloc(int nelems, size_t size);
+extern void safe_free( void *ptr );
 
+//extern void lock_malloc_lock( void );
+//extern void unlock_malloc_lock( void );
+
+extern GThread *main_thread;
 #endif

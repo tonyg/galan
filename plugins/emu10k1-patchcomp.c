@@ -345,7 +345,7 @@ PRIVATE void emupatchcomp_paint(Component *c, GdkRectangle *area,
 		     c->height - 2 * EMUPATCHCOMP_BORDER_WIDTH - 1);
   gdk_gc_set_foreground(gc, &style->black);
 
-  gdk_draw_text(drawable, style->font, style->white_gc,
+  gdk_draw_text(drawable, gtk_style_get_font(style), style->white_gc,
 		c->x + EMUPATCHCOMP_BORDER_WIDTH + (EMUPATCHCOMP_CONNECTOR_WIDTH>>1),
 		c->y + EMUPATCHCOMP_BORDER_WIDTH + EMUPATCHCOMP_TITLEHEIGHT - 3,
 		d->name, strlen(d->name));

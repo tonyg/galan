@@ -457,6 +457,7 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
   data->inevents[event->dst_q] = event->d.number;
 
+  gen_update_controls( g, event->dst_q );
 }
 
 

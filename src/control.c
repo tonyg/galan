@@ -67,6 +67,13 @@ PUBLIC void control_panel_unregister_panel( ControlPanel *panel ) {
     panel->visible = FALSE;
 }
 
+PUBLIC void update_panel_name( ControlPanel *panel ) {
+    if( panel->visible )
+	gtk_notebook_set_tab_label_text( GTK_NOTEBOOK( control_notebook ), panel->scrollwin, panel->name );
+    else
+	control_update_names( panel->sheet->panel_control );
+}
+
 PRIVATE void control_moveto(Control *c, int x, int y) {
   x = floor((x + (GRANULARITY>>1)) / ((gdouble) GRANULARITY)) * GRANULARITY;
   y = floor((y + (GRANULARITY>>1)) / ((gdouble) GRANULARITY)) * GRANULARITY;
@@ -587,6 +594,7 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
   gtk_widget_show(panel->fixedwidget);
   if (!GTK_WIDGET_REALIZED(panel->fixedwidget))
     gtk_widget_realize(panel->fixedwidget);
+  update_panel_name( panel );
   return panel;
 }
 

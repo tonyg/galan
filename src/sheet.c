@@ -556,6 +556,46 @@ PUBLIC void sheet_kill_refs( Sheet *s ) {
     s->referring_sheets = NULL;
 }
 
+/*! handle mouse motion events to display port names */
+static gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
+		gpointer func_data)
+{
+  int x, y;
+  GdkModifierType state;
+  Component *c;
+  Sheet *sheet = (Sheet*)func_data;
+
+  if(event->is_hint)
+    gdk_window_get_pointer(event->window, &x, &y, &state);
+  else {
+    x = event->x;
+    y = event->y;
+    state = event->state;
+  }
+  
+  if((c = find_component_at(sheet, x, y)) != NULL)
+  {
+     char *name;
+     ConnectorReference ref;
+     
+     if(!comp_find_connector(c, x, y, &ref)) {
+	     gui_statusbar_push( "" );
+	     return FALSE;
+     }
+ 
+     name = comp_get_connector_name(&ref);
+     g_assert(name != NULL);
+
+     //g_print("tooltip %s\n", name);
+     gui_statusbar_push( name );
+     free(name);
+   } else {
+       gui_statusbar_push( "" );
+   }
+
+   return FALSE;
+}
+
 PUBLIC Sheet *create_sheet( void ) {
   GtkWidget *eb;
   GdkColormap *colormap;
@@ -581,6 +621,16 @@ PUBLIC Sheet *create_sheet( void ) {
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sheet->scrollwin), eb);
 
   sheet->drawingwidget = gtk_drawing_area_new();
+  // connect mouse motion event handler
+  gtk_signal_connect( GTK_OBJECT(sheet->drawingwidget),
+	"motion_notify_event", (GtkSignalFunc)motion_notify_event, sheet);
+
+  // unmask motion events so handler gets called
+  gtk_widget_set_events(sheet->drawingwidget, GDK_EXPOSURE_MASK
+	| GDK_LEAVE_NOTIFY_MASK
+	| GDK_POINTER_MOTION_MASK
+	| GDK_POINTER_MOTION_HINT_MASK);
+
   gtk_widget_show(sheet->drawingwidget);
   gtk_drawing_area_size(GTK_DRAWING_AREA(sheet->drawingwidget), GEN_AREA_LENGTH, GEN_AREA_LENGTH);
   gtk_container_add(GTK_CONTAINER(eb), sheet->drawingwidget);

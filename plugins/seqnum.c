@@ -28,6 +28,7 @@
 #include "comp.h"
 #include "control.h"
 #include "gencomp.h"
+#include "msgbox.h"
 
 #define SEQUENCE_LENGTH	32
 #define NUM_PATTERNS	16
@@ -53,6 +54,7 @@ PRIVATE ControlDescriptor seqnum_controls[] = {
 
 typedef struct Data {
   int edit, play;
+  gdouble min, max, step, page;
   gdouble pattern[NUM_PATTERNS][SEQUENCE_LENGTH];
 } Data;
 
@@ -63,6 +65,10 @@ PRIVATE int init_instance(Generator *g) {
   g->data = data;
 
   data->edit = data->play = 0;
+  data->min = 0;
+  data->max = 1;
+  data->step = 0.1;
+  data->page = 0.1;
 
   for (i = 0; i < NUM_PATTERNS; i++)
     for (j = 0; j < SEQUENCE_LENGTH; j++)
@@ -84,6 +90,12 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
   data->edit = objectstore_item_get_integer(item, "seqnum_edit", 0);
   data->play = objectstore_item_get_integer(item, "seqnum_play", 0);
+
+  data->min = objectstore_item_get_double(item, "seqnum_min", 0);
+  data->max = objectstore_item_get_double(item, "seqnum_max", 1);
+  data->step = objectstore_item_get_double(item, "seqnum_step", 0.01);
+  data->page = objectstore_item_get_double(item, "seqnum_page", 0.01);
+
   array = objectstore_item_get(item, "seqnum_patterns");
 
   for (i = 0; i < NUM_PATTERNS; i++)
@@ -101,6 +113,10 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 
   objectstore_item_set_integer(item, "seqnum_edit", data->edit);
   objectstore_item_set_integer(item, "seqnum_play", data->play);
+  objectstore_item_set_double(item, "seqnum_min", data->min);
+  objectstore_item_set_double(item, "seqnum_max", data->max);
+  objectstore_item_set_double(item, "seqnum_step", data->step);
+  objectstore_item_set_double(item, "seqnum_page", data->page);
   objectstore_item_set(item, "seqnum_patterns", array);
 
   for (i = 0; i < NUM_PATTERNS; i++)
@@ -135,7 +151,7 @@ PRIVATE void value_changed_handler(GtkAdjustment *adj, gpointer userdata) {
   Data *data = c->g->data;
 
   if (c->events_flow) {
-    data->pattern[data->edit][step] = 1 - adj->value;
+    data->pattern[data->edit][step] = data->max - adj->value;
     gen_update_controls(c->g, SEQNUM_CONTROL_PATTERN);
   }
 }
@@ -155,11 +171,11 @@ PRIVATE void init_pattern(Control *control) {
     gtk_scale_set_draw_value(GTK_SCALE(b), FALSE);
     gtk_scale_set_digits(GTK_SCALE(b), 2);
 
-    adj->step_increment = 0.01;
-    adj->page_increment = 0.01;
-    adj->lower = 0;
-    adj->upper = 1;
-    adj->value = 1 - data->pattern[data->edit][i];
+    adj->step_increment = data->step;
+    adj->page_increment = data->page;
+    adj->lower = data->min;
+    adj->upper = data->max;
+    adj->value = data->max - data->pattern[data->edit][i];
 
     gtk_object_set_data(GTK_OBJECT(adj), "Control", control);
     gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
@@ -185,7 +201,70 @@ PRIVATE void refresh_pattern(Control *control) {
 
   for (i = 0; i < SEQUENCE_LENGTH; i++) {
     gtk_adjustment_set_value(gtk_range_get_adjustment(GTK_RANGE(widgets[i])),
-			     1 - data->pattern[data->edit][i]);
+			     data->max - data->pattern[data->edit][i]);
+  }
+}
+
+PRIVATE void seqnum_setrange(Control *c) {
+  Data *data= c->g->data;
+  GtkWidget **widgets = c->data;
+  int i,j;
+
+  for( i=0; i<NUM_PATTERNS; i++ )
+      for( j=0; j<SEQUENCE_LENGTH; j++ )
+	  data->pattern[i][j] = MAX( data->min, MIN( data->max, data->pattern[i][j] ) );
+
+  for (i = 0; i < SEQUENCE_LENGTH; i++) {
+      GtkAdjustment *adj = gtk_range_get_adjustment( GTK_RANGE(widgets[i]) );
+
+      adj->lower = data->min;
+      adj->upper = data->max;
+      adj->step_increment = data->step;
+      adj->page_increment = data->page;
+      adj->value = data->pattern[data->edit][i];
+
+      gtk_adjustment_changed( adj );
+  }
+}
+
+PRIVATE GtkWidget *build_entry(GtkWidget *vbox, char *text, gdouble value) {
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 2);
+  GtkWidget *label = gtk_label_new(text);
+  GtkWidget *entry = gtk_entry_new();
+  char buf[128];
+
+  gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
+  gtk_widget_show(label);
+  gtk_widget_show(entry);
+  gtk_widget_show(hbox);
+
+  sprintf(buf, "%g", value);
+  gtk_entry_set_text(GTK_ENTRY(entry), buf);
+
+  return entry;
+}
+
+PRIVATE void props(Component *c, Generator *g) {
+  Data *data = g->data;
+  GtkWidget *min, *max, *step, *page;
+  GtkWidget *vbox;
+
+  vbox = gtk_vbox_new(FALSE, 2);
+
+  min = build_entry(vbox, "Range Minimum:", data->min);
+  max = build_entry(vbox, "Range Maximum:", data->max);
+  step = build_entry(vbox, "Step Increment:", data->step);
+  page = build_entry(vbox, "Page Increment:", data->page);
+
+  if (popup_dialog(g->name, MSGBOX_OK | MSGBOX_CANCEL, 0, MSGBOX_OK, vbox, NULL, 0) == MSGBOX_OK) {
+    data->min = atof(gtk_entry_get_text(GTK_ENTRY(min)));
+    data->max = atof(gtk_entry_get_text(GTK_ENTRY(max)));
+    data->step = atof(gtk_entry_get_text(GTK_ENTRY(step)));
+    data->page = atof(gtk_entry_get_text(GTK_ENTRY(page)));
+
+    g_list_foreach(g->controls, (GFunc) seqnum_setrange, NULL);
   }
 }
 
@@ -200,7 +279,7 @@ PRIVATE void setup_class(void) {
   gen_configure_event_input(k, EVT_STEP, "Step", evt_step_handler);
   gen_configure_event_output(k, EVT_OUTPUT, "Output");
 
-  gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
+  gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, props);
 }
 
 PUBLIC void init_plugin_seqnum(void) {

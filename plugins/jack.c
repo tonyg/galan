@@ -38,7 +38,9 @@
 #include "prefs.h"
 
 #include <jack/jack.h>
+#ifdef HAVE_JACKMIDI_H
 #include <jack/miditypes.h>
+#endif
 
 #define SIG_LEFT_CHANNEL	0
 #define SIG_RIGHT_CHANNEL	1
@@ -535,7 +537,7 @@ PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME n
 }
 
 // Midiout
-
+#ifdef HAVE_JACKMIDI_H
 PRIVATE void midiinport_realtime_handler(Generator *g, AEvent *event) {
     MidiInData *data = g->data;
 
@@ -676,7 +678,7 @@ PRIVATE void midiinport_destroy_instance(Generator *g) {
 
   jack_instance_count--;
 }
-
+#endif
 
 // General
 
@@ -719,6 +721,7 @@ PRIVATE void setup_class(void) {
 				  NULL,
 				  NULL);
 
+#ifdef HAVE_JACKMIDI_H
   k = gen_new_generatorclass("jack_midiin", FALSE, 0, NUM_EVENT_OUTPUTS,
 			     NULL, NULL, NULL,
 			     midiinport_init_instance, midiinport_destroy_instance,
@@ -737,6 +740,7 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi In",
 				  NULL,
 				  NULL);
+#endif
 
   k = gen_new_generatorclass("jack_transport", FALSE, 2, 1,
 			     NULL, NULL, transport_controls,

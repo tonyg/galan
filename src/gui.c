@@ -209,7 +209,7 @@ PRIVATE void open_file(gpointer userdata, guint action, GtkWidget *widget) {
 
 PRIVATE gboolean sheet_only = FALSE;
 
-PRIVATE void save_file_to(char *filename) {
+PRIVATE void save_file_to(const char *filename) {
   FILE *f = fopen(filename, "wb");
   if (f == NULL)
     return;

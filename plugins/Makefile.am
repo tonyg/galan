@@ -65,7 +65,8 @@ ladspa_la_SOURCES = ladspa.c ladspa-load.c
 ladspa_la_LDFLAGS = @LRDF_LIBS@
 ladspa_la_INCLUDES = @LRDF_CFLAGS@
 
-fft_la_LDFLAGS= -ldrfftw -ldfftw
+fft_la_LDFLAGS= @FFTW_LIBS@
+ifftw_la_LDFLAGS= @FFTW_LIBS@
 
 SUFFIXES= .la.c
 %.la.c: %.c

@@ -359,8 +359,6 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
   if( outscount == 0 )
       gen_register_realtime_fn(g, realtime_handler);
-
-  //data->dummy = objectstore_item_get_integer(item, "TEMPLATE_dummy", 123456);
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
@@ -617,7 +615,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
    
     //printf( "Menu : %s\n", get_lrdf_menuname( psDescriptor->UniqueID ) );
     k = gen_new_generatorclass_with_different_tag( psDescriptor->Label, 
-				g_strdup_printf( "ladspa-%d", psDescriptor->UniqueID ), FALSE,
+				g_strdup_printf( "ladspa-%d", (int) psDescriptor->UniqueID ), FALSE,
 				g_list_length( plugindata->inevent ), g_list_length( plugindata->outevent ),
 				inputdescr, outputdescr, controls,
 				init_instance, destroy_instance,

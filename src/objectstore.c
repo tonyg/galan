@@ -34,6 +34,12 @@ PUBLIC void init_objectstore(void) {
 PUBLIC void done_objectstore(void) {
 }
 
+/**
+ * \brief allocate a new ObjectStore
+ *
+ * \return A new ObjectStore
+ */
+
 PUBLIC ObjectStore *objectstore_new_objectstore(void) {
   ObjectStore *db = safe_malloc(sizeof(ObjectStore));
 
@@ -89,6 +95,12 @@ PRIVATE void objectstore_kill_objectstoreitem(gpointer key, gpointer value, gpoi
   g_hash_table_destroy(item->fields);
   free(item);
 }
+
+/**
+ * \brief Free the Memory allocated by the ObjectStore
+ *
+ * \param db The ObjectStore to be freed.
+ */
 
 PUBLIC void objectstore_kill_objectstore(ObjectStore *db) {
   g_hash_table_foreach(db->object_table, objectstore_kill_objectstoreitem, NULL);
@@ -155,6 +167,15 @@ PRIVATE void objectstore_write_objectstoreitem(gpointer key_p, gpointer value,
   g_hash_table_foreach(item->fields, objectstore_write_objectstoreitem_field, f);
   fprintf(f, "]\n\n");
 }
+
+/**
+ * \brief Write out an ObjectStore
+ *
+ * \param f FILE * where the ObjectStore should be written to.
+ * \param db the ObjectStore
+ *
+ * \return TRUE on success.
+ */
 
 PUBLIC gboolean objectstore_write(FILE *f, ObjectStore *db) {
 
@@ -312,6 +333,15 @@ PRIVATE ObjectStoreItem *read_item(FILE *f) {
   return item;
 }
 
+/**
+ * \brief Read ObjectStore from a FILE
+ *
+ * \param f FILE
+ * \param db the empty ObjectStore.
+ *
+ * \return TRUE if the FILE could be read in.
+ */
+
 PUBLIC gboolean objectstore_read(FILE *f, ObjectStore *db) {
     ObjectStoreItem *item;
     ObjectStoreDatum *datum;
@@ -368,22 +398,68 @@ PUBLIC gboolean objectstore_read(FILE *f, ObjectStore *db) {
     return TRUE;
 }
 
+
+/**
+ * \brief Set the Root ObjectStoreItem.
+ *
+ * \param db ObjectStore
+ * \param root The new root ObjectStoreItem
+ */
+
 PUBLIC void objectstore_set_root(ObjectStore *db, ObjectStoreItem *root) {
   db->rootkey = root->key;
 }
 
+
+/**
+ * \brief Get the Root Item
+ *
+ * \param db The ObjectStore
+ *
+ * \return The ObjectStoreItem which was set with objectstore_set_root().
+ */
+
 PUBLIC ObjectStoreItem *objectstore_get_root(ObjectStore *db) {
   return g_hash_table_lookup(db->object_table, (gconstpointer) db->rootkey);
 }
+
+
+/**
+ * \brief Get the ObjectStoreItem representing the object at a given pointer
+ *
+ * \param db ObjectStore
+ * \param object A pointer to a Structure which is represented in the ObjectStore.
+ * 
+ * \return The ObjectStoreItem or NULL if the pointer is not known.
+ */
 
 PUBLIC ObjectStoreItem *objectstore_get_item(ObjectStore *db, gpointer object) {
   return g_hash_table_lookup(db->object_table,
 			     g_hash_table_lookup(db->key_table, object));
 }
 
+/**
+ * \brief Get ObjectStoreItem by key
+ *
+ * \param db the ObjectStore
+ * \param key the ObjectStoreKey for the ObjectStoreItem we want to be returned.
+ *
+ * \return The ObjectStoreItem identified by \a key
+ */
+
 PUBLIC ObjectStoreItem *objectstore_get_item_by_key(ObjectStore *db, ObjectStoreKey key) {
   return g_hash_table_lookup(db->object_table, (gpointer) key);
 }
+
+/**
+ * \brief Create a new ObjectStoreItem
+ *
+ * \param db the ObjectStore
+ * \param tag a string describing the type of the ObjectStoreItem
+ * \param object a pointer to the structure we want to put into the ObjectStoreItem.
+ *               Because the pointer is known in the ObjectStore we can find out if we
+ *               already have a structure in the object store and only have a reference on that.
+ */
 
 PUBLIC ObjectStoreItem *objectstore_new_item(ObjectStore *db, char *tag, gpointer object) {
   ObjectStoreItem *item = safe_malloc(sizeof(ObjectStoreItem));
@@ -400,12 +476,27 @@ PUBLIC ObjectStoreItem *objectstore_new_item(ObjectStore *db, char *tag, gpointe
   return item;
 }
 
+/**
+ * \brief Get the pointer associated with an ObjectStoreItem.
+ *
+ * \param item an ObjectStoreItem.
+ *
+ * \return The pointer to the data or NULL if the item is not valid.
+ */
+
 PUBLIC gpointer objectstore_get_object(ObjectStoreItem *item) {
     if( item )
 	return item->object;
     else
 	return NULL;
 }
+
+/**
+ * \brief set the pointer of an ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem we want to setup.
+ * \param object the pointer.
+ */
 
 PUBLIC void objectstore_set_object(ObjectStoreItem *item, gpointer object) {
   if (item->object != NULL) {
@@ -417,6 +508,17 @@ PUBLIC void objectstore_set_object(ObjectStoreItem *item, gpointer object) {
   g_hash_table_insert(item->db->key_table, item->object, (gpointer) item->key);
 }
 
+/**
+ * \brief get an integer value from an ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem
+ * \param name The Name of the value we want to read out
+ * \param deft default value.
+ *
+ * \return The gint32 associated with \a name on \a item, or \a deft if \a item does not have
+ *         a value named \a name.
+ */
+
 PUBLIC gint32 objectstore_item_get_integer(ObjectStoreItem *item, char *name, gint32 deft) {
   ObjectStoreDatum *datum = objectstore_item_get(item, name);
 
@@ -427,6 +529,17 @@ PUBLIC gint32 objectstore_item_get_integer(ObjectStoreItem *item, char *name, gi
   return datum->d.integer;
 }
 
+/**
+ * \brief get a double value from an ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem
+ * \param name The Name of the value we want to read out
+ * \param deft default value.
+ *
+ * \return The double associated with \a name on \a item, or \a deft if \a item does not have
+ *         a value named \a name.
+ */
+
 PUBLIC gdouble objectstore_item_get_double(ObjectStoreItem *item, char *name, gdouble deft) {
   ObjectStoreDatum *datum = objectstore_item_get(item, name);
 
@@ -435,6 +548,17 @@ PUBLIC gdouble objectstore_item_get_double(ObjectStoreItem *item, char *name, gd
 
   return objectstore_datum_double_value(datum);
 }
+
+/**
+ * \brief get a string value from an ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem
+ * \param name The Name of the value we want to read out
+ * \param deft default value.
+ *
+ * \return The string associated with \a name on \a item, or \a deft if \a item does not have
+ *         a value named \a name.
+ */
 
 PUBLIC char *objectstore_item_get_string(ObjectStoreItem *item, char *name, char *deft) {
   ObjectStoreDatum *datum = objectstore_item_get(item, name);
@@ -446,6 +570,15 @@ PUBLIC char *objectstore_item_get_string(ObjectStoreItem *item, char *name, char
   return datum->d.string;
 }
 
+/**
+ * \brief get an Object from an ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem
+ * \param name The Name of the value we want to read out
+ *
+ * \return The ObjectStoreItem associated with \a name on \a item.
+ */
+
 PUBLIC ObjectStoreItem *objectstore_item_get_object(ObjectStoreItem *item, char *name) {
   ObjectStoreDatum *datum = objectstore_item_get(item, name);
 
@@ -455,6 +588,16 @@ PUBLIC ObjectStoreItem *objectstore_item_get_object(ObjectStoreItem *item, char 
   RETURN_VAL_UNLESS(datum->kind == OSI_KIND_OBJECT, NULL);
   return g_hash_table_lookup(item->db->object_table, (gconstpointer) datum->d.object_key);
 }
+
+/**
+ * \brief get binary data from ObjectStoreItem
+ *
+ * \param item The ObjectStoreItem
+ * \param name The name of the value we want to read out.
+ *
+ * \retval dataptr a void * to the data.
+ * \return the length of the data or -1 on failure.
+ */
 
 PUBLIC gint32 objectstore_item_get_binary(ObjectStoreItem *item, char *name, void **dataptr) {
   ObjectStoreDatum *datum = objectstore_item_get(item, name);
@@ -467,6 +610,15 @@ PUBLIC gint32 objectstore_item_get_binary(ObjectStoreItem *item, char *name, voi
   return datum->d.binary.length;
 }
 
+/**
+ * \brief get an ObjectStoreDatum from an ObjectStoreItem.
+ *
+ * \param item the ObjectStoreItem.
+ * \param name the name of the ObjectStoreDatum we want to get.
+ *
+ * \return an ObjectStoreDatum or NULL on failure.
+ */
+
 PUBLIC ObjectStoreDatum *objectstore_item_get(ObjectStoreItem *item, char *name) {
   ObjectStoreItemField *field;
   if( item == NULL )
@@ -476,6 +628,14 @@ PUBLIC ObjectStoreDatum *objectstore_item_get(ObjectStoreItem *item, char *name)
 
   return field ? field->value : NULL;
 }
+
+/**
+ * \brief set that \a name on \a item is \a value.
+ *
+ * \param item ObjectStoreItem to set.
+ * \param name the name of the ObjectStoreDatum
+ * \param value ObjectStoreDatum.
+ */
 
 PUBLIC void objectstore_item_set(ObjectStoreItem *item, char *name, ObjectStoreDatum *value) {
   ObjectStoreItemField *field;
@@ -503,17 +663,41 @@ PRIVATE ObjectStoreDatum *objectstore_datum_new(enum ObjectStoreDatumKind kind) 
   return datum;
 }
 
+/**
+ * \brief Create an ObjectStoreDatum from an integer.
+ *
+ * \param value The integer.
+ * 
+ * \return New ObjectStoreDatum of Type OSI_KIND_INT
+ */
+
 PUBLIC ObjectStoreDatum *objectstore_datum_new_integer(gint32 value) {
   ObjectStoreDatum *datum = objectstore_datum_new(OSI_KIND_INT);
   datum->d.integer = value;
   return datum;
 }
 
+/**
+ * \brief Create an ObjectStoreDatum from a double.
+ *
+ * \param value The double.
+ * 
+ * \return New ObjectStoreDatum of Type OSI_KIND_DOUBLE
+ */
+
 PUBLIC ObjectStoreDatum *objectstore_datum_new_double(gdouble value) {
   ObjectStoreDatum *datum = objectstore_datum_new(OSI_KIND_DOUBLE);
   datum->d.number = value;
   return datum;
 }
+
+/**
+ * \brief Create an ObjectStoreDatum from an string.
+ *
+ * \param value The string.
+ * 
+ * \return New ObjectStoreDatum of Type OSI_KIND_STRING
+ */
 
 PUBLIC ObjectStoreDatum *objectstore_datum_new_string(char *value) {
   ObjectStoreDatum *datum = objectstore_datum_new(OSI_KIND_STRING);
@@ -527,11 +711,27 @@ PRIVATE ObjectStoreDatum *objectstore_datum_new_object_key(ObjectStoreKey key) {
   return datum;
 }
 
+/**
+ * \brief Create an ObjectStoreDatum from an ObjectStoreItem.
+ *
+ * \param value The ObjectStoreItem.
+ * 
+ * \return New ObjectStoreDatum of Type OSI_KIND_OBJECT
+ */
+
 PUBLIC ObjectStoreDatum *objectstore_datum_new_object(ObjectStoreItem *value) {
   ObjectStoreDatum *datum = objectstore_datum_new(OSI_KIND_OBJECT);
   datum->d.object_key = value->key;
   return datum;
 }
+
+/**
+ * \brief Create an ObjectStoreDatum of type Array.
+ *
+ * \param length The Length of the new array.
+ * 
+ * \return New ObjectStoreDatum of Type OSI_KIND_ARRAY
+ */
 
 PUBLIC ObjectStoreDatum *objectstore_datum_new_array(int length) {
   ObjectStoreDatum *datum = objectstore_datum_new(OSI_KIND_ARRAY);
@@ -539,6 +739,15 @@ PUBLIC ObjectStoreDatum *objectstore_datum_new_array(int length) {
   datum->d.array.elts = calloc(length, sizeof(ObjectStoreDatum *));
   return datum;
 }
+
+/**
+ * \brief Create an ObjectStoreDatum of type Binary.
+ *
+ * \param length The Size of the data in bytes.
+ * \param data Pointer to the binary data.
+ * 
+ * \return New ObjectStoreDatum of Type OSI_KIND_BINARY
+ */
 
 PUBLIC ObjectStoreDatum *objectstore_datum_new_binary(int length, void *data) {
   ObjectStoreDatum *datum = objectstore_datum_new(OSI_KIND_BINARY);
@@ -548,32 +757,84 @@ PUBLIC ObjectStoreDatum *objectstore_datum_new_binary(int length, void *data) {
   return datum;
 }
 
+/**
+ * \brief get the Integer from an ObjectStoreDatum
+ *
+ * \param datum The ObjectStoreDatum
+ *
+ * \return the Integer or 0 on failure.
+ */
+
 PUBLIC gint32 objectstore_datum_integer_value(ObjectStoreDatum *datum) {
   RETURN_VAL_UNLESS(datum->kind == OSI_KIND_INT, 0);
   return datum->d.integer;
 }
+
+/**
+ * \brief get the Double from an ObjectStoreDatum
+ *
+ * \param datum The ObjectStoreDatum
+ *
+ * \return the double or 0 on failure.
+ */
 
 PUBLIC gdouble objectstore_datum_double_value(ObjectStoreDatum *datum) {
   RETURN_VAL_UNLESS(datum->kind == OSI_KIND_DOUBLE || datum->kind == OSI_KIND_INT, 0);
   return (datum->kind == OSI_KIND_DOUBLE) ? datum->d.number : datum->d.integer;
 }
 
-// XXX: Do i need strdup ??? (objectstore_item_get_string does not)
+
+
+
+/**
+ * \brief get the string from an ObjectStoreDatum
+ *
+ * \param datum The ObjectStoreDatum
+ *
+ * \return the string or NULL on failure. The string is in the Memory of the ObjectStore so if that is
+ *         destroyed then the string will become invalid.
+ */
+
 
 PUBLIC char *objectstore_datum_string_value(ObjectStoreDatum *datum) {
   RETURN_VAL_UNLESS(datum->kind == OSI_KIND_STRING, NULL);
   return safe_string_dup( datum->d.string );
 }
 
+/**
+ * \brief get the ObjectStoreKey from an ObjectStoreDatum of Type OSI_KIND_OBJECT
+ *
+ * \param obj The ObjectStoreDatum
+ *
+ * \return the key or 0 on failure.
+ */
+
 PUBLIC ObjectStoreKey objectstore_datum_object_key(ObjectStoreDatum *obj) {
   RETURN_VAL_UNLESS(obj->kind == OSI_KIND_OBJECT, 0);
   return obj->d.object_key;
 }
 
+/**
+ * \brief Get the length of an ObjectStoreDatum of type Array
+ *
+ * \param array The ObjectStoreDatum of Type OSI_KIND_ARRAY
+ *
+ * \return the length or 0 on failure.
+ */
+
 PUBLIC int objectstore_datum_array_length(ObjectStoreDatum *array) {
   RETURN_VAL_UNLESS(array->kind == OSI_KIND_ARRAY, 0);
   return array->d.array.count;
 }
+
+/**
+ * \brief Get the ObjectStoreDatum at \a index of an ObjectStoreDatum of type Array
+ *
+ * \param array The ObjectStoreDatum of Type OSI_KIND_ARRAY
+ * \param index The index in the array.
+ *
+ * \return The ObjectStoreDatum or NULL on failure.
+ */
 
 PUBLIC ObjectStoreDatum *objectstore_datum_array_get(ObjectStoreDatum *array, int index) {
   RETURN_VAL_UNLESS(array->kind == OSI_KIND_ARRAY, NULL);
@@ -582,6 +843,16 @@ PUBLIC ObjectStoreDatum *objectstore_datum_array_get(ObjectStoreDatum *array, in
 
   return array->d.array.elts[index];
 }
+
+/**
+ * \brief Set the ObjectStoreDatum at \a index of an ObjectStoreDatum of type Array
+ *
+ * \param array The ObjectStoreDatum of Type OSI_KIND_ARRAY
+ * \param index The index in the array.
+ * \param value The ObjectStoreDatum which the array element will be set to.
+ *
+ * \return The ObjectStoreDatum or NULL on failure.
+ */
 
 PUBLIC void objectstore_datum_array_set(ObjectStoreDatum *array, int index,
 					ObjectStoreDatum *value) {
@@ -593,6 +864,16 @@ PUBLIC void objectstore_datum_array_set(ObjectStoreDatum *array, int index,
     objectstore_kill_objectstoredatum(array->d.array.elts[index]);
   array->d.array.elts[index] = value;
 }
+
+/**
+ * \brief extract the objects from an Array into a GList
+ *
+ * \param array ObjectStoreDatum of Type OSI_KIND_ARRAY
+ * \param db the ObjectStore
+ * \param unpickler a function which returns a pointer from an ObjectStoreItem
+ *
+ * \return GList of unpickled objects
+ */
 
 PUBLIC GList *objectstore_extract_list_of_items(ObjectStoreDatum *array, ObjectStore *db,
 						gpointer (*unpickler)(ObjectStoreItem *item)) {
@@ -608,6 +889,16 @@ PUBLIC GList *objectstore_extract_list_of_items(ObjectStoreDatum *array, ObjectS
 
   return result;
 }
+
+/**
+ * \brief create an ObjectStoreDatum of type Array from a GList of Objects.
+ *
+ * \param list A GList of Objects which can be pickled with \a pickler
+ * \param db the ObjectStore
+ * \param pickler a function of type objectstore_pickler_t.
+ *
+ * \return ObjectStoreDatum of type Array.
+ */
 
 PUBLIC ObjectStoreDatum *objectstore_create_list_of_items(GList *list, ObjectStore *db,
 							  objectstore_pickler_t pickler) {

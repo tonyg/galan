@@ -267,16 +267,24 @@ PRIVATE void gencomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *
 
   id = g_hash_table_lookup(generatorclasses, d->g->klass->name);
 
-  d->icon =
-    id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(c->sheet),
-					      &mask,
-					      sheet_get_transparent_color(c->sheet),
-					      id->iconpath)
-    : NULL;
+  if( id != NULL ) {
+      d->icon =
+	  id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(c->sheet),
+		  &mask,
+		  sheet_get_transparent_color(c->sheet),
+		  id->iconpath)
+	  : NULL;
 
-  d->propgen = id->propgen;
+      d->propgen = id->propgen;
+  }
+  else
+  {
+      d->icon = d->propgen = NULL;
+  }
+
   c->data = d;
   validate_connectors(c);
+
   gencomp_resize(c);	/* because things may be different if loading on a different
 			   system from the one we saved with */
 }

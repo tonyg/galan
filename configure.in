@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/main.c)
-AM_INIT_AUTOMAKE(galan, 0.2.9)
+AM_INIT_AUTOMAKE(galan, 0.2.11)
 AM_CONFIG_HEADER(config.h)
 
 AM_MAINTAINER_MODE
@@ -48,7 +48,7 @@ AM_PATH_GTK(1.2.0, ,
 
 AM_PATH_GDK_PIXBUF()
 
-AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.so")
+AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.so", AC_MSG_RESULT(Alsa not found))
 
 CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"

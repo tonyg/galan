@@ -29,19 +29,29 @@ be sufficient to type
 You will need GTK+ v1.2.x and a properly-configured OSS-compatible soundcard
 capable of 44.1kHz 16-bit stereo output. A fast CPU is also recommended.
 
-gAlan tries to detect the audiofile library and the ESD library on
+gAlan tries to detect the audiofile libraryi, the ESD library and libvorbis on
 your system. If it does this wrongly, please try to find out what went
 wrong and let me know. Specifically, if you don't have ESD installed
 and gAlan refuses to compile, this is a bug and I want to know about
 it.
 
+
+
 For further information, tutorials, and user- and developer-guides, please see
 the doc/ subdirectory and the main gAlan website,
 
-	http://homepages.ihug.co.nz/~surazal/
+	http://galan.sourceforge.net/
 
 Good luck!
 
 	Tony Garnock-Jones
 	surazal@ihug.co.nz
 	30 August 1999
+
+gAlan is now maintained by 
+
+	Torben Hohn
+	torbenh@users.sourceforge.net
+   
+so if you have questions especially because i am
+to lazy to write the documentation drop me a mail... 

@@ -11,7 +11,6 @@ plugindir = $(pkglibdir)/plugins
 # below. (The optional plugins HAVE to be defined in EXTRA_PROGRAMS -
 # see the infopages for automake.)
 
-LDFLAGS = "-module" @GTK_LIBS@
 
 EXTRA_LTLIBRARIES = esd_output.la pcm_out.la ogg_ra.la emu10k1.la alsa_out.la alsa_midi.la sndfile_in.la sndfile_out.la \
 		 alsa_out_callback.la jack.la voice.la 
@@ -30,7 +29,8 @@ plugin_LTLIBRARIES = \
 
 
 
-
+LDFLAGS = "-module" @GTK_LIBS@
+LIBS = @GTK_LIBS@ @GTHREAD_LIBS@ $(srcdir)/../src/libgalan.la
 INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\" 
 
 CLEANFILES=*.la.c

@@ -279,7 +279,8 @@ PRIVATE void gencomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *
   }
   else
   {
-      d->icon = d->propgen = NULL;
+      d->icon = NULL;
+      d->propgen = NULL;
   }
 
   c->data = d;

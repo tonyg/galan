@@ -42,7 +42,8 @@
 #define EVT_PLAY_IN		2
 #define EVT_CLOCK_IN		3
 #define EVT_RESYNC_IN		4
-#define NUM_EVENT_INPUTS	5
+#define EVT_TRANSPORT_IN	5
+#define NUM_EVENT_INPUTS	6
 
 #define EVT_LEN_OUT		0
 #define EVT_PLAY_OUT		1
@@ -220,6 +221,37 @@ PRIVATE void evt_resync_handler(Generator *g, AEvent *event) {
   data->seq_step = 0;
 }
 
+PRIVATE void evt_transport_handler(Generator *g, AEvent *event) {
+  Data *data = g->data;
+  int tmp;
+
+
+  data->seq_step = ((int)event->d.number) % (data->length ? data->length : 1);
+  data->step = (((int)event->d.number)/data->length) % ((tmp = g_list_length(data->sequence[data->play])) ? tmp : 1);
+
+  gen_update_controls(g, PATLOOP_CONTROL_PANEL);
+
+  if (data->seq_step == 0) {
+    GList *entry = g_list_nth(data->sequence[data->play], data->step);
+
+    if (entry != NULL) {
+      event->d.number = (int) entry->data;
+      gen_send_events(g, EVT_PLAY_OUT, -1, event);
+    }
+  }
+
+  event->d.number = data->seq_step;
+  gen_send_events(g, EVT_STEP_OUT, -1, event);
+
+  //data->seq_step++;
+
+  if (data->seq_step == 0) {
+
+    if (data->step == 0) {
+      data->play = data->next_play;
+    }
+  }
+}
 PRIVATE void entry_adder(gpointer data, gpointer user_data) {
   int num = (int) data;
   GtkCList *list = user_data;
@@ -449,6 +481,7 @@ PRIVATE void setup_class(void) {
   gen_configure_event_input(k, EVT_PLAY_IN, "Play", evt_play_handler);
   gen_configure_event_input(k, EVT_CLOCK_IN, "Clock", evt_clock_handler);
   gen_configure_event_input(k, EVT_RESYNC_IN, "Resync", evt_resync_handler);
+  gen_configure_event_input(k, EVT_TRANSPORT_IN, "Transport", evt_transport_handler);
   gen_configure_event_output(k, EVT_LEN_OUT, "Length Out");
   gen_configure_event_output(k, EVT_PLAY_OUT, "Play");
   gen_configure_event_output(k, EVT_STEP_OUT, "Step");

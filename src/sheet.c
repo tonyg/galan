@@ -615,8 +615,10 @@ PUBLIC void sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpointer 
 }
 
 PUBLIC void sheet_delete_component(Sheet *sheet, Component *c) {
-  sheet->components = g_list_remove(sheet->components, c);
-  comp_kill_component(c);
+
+  if( comp_kill_component(c) )
+      sheet->components = g_list_remove(sheet->components, c);
+
   gtk_widget_queue_draw(sheet->drawingwidget);
 }
 
@@ -644,7 +646,8 @@ PUBLIC void sheet_clear(Sheet *sheet) {
   while (sheet->components != NULL) {
     GList *temp = g_list_next(sheet->components);
 
-    comp_kill_component(sheet->components->data);
+    if( !comp_kill_component(sheet->components->data) )
+	return;
 
     g_list_free_1(sheet->components);
     sheet->components = temp;

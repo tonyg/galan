@@ -124,7 +124,30 @@ PUBLIC Component *comp_new_component(ComponentClass *k, gpointer init_data,
   return c;
 }
 
-PUBLIC void comp_kill_component(Component *c) {
+
+PRIVATE gboolean comp_try_unconnect( Component *c ) {
+    GList *connX = c->connectors;
+
+    while( connX != NULL ) {
+	Connector *con = connX->data;
+
+	while( con->refs != NULL ) {
+	    ConnectorReference *ref = con->refs->data;
+	    if( comp_unlink( ref, &(con->ref) ) != TRUE )
+		    return FALSE;
+	}
+
+	connX = g_list_next( connX );
+    }
+
+    return TRUE;
+}
+
+PUBLIC gboolean comp_kill_component(Component *c) {
+
+  if( !comp_try_unconnect( c ) )
+      return FALSE;
+
 
   while (c->connectors != NULL) {
     GList *tmp = g_list_next(c->connectors);
@@ -140,6 +163,7 @@ PUBLIC void comp_kill_component(Component *c) {
     c->klass->destroy_instance(c);
 
   free(c);
+  return TRUE;
 }
 
 PUBLIC ConnectorReference *unpickle_connectorreference(ConnectorReference *ref,
@@ -355,12 +379,12 @@ PUBLIC void comp_link(ConnectorReference *src, ConnectorReference *dst) {
   comp_insert_connection(comp_get_connector(dst), src);
 }
 
-PUBLIC void comp_unlink(ConnectorReference *src, ConnectorReference *dst) {
+PUBLIC gboolean comp_unlink(ConnectorReference *src, ConnectorReference *dst) {
   Connector *srccon, *dstcon;
-  g_return_if_fail(src != NULL && dst != NULL);
+  g_return_val_if_fail(src != NULL && dst != NULL, FALSE);
 
   if (src->is_output == dst->is_output)
-    return;
+    return FALSE;
 
   if (!src->is_output) {
     ConnectorReference *tmp = src;
@@ -371,20 +395,22 @@ PUBLIC void comp_unlink(ConnectorReference *src, ConnectorReference *dst) {
   if (src->kind != dst->kind &&
       src->kind != COMP_ANY_CONNECTOR &&
       dst->kind != COMP_ANY_CONNECTOR)
-    return;
+    return FALSE;
 
   if (src->c->klass->unlink_outbound) 
       if( !src->c->klass->unlink_outbound(src->c, src, dst) )
-	  return;
+	  return FALSE;
 
   if (dst->c->klass->unlink_inbound)
       if( !dst->c->klass->unlink_inbound(dst->c, src, dst) )
-	  return;
+	  return FALSE;
 
   srccon = comp_get_connector(src);
   dstcon = comp_get_connector(dst);
   comp_remove_connection(srccon, dst);
   comp_remove_connection(dstcon, src);
+
+  return TRUE;
 }
 
 PUBLIC char *comp_get_title(Component *c) {

@@ -176,9 +176,8 @@ PRIVATE SAMPLETIME output_range(Generator *g, OutputSignalDescriptor *sig) {
 }
 
 PRIVATE gboolean output_generator(Generator *g, OutputSignalDescriptor *sig,
-				  SAMPLETIME offset, SAMPLE *buf, int buflen) {
+				  SAMPLETIME offset, SAMPLE *buf, int buflen, int coffset) {
   Data *data = g->data;
-  int coffset = 0;
   int len, sil;
   int i;
 
@@ -195,6 +194,42 @@ PRIVATE gboolean output_generator(Generator *g, OutputSignalDescriptor *sig,
   sil = buflen - len;
   memset(&buf[len], 0, sil * sizeof(SAMPLE));
   return TRUE;
+}
+
+PRIVATE gboolean output_generator_ch0(Generator *g, OutputSignalDescriptor *sig,
+				  SAMPLETIME offset, SAMPLE *buf, int buflen) {
+
+    return output_generator( g,sig,offset,buf,buflen,0);
+}
+    
+PRIVATE gboolean output_generator_ch1(Generator *g, OutputSignalDescriptor *sig,
+				  SAMPLETIME offset, SAMPLE *buf, int buflen) {
+
+    Data *data = g->data;
+    if( data->channels < 2 )
+	return FALSE;
+
+    return output_generator( g,sig,offset,buf,buflen,1);
+}
+
+PRIVATE gboolean output_generator_ch2(Generator *g, OutputSignalDescriptor *sig,
+				  SAMPLETIME offset, SAMPLE *buf, int buflen) {
+
+    Data *data = g->data;
+    if( data->channels < 3 )
+	return FALSE;
+
+    return output_generator( g,sig,offset,buf,buflen,2);
+}
+
+PRIVATE gboolean output_generator_ch3(Generator *g, OutputSignalDescriptor *sig,
+				  SAMPLETIME offset, SAMPLE *buf, int buflen) {
+
+    Data *data = g->data;
+    if( data->channels < 4 )
+	return FALSE;
+
+    return output_generator( g,sig,offset,buf,buflen,3);
 }
 
 PRIVATE void load_new_sample(GtkWidget *widget, GtkWidget *fs) {
@@ -281,7 +316,10 @@ PRIVATE void propgen(Component *c, Generator *g) {
 }
 
 PRIVATE OutputSignalDescriptor output_sigs[] = {
-  { "Output", SIG_FLAG_RANDOMACCESS, { NULL, { output_range, output_generator } } },
+  { "Channel 0", SIG_FLAG_RANDOMACCESS, { NULL, { output_range, output_generator_ch0 } } },
+  { "Channel 1", SIG_FLAG_RANDOMACCESS, { NULL, { output_range, output_generator_ch1 } } },
+  { "Channel 2", SIG_FLAG_RANDOMACCESS, { NULL, { output_range, output_generator_ch2 } } },
+  { "Channel 3", SIG_FLAG_RANDOMACCESS, { NULL, { output_range, output_generator_ch3 } } },
   { NULL, }
 };
 

@@ -156,13 +156,18 @@ PRIVATE void process_click(GtkWidget *w, GdkEventButton *be) {
     sheet->saved_ref.kind = COMP_NO_CONNECTOR;
 
     found_conn = comp_find_connector(c, be->x, be->y, &sheet->saved_ref);
+    
 
     if (!found_conn) {
       sheet->components = g_list_remove(sheet->components, c);
       sheet->components = g_list_prepend(sheet->components, c);
       sheet->saved_ref.c = c;
-      gtk_widget_queue_draw_area(sheet->drawingwidget, c->x, c->y, c->width, c->height);
     }
+    else
+    {
+	sheet->highlight_ref = sheet->saved_ref;
+    }
+    gtk_widget_queue_draw_area(sheet->drawingwidget, c->x, c->y, c->width, c->height);
 
     sheet->saved_x = c->x - be->x_root;
     sheet->saved_y = c->y - be->y_root;
@@ -342,9 +347,10 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
 
 	    if (comp_find_connector(c, be->x, be->y, &ref)) {
 	      comp_link(&sheet->saved_ref, &ref);
-	      gtk_widget_queue_draw(sheet->drawingwidget);
 	    }
 	  }
+	  sheet->highlight_ref.kind = COMP_NO_CONNECTOR;
+	  gtk_widget_queue_draw(sheet->drawingwidget);
 
 	  break;
 	}
@@ -537,6 +543,7 @@ PUBLIC Sheet *create_sheet( void ) {
   sheet->components = NULL;
   sheet->sheetmode  = SHEET_MODE_NORMAL;
   sheet->sheetklass = NULL;
+  sheet->highlight_ref.kind = COMP_NO_CONNECTOR;
 
   sheet->name = safe_malloc( sizeof( "sheet" ) + 20 );
   sprintf( sheet->name, "sheet%d", next_sheet_number++ );

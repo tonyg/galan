@@ -312,7 +312,7 @@ PRIVATE gint find_connector(Connector *con, ConnectorReference *ref) {
     (ref->is_output != con->ref.is_output);
 }
 
-PRIVATE gint connectorreference_equal(ConnectorReference *r1, ConnectorReference *r2) {
+PUBLIC gint connectorreference_equal(ConnectorReference *r1, ConnectorReference *r2) {
   return
     (r1->c != r2->c) ||
     (r1->queue_number != r2->queue_number) ||

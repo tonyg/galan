@@ -148,6 +148,7 @@ extern void comp_kill_connector(Connector *con);
 
 extern void comp_insert_connection(Connector *con, ConnectorReference *other);
 extern void comp_remove_connection(Connector *con, ConnectorReference *other);
+extern gint connectorreference_equal(ConnectorReference *r1, ConnectorReference *r2);
 
 /*=======================================================================*/
 /* Module setup/shutdown */

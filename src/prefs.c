@@ -178,7 +178,7 @@ PUBLIC void prefs_edit_prefs(void) {
   g_hash_table_foreach(options, add_option_to_optlist, optlist);
 
   gtk_box_pack_start(GTK_BOX(ob), label, FALSE, FALSE, 5);
-  gtk_box_pack_start(GTK_BOX(ob), frame, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(ob), frame, TRUE, TRUE, 0);
   gtk_widget_show(label);
   gtk_widget_show(frame);
 
@@ -187,7 +187,7 @@ PUBLIC void prefs_edit_prefs(void) {
   gtk_widget_show(ib);
 
   gtk_container_add( GTK_CONTAINER( scrollwin ), optlist );
-  gtk_box_pack_start(GTK_BOX(ib), scrollwin, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(ib), scrollwin, TRUE, TRUE, 0);
   gtk_widget_show(optlist);
   gtk_widget_show(scrollwin);
 

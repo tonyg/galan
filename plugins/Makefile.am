@@ -25,7 +25,7 @@ plugin_LTLIBRARIES = \
 	evtsgn.la strcombo.la filerequester.la midi_seq_clock.la  midiclock.la sqrt.la \
 	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
 	integrate.la diff.la notetofreq.la fbdelay.la fft.la powerspectrum.la\
-	arrwindow.la arrmul.la\
+	arrwindow.la arrmul.la arradd.la ifft.la ra2evt.la sigpow.la sigsignum.la\
 	@OPTIONAL_PLUGINS@
 
 
@@ -57,7 +57,7 @@ sndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(pkglibdir)
 voice_la_LDFLAGS=-laudiofile -rpath $(pkglibdir)
 pcm_out_la_LDFLAGS=-laudiofile -rpath $(pkglibdir)
 
-ogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@
+ogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ -rpath $(pkglibdir)
 ogg_ra_la_INCLUDES= @GTHREAD_CFLAGS@
 
 emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c

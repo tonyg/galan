@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/main.c)
-AM_INIT_AUTOMAKE(galan, 0.3.0-test2)
+AM_INIT_AUTOMAKE(galan, 0.2.13)
 AM_CONFIG_HEADER(config.h)
 
 AM_MAINTAINER_MODE
@@ -29,10 +29,9 @@ dnl ===========================================================================
 AC_SUBST(OPTIONAL_PLUGINS)
 OPTIONAL_PLUGINS=
 
-AC_CHECK_HEADER(esd.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.la")
-AC_CHECK_HEADER(vorbis/vorbisfile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.la")
-AC_CHECK_HEADERS(audiofile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.la voice.la")
-AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} oss_output.la oss_input.la")
+AC_CHECK_HEADER(esd.h, [OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.la"])
+AC_CHECK_HEADER(vorbis/vorbisfile.h, [OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.la"])
+AC_CHECK_HEADERS(audiofile.h, [OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.la voice.la"])
 
 dnl Feature tests
 dnl ===========================================================================
@@ -47,21 +46,17 @@ AC_ARG_ENABLE(emu10k1,
 [  --enable-emu10k1        Compile emu10k1 support],
 	OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} emu10k1.la" )
 
-dnl AM_PATH_GTK(1.2.0, ,
-dnl	    AC_MSG_ERROR(Cannot find GTK: is gtk-config in path?))
-	    
-PKG_CHECK_MODULES( GTK, gtk+-2.0 >= 2.0 )
-PKG_CHECK_MODULES( GTHREAD, gthread-2.0 >= 2.0 )
+AM_PATH_GTK(1.2.0, ,[AC_MSG_ERROR([Cannot find GTK: is gtk-config in path?])])
 
-dnl AM_PATH_GDK_PIXBUF()
+AM_PATH_GDK_PIXBUF()
 
-AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.la alsa_out_callback.la alsa_midi.la", AC_MSG_RESULT(Alsa not found))
+AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.la alsa_midi.la", AC_MSG_RESULT(Alsa not found))
 
 CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"
 LIBS="$alsa_save_LIBS"
 
-dnl AM_PATH_GTKGL(, AC_MSG_RESULT(GtkGL not found))
+AM_PATH_GTKGL(, [AC_MSG_RESULT([GtkGL not found])])
 
 AM_CONDITIONAL(compileGL, test x$have_gtkgl = xyes )
 
@@ -73,7 +68,6 @@ if test "x$GCC" = "xyes"; then
 fi
 
 PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.la sndfile_out.la", AC_MSG_RESULT(sndfile not found) )
-PKG_CHECK_MODULES( JACK, jack >= 0.34.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} jack.la", AC_MSG_RESULT(jack not found) )
 
 
 AC_OUTPUT(Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile sheets/Makefile galan.spec)

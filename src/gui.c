@@ -108,10 +108,12 @@ PRIVATE void about_callback(void) {
 	       "License. Please see \"COPYING\" or http://www.gnu.org/copyleft/gpl.txt\n"
 	       "\n"
 	       "SITE_PKGLIB_DIR = %s\n"
+	       "SITE_PKGDATA_DIR = %s\n"
 	       "\n"
 	       "NOTE: This is BETA software\n",
 	       VERSION,
-	       SITE_PKGLIB_DIR
+	       SITE_PKGLIB_DIR,
+	       SITE_PKGDATA_DIR
 	       );
 }
 
@@ -185,7 +187,6 @@ PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
 
 PRIVATE void open_file(gpointer userdata, guint action, GtkWidget *widget) {
   GtkWidget *fs = gtk_file_selection_new("Open Sheet");
-  //g_print( "hello \n" );
 
   if (current_filename != NULL)
     gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), current_filename);
@@ -195,13 +196,8 @@ PRIVATE void open_file(gpointer userdata, guint action, GtkWidget *widget) {
   gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
 			    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
 
-  //g_print( "hello \n" );
-  //gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
-  //gtk_widget_show(fs);
-
-  gtk_dialog_run( GTK_DIALOG( fs ) );
-  
-  //g_print( "hello \n" );
+  gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
+  gtk_widget_show(fs);
 }
 
 PRIVATE gboolean sheet_only = FALSE;
@@ -373,9 +369,7 @@ PRIVATE GtkWidget *build_mainmenu(void) {
 
   gtk_item_factory_create_items(ifact, nitems, mainmenu_items, NULL);
 
-  //gtk_accel_group_attach(group, GTK_OBJECT(mainwin));
-  gtk_window_add_accel_group( GTK_WINDOW( mainwin), group );
-
+  gtk_accel_group_attach(group, GTK_OBJECT(mainwin));
   return gtk_item_factory_get_widget(ifact, "<main>");
 }
 

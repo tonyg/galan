@@ -50,6 +50,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #define SHCOMP_ICONLENGTH	48
 #define SHCOMP_TITLEHEIGHT	15
 #define SHCOMP_CONNECTOR_SPACE	5
@@ -175,28 +176,6 @@ PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
     return isl;
 }
 
-
-/**
- * 
- * There must be a different init_data for the load from file
- * library components... 
- *
- * ansonsten ist das aber das selbe hier mit dem ganzen Kram...
- * ich habe dann zwei component klassen, die sich nur durch
- * den konstruktor unterscheiden... sp"ater aber auch durch
- * das pickle unpickle geraffel... obwohl
- * das probleme gibt, wegen den generator links :(
- *
- * erster Versuch ist 
- *
- * konstruktor mit load file, register sheet, aufruf von shcomp_init
- *
- * ansonsten das selbe...
- *
- * TODO: shared component code in eigenes Teil packen...
- *
- */
-
 PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
   ShCompData *d = safe_malloc(sizeof(ShCompData));
   ShCompInitData *id = (ShCompInitData *) init_data;
@@ -228,14 +207,17 @@ PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
 
 PRIVATE int fileshcomp_initialize(Component *c, gpointer init_data) {
   FileShCompInitData *id = (FileShCompInitData *) init_data;
+  int retval;
 
-  ShCompInitData *shcid = g_alloca( sizeof( ShCompInitData ) );
+  ShCompInitData *shcid = safe_malloc( sizeof( ShCompInitData ) );
   //printf( "hi %s\n", id->filename );
   FILE *f = fopen( id->filename, "rb" );
 
   shcid->sheet = sheet_loadfrom( NULL, f );
   fclose( f );
-  return shcomp_initialize( c, shcid );
+  retval =  shcomp_initialize( c, shcid );
+  free(shcid);
+  return retval;
 }
 
 
@@ -254,7 +236,7 @@ PRIVATE void shcomp_destroy(Component *c) {
   //g_list_free( d->isl.outputsignals );
 
 
-  safe_free(d);
+  free(d);
 }
 
 PRIVATE void shcomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *db) {
@@ -408,7 +390,7 @@ PRIVATE void shcomp_paint(Component *c, GdkRectangle *area,
 		     c->height - 2 * SHCOMP_BORDER_WIDTH - 1);
 
   gdk_gc_set_foreground(gc, &colors[COMP_COLOR_WHITE]);
-  gdk_draw_text(drawable, gtk_style_get_font(style), gc,
+  gdk_draw_text(drawable, style->font, gc,
 		c->x + SHCOMP_BORDER_WIDTH + (SHCOMP_CONNECTOR_WIDTH>>1),
 		c->y + SHCOMP_BORDER_WIDTH + SHCOMP_TITLEHEIGHT - 3,
 		d->sheet->name, strlen(d->sheet->name));
@@ -757,7 +739,7 @@ PRIVATE void scan_library_dir( void ) {
 	if( sheetdir )
 		load_all_gsheets( sheetdir );
 	
-	load_all_gsheets(SITE_PKGLIB_DIR G_DIR_SEPARATOR_S "sheets");
+	load_all_gsheets(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "sheets");
 }
 
 

@@ -68,6 +68,16 @@ if test "x$GCC" = "xyes"; then
 fi
 
 PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.la sndfile_out.la", AC_MSG_RESULT(sndfile not found) )
-
+AC_CHECK_HEADER(lrdf.h,
+		AC_CHECK_LIB(lrdf, lrdf_init, LRDF_FOUND="yes", LRDF_FOUND="no"),
+		LRDF_FOUND="no")
+	  
+if test x$LRDF_FOUND == "xyes"; then
+  LRDF_CFLAGS=""
+  LRDF_LIBS="-llrdf"
+  AC_DEFINE(HAVE_LRDF, 1, "whether or not lrdf support is enabled")
+  AC_SUBST(LRDF_CFLAGS)
+  AC_SUBST(LRDF_LIBS)
+fi
 
 AC_OUTPUT(Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile sheets/Makefile galan.spec)

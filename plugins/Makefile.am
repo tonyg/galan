@@ -48,6 +48,8 @@ emu10k1_la_LDFLAGS= emu10k1-lib/libdsp.o
 
 emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
 ladspa_la_SOURCES = ladspa.c ladspa-load.c
+ladspa_la_LDFLAGS = @LRDF_LIBS@
+ladspa_la_INCLUDES = @LRDF_CFLAGS@
 
 SUFFIXES= .la.c
 %.la.c: %.c

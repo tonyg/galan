@@ -127,7 +127,8 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
   int i,j;
 
   if (!gen_read_realtime_input(g, SIG_INPUT, -1, buf, buflen))
-    return FALSE;
+  	for( i=0; i<buflen; i++ )
+		buf[i] = 0.0;
 
   for (i = 0; i < buflen; i++) {
       SAMPLE tmp = buf[i] * data->coeffs[0]; // This is normally not in canonical form 2

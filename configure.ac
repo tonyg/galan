@@ -1,7 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/main.c)
+AC_INIT(galan, 0.2.14)
+AC_CONFIG_SRCDIR([src/main.c])
 AM_INIT_AUTOMAKE(galan, 0.2.14)
-AM_CONFIG_HEADER(config.h)
+
+AM_CONFIG_HEADER( config.h )
 
 AM_MAINTAINER_MODE
 
@@ -80,4 +82,5 @@ if test x$LRDF_FOUND == "xyes"; then
   AC_SUBST(LRDF_LIBS)
 fi
 
-AC_OUTPUT(Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile sheets/Makefile galan.spec)
+AC_CONFIG_FILES([Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile sheets/Makefile galan.spec])
+AC_OUTPUT

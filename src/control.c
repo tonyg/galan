@@ -530,9 +530,23 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   if( (c->folded = objectstore_item_get_integer(item, "folded", 0)) )
       // XXX: Why is that ?
       // hmm...
-      if( (c->discreet = objectstore_item_get_integer(item, "discreet", 0)) )
         gtk_widget_hide( c->widget );
  
+  if( (c->discreet = objectstore_item_get_integer(item, "discreet", 0)) ) {
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_NONE);
+        gtk_frame_set_label (GTK_FRAME (c->title_frame) , NULL);
+        //gtk_adjustment_set_draw_value(c->widget,FALSE);
+	
+	
+	if( c->entry )
+		gtk_widget_hide( c->entry );
+
+        /* In order for this to work, you need the pixmap to bring up the menu...
+         * gtk_widget_hide( c->title_label );
+         * the following is a temp hack.
+         */
+        gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
+  }
 
   x = objectstore_item_get_integer(item, "x_coord", 0);
   y = objectstore_item_get_integer(item, "y_coord", 0);

@@ -54,6 +54,10 @@ CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"
 LIBS="$alsa_save_LIBS"
 
+AM_PATH_GTKGL(, AC_MSG_RESULT(GtkGL not found))
+
+AM_CONDITIONAL(compileGL, test x$have_gtkgl = xyes )
+
 dnl Only use -Wall if we have gcc
 if test "x$GCC" = "xyes"; then
   if test -z "`echo "$CFLAGS" | grep "\-Wall" 2> /dev/null`" ; then
@@ -62,4 +66,4 @@ if test "x$GCC" = "xyes"; then
 fi
 
 
-AC_OUTPUT(Makefile src/Makefile plugins/Makefile pixmaps/Makefile galan.spec)
+AC_OUTPUT(Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile galan.spec)

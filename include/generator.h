@@ -103,6 +103,7 @@ struct AClock {
 
 #define SIG_FLAG_REALTIME	0x00000001
 #define SIG_FLAG_RANDOMACCESS	0x00000002
+#define SIG_FLAG_OPENGL		0x00000004
 
 struct InputSignalDescriptor {
   const char *name;
@@ -119,6 +120,7 @@ struct OutputSignalDescriptor {
       gboolean (*get_samples)(Generator *generator, OutputSignalDescriptor *sig,
 			      SAMPLETIME offset, SAMPLE *buffer, int length);
     } randomaccess;
+    gboolean (*render_gl)(Generator *generator );
   } d;
 };
 
@@ -237,6 +239,8 @@ extern gboolean gen_read_randomaccess_input(Generator *g, gint index, int attach
 					    SAMPLETIME offset, SAMPLE *buffer, int buflen);
 					/* attachment -1 is meaningless here */
 					/* there's no point in mixing many RA inputs (?) */
+
+extern gboolean gen_render_gl(Generator *g, gint index, int attachment_number );
 
 extern void gen_send_events(Generator *g, gint index, int attachment_number, AEvent *e);
 					/* use attachment_number == -1 for 'all' */

@@ -54,6 +54,7 @@
 typedef struct EmuPatchCompInitData {
     GeneratorClass *gc;
     char *patchname;
+    char *genname;
     char *patchpath;
     int anzinputevents;
     char *gprnames[5];
@@ -196,7 +197,7 @@ PRIVATE void emupatchcomp_unpickle(Component *c, ObjectStoreItem *item, ObjectSt
     
   ObjectStoreItem *it;
   EmuPatchCompData *d = safe_malloc(sizeof(EmuPatchCompData));
-  g_print( "data = %d\n", d );
+  //g_print( "data = %d\n", d );
 
   d->name = safe_string_dup( objectstore_item_get_string(item, "patch_name", "what ???" ) );
   d->patchpath = safe_string_dup( objectstore_item_get_string(item, "patch_patchpath", "what ???" ) );
@@ -633,15 +634,15 @@ PRIVATE ComponentClass EmuPatchComponentClass = {
   emupatchcomp_build_popup
 };
 
-EmuPatchCompInitData id_eq = { NULL, "5band-eq", "/usr/local/share/emu10k1/5band-eq.bin", 5,
+EmuPatchCompInitData id_eq = { NULL, "5band-eq", "emu10k1-5bandeq","/usr/local/share/emu10k1/5band-eq.bin", 5,
     { "F_100Hz", "F_316Hz", "F_1000Hz", "F_3160Hz", "F_10000Hz" } };
-EmuPatchCompInitData id_flanger = { NULL, "flanger", "/usr/local/share/emu10k1/flanger.bin", 5,
+EmuPatchCompInitData id_flanger = { NULL, "flanger", "emu10k1-flanger", "/usr/local/share/emu10k1/flanger.bin", 5,
     { "speed", "delay", "width", "forward", "feedback" } };
-EmuPatchCompInitData id_chorus = { NULL, "chorus", "/usr/local/share/emu10k1/chorus.bin", 4,
+EmuPatchCompInitData id_chorus = { NULL, "chorus", "emu10k1-chorus", "/usr/local/share/emu10k1/chorus.bin", 4,
     { "speed", "delay", "width", "mix", NULL } };
-EmuPatchCompInitData id_vibro = { NULL, "vibro", "/usr/local/share/emu10k1/vibrato.bin", 2,
+EmuPatchCompInitData id_vibro = { NULL, "vibro", "emu10k1-vibro", "/usr/local/share/emu10k1/vibrato.bin", 2,
     { "delta", "depth", NULL, NULL, NULL } };
-EmuPatchCompInitData id_vol = { NULL, "vol", "/usr/local/share/emu10k1/vol.bin", 1,
+EmuPatchCompInitData id_vol = { NULL, "vol", "emu10k1-vol", "/usr/local/share/emu10k1/vol.bin", 1,
     { "Vol", NULL, NULL, NULL, NULL } };
 
 PRIVATE void register_init_data( EmuPatchCompInitData *id ) {
@@ -650,7 +651,7 @@ PRIVATE void register_init_data( EmuPatchCompInitData *id ) {
     
     g_hash_table_insert(init_datas, id->patchname, id);
     
-    id->gc = gen_new_generatorclass( id->patchname, FALSE, id->anzinputevents, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+    id->gc = gen_new_generatorclass( id->genname, FALSE, id->anzinputevents, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     for( i=0; i<id->anzinputevents; i++ )
 	gen_configure_event_input( id->gc, i, id->gprnames[i], emupatch_gen_event_handler ); 
 }

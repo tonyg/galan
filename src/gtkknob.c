@@ -338,7 +338,7 @@ static gint gtk_knob_expose(GtkWidget *widget, GdkEventExpose *event) {
     GdkPixbuf *pixbuf;
 
     dx = MIN(MAX(dx / dy, 0), 1);
-    dx = (1-dx) * (g_list_length( framelist )-0.5);
+    dx = (1-dx) * (g_list_length( framelist )-0.5) * 0.75 + 0.125 * g_list_length( framelist );
 
     pixbuf = g_list_nth_data( framelist, (int) dx);
 

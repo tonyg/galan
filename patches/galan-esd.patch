@@ -1,0 +1,223 @@
+--- galan-0.2.0/plugins/Makefile.am.sopwith	Fri Sep 17 22:05:52 1999
++++ galan-0.2.0/plugins/Makefile.am	Sat Sep 18 21:32:17 1999
+@@ -6,11 +6,15 @@
+ 
+ plugin_PROGRAMS = osc.so oss_output.so random.so rart.so voice.so ctrl.so gain.so \
+ 	clock.so vca.so delay.so patsel.so trigseq.so vcf.so sig2evt.so dcbias.so \
+-	resample.so xfade.so atan.so evtadd.so evtmul.so seqnum.so adsr.so seqnote.so
++	resample.so xfade.so atan.so evtadd.so evtmul.so seqnum.so adsr.so seqnote.so \
++	esd_output.so
+ 
+ LDFLAGS = -shared
+ LDADD = @GTK_LIBS@
+ 
++esd_output_so_INCLUDES=`esd-config --cflags`
++esd_output_so_LDFLAGS=`esd-config --libs`
++
+ osc_so_SOURCES = osc.c
+ oss_output_so_SOURCES = oss_output.c
+ random_so_SOURCES = random.c
+@@ -34,5 +38,6 @@
+ seqnum_so_SOURCES = seqnum.c
+ adsr_so_SOURCES = adsr.c
+ seqnote_so_SOURCES = seqnote.c
++esd_output_so_SOURCES = esd_output.c
+ 
+ INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\"
+--- galan-0.2.0/plugins/esd_output.c.sopwith	Sat Sep 18 21:30:19 1999
++++ galan-0.2.0/plugins/esd_output.c	Sat Sep 18 21:37:56 1999
+@@ -0,0 +1,194 @@
++/* gAlan - Graphical Audio Language
++ * Copyright (C) 1999 Tony Garnock-Jones
++ * Copyright (C) 1999 Elliot Lee
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++/* esd_output.c - gAlan filter to output to the Enlightened (NOT!) sound daemon */
++
++#include <stdlib.h>
++#include <string.h>
++#include <stdio.h>
++
++#include <sys/types.h>
++#include <sys/ioctl.h>
++#include <fcntl.h>
++#include <unistd.h>
++
++#include <esd.h>
++
++#include <gtk/gtk.h>
++
++#include "global.h"
++#include "generator.h"
++#include "comp.h"
++#include "control.h"
++#include "gencomp.h"
++#include "msgbox.h"
++
++#define SIG_LEFT_CHANNEL	0
++#define SIG_RIGHT_CHANNEL	1
++
++#define AUDIO_FRAGMENT_EXPONENT		12
++#define AUDIO_FRAGMENT_LENGTH		(1<<AUDIO_FRAGMENT_EXPONENT)
++
++typedef signed short OUTPUTSAMPLE;
++
++typedef struct OSSData {
++  int audiofd;
++  gint input_tag;
++  AClock *clock;
++} OSSData;
++
++PRIVATE int instance_count = 0;
++
++PRIVATE void audio_play_fragment(int audiofd, SAMPLE *left, SAMPLE *right, int length) {
++  OUTPUTSAMPLE *outbuf;
++  int buflen = length * sizeof(OUTPUTSAMPLE) * 2;
++  int i;
++
++  if (length <= 0)
++    return;
++
++  outbuf = malloc(buflen);
++  g_return_if_fail(outbuf != NULL);
++
++  for (i = 0; i < length; i++) {
++    outbuf[i<<1]	= (OUTPUTSAMPLE) MIN(MAX(left[i] * 32767, -32768), 32767);
++    outbuf[(i<<1) + 1]	= (OUTPUTSAMPLE) MIN(MAX(right[i] * 32767, -32768), 32767);
++  }
++
++  write(audiofd, outbuf, buflen);
++  free(outbuf);
++}
++
++PRIVATE int open_audiofd(void) {
++  return esd_play_stream_fallback(ESD_BITS16|ESD_STEREO, 44100, NULL, "esd_output");
++}
++
++PRIVATE void clock_handler(AClock *clock, AClockReason reason) {
++  OSSData *data = clock->gen->data;
++
++  switch (reason) {
++    case CLOCK_DISABLE:
++      gdk_input_remove(data->input_tag);
++      data->input_tag = -1;
++      break;
++
++    case CLOCK_ENABLE:
++      if (data->input_tag == -1)
++	data->input_tag = gdk_input_add(data->audiofd, GDK_INPUT_WRITE,
++					(GdkInputFunction) gen_clock_mainloop, NULL);
++      break;
++
++    default:
++      g_message("Unreachable code reached (esd_output)... reason = %d", reason);
++      break;
++  }
++}
++
++PRIVATE void realtime_handler(Generator *g, AEvent *event) {
++  OSSData *data = g->data;
++
++  switch (event->kind) {
++    case AE_REALTIME: {
++      SAMPLE *l_buf, *r_buf;
++
++      l_buf = calloc(event->d.integer, sizeof(SAMPLE));
++      r_buf = calloc(event->d.integer, sizeof(SAMPLE));
++
++      gen_read_realtime_input(g, SIG_LEFT_CHANNEL, -1, l_buf, event->d.integer);
++      gen_read_realtime_input(g, SIG_RIGHT_CHANNEL, -1, r_buf, event->d.integer);
++
++      audio_play_fragment(data->audiofd, l_buf, r_buf, event->d.integer);
++      free(l_buf);
++      free(r_buf);
++
++      break;
++    }
++
++    default:
++      g_warning("esd_output module doesn't care for events of kind %d.", event->kind);
++      break;
++  }
++}
++
++PRIVATE int init_instance(Generator *g) {
++  OSSData *data;
++
++  instance_count++;
++  if (instance_count > 1)
++    /* Not allowed more than one of these things. */
++    return 0;
++
++  data = malloc(sizeof(OSSData));
++  g_return_val_if_fail(data != NULL, 0);
++
++  data->audiofd = open_audiofd();
++
++  if (data->audiofd < 0) {
++    free(data);
++    popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK, "Could not open audio subsystem.");
++    return 0;
++  }
++
++  data->input_tag = -1;
++  data->clock = gen_register_clock(g, "ESD Output Clock", clock_handler);
++
++  g->data = data;
++
++  gen_register_realtime_fn(g, realtime_handler);
++  gen_select_clock(data->clock);	/* a not unreasonable assumption? */
++
++  return 1;
++}
++
++PRIVATE void destroy_instance(Generator *g) {
++  OSSData *data = g->data;
++
++  gen_deregister_realtime_fn(g, realtime_handler);
++
++  if (data != NULL) {
++    gen_deregister_clock(data->clock);
++    if (data->input_tag != -1)
++      gdk_input_remove(data->input_tag);
++    close(data->audiofd);
++
++    free(data);
++  }
++
++  instance_count--;
++}
++
++PRIVATE InputSignalDescriptor input_sigs[] = {
++  { "Left Channel", SIG_FLAG_REALTIME },
++  { "Right Channel", SIG_FLAG_REALTIME },
++  { NULL, }
++};
++
++PRIVATE void setup_class(void) {
++  GeneratorClass *k = gen_new_generatorclass("audio_out", 0, 0,
++					     input_sigs, NULL, NULL,
++					     init_instance, destroy_instance,
++					     (AGenerator_pickle_t) init_instance, NULL);
++
++  gencomp_register_generatorclass(k, "Outputs/ESound Output",
++				  PIXMAPDIRIFY("oss_output.xpm"),
++				  NULL);
++}
++
++PUBLIC void init_plugin_esd_output(void) {
++  setup_class();
++}

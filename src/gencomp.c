@@ -413,7 +413,8 @@ PRIVATE void rename_handler(MsgBoxResponse action_taken, Component *c) {
 
     sheet_queue_redraw_component(c->sheet, c);	/* to 'erase' the old size */
     gencomp_resize(c);
-    sheet_queue_redraw_component(c->sheet, c);	/* to 'fill in' the new size */
+    gtk_widget_queue_draw(c->sheet->drawingwidget);
+    //sheet_queue_redraw_component(c->sheet, c);	/* to 'fill in' the new size */
   }
 }
 
@@ -464,6 +465,15 @@ PRIVATE void new_control_callback(Component *c, guint control_index, GtkWidget *
   control_new_control(&d->g->klass->controls[control_index], d->g);
 }
 
+PRIVATE void all_controls_callback(Component *c, guint control_index, GtkWidget *menuitem) {
+
+  int i;
+  GenCompData *d = c->data;
+
+  for (i = 0; i < d->g->klass->numcontrols; i++)
+      control_new_control(&d->g->klass->controls[i], d->g);
+}
+
 #define NEW_CONTROL_PREFIX "/New Control/"
 
 PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
@@ -476,6 +486,11 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
   ifact = gtk_item_factory_new(GTK_TYPE_MENU, "<gencomp-popup>", NULL);
   gtk_item_factory_create_items(ifact, nitems, popup_items, c);
 
+  if(d->g->klass->numcontrols > 5) {
+      GtkItemFactoryEntry ent = { NEW_CONTROL_PREFIX "ALL", NULL, all_controls_callback, 0, NULL };
+      gtk_item_factory_create_item(ifact, &ent, c, 1);
+  }
+
   for (i = 0; i < d->g->klass->numcontrols; i++) {
     GtkItemFactoryEntry ent = { NULL, NULL, new_control_callback, i, NULL };
     char *name = malloc(strlen(NEW_CONTROL_PREFIX) + strlen(d->g->klass->controls[i].name) + 1);
@@ -487,6 +502,7 @@ PRIVATE GtkWidget *gencomp_build_popup(Component *c) {
     gtk_item_factory_create_item(ifact, &ent, c, 1);
     free(name);
   }
+
 
   result = gtk_item_factory_get_widget(ifact, "<gencomp-popup>");
 

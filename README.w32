@@ -1,0 +1,271 @@
+README for compiling and installing gAlan on Win32 (Win9X and WinNT systems)
+============================================================================
+Tony Garnock-Jones, 3 September 1999
+
+IMPORTANT NOTE: The Win32 port is based on the development versions of
+glib, gdk and gtk+. This means that it must be considered
+UNSTABLE. Any stability you observe is sure to be an exception rather
+than the rule :-) If this bothers you, I'm sure anything you can
+contribute to the job of porting GTK+ to Win32 will be appreciated -
+the mailing-list details are on Tor Lillqvist's GTK+/Win32 page, URLs
+given below.
+
+The file TODO.w32 contains some notes on current problems with the Win32
+build.
+
+Section 1. Ingredients
+Section 2. Method
+Section 3. What needs changing in libaudiofile
+
+============================================================================
+SECTION 1. INGREDIENTS
+
+You will need:
+* a recent egcs/gcc for mingw32 - no earlier than egcs 1.1.2
+* the port of GNU make to Win32 - 3.77 works nicely
+* recent glib-dev and gtk+-dev packages - no earlier than 19990726
+* a recent extralibs-dev package - no earlier than 19990726, I assume
+* Michael Pruett's audiofile - version 0.1.7 works fine
+
+I have had success with gcc 2.95 (mingw32) from Mumit Khan (thanks for
+a wonderful tool, Mumit!), GNU make 3.77 ported to Win32 by JanJaap
+van der Heijden, and Tor Lillqvist's pioneering effort to port GTK+ to
+Win32.
+
+The files I downloaded from Tor's page were:
+- glib-dev-19990726.zip
+- gtk+-dev-19990726.zip
+- extralibs-dev-19990828.zip, although I daresay 19990726 would have worked,
+  too.
+
+Mumit Khan's gcc is available by following links from his gcc/egcs webpage at
+
+	http://www.xraylith.wisc.edu/~khan/software/gnu-win32/index.html
+
+I believe there is also a link from there to a copy of GNU make for
+Win32. I got mine elsewhere, and can't remember where that elsewhere
+was :-(
+
+Tor Lillqvist's port of GTK+ to Win32 is available from these URLs
+(the bottom two are mirrors of the top one):
+
+	http://www.iki.fi/tml/gimp/win32/	(Finland)
+	http://user.sgic.fi/~tml/gimp/win32/	(Finland)
+	http://www.gimp.org/~tml/gimp/win32/	(USA)
+
+You can find Michael Pruett's audiofile library from this site:
+
+	http://www.68k.org/~michael/audiofile
+
+Note that I used version 0.1.7 - newer versions may well work, but
+you might find yourself needing to edit the files Makefile.libaudiofile
+and config.h.libaudiofile in this distribution to match any changes
+made in newer versions of audiofile.
+
+============================================================================
+SECTION 2. METHOD
+
+0. I'm going to use the following directories (and the Makefile.w32 as
+shipped is set to use them too):
+
+c:\gcc				for mingw32 gcc
+c:\devel\galan-X.Y.Z		for the gAlan distribution
+c:\devel\gtk			to unpack glib/gtk+ into
+c:\devel\gtk\src\...		where glib/gtk+ end up
+c:\devel\audiofile-0.1.7	for the audiofile distribution
+
+Once you've got a binary, you'll need some of the .DLLs from glib/gtk+
+and the .DLL for libaudiofile to actually run gAlan, and you will need
+to copy them into the install directory by hand. (Note that the
+Makefile tries to do the right thing, but if it doesn't match your
+setup, it will break and you will have to copy the DLLs by hand.) The
+DLLs you will need:
+
+	gdk-1.3.dll		gmodule-1.3.dll
+	glib-1.3.dll		gthread-1.3.dll
+	gtk-1.3.dll		gnu-intl.dll
+	libaudiofile.dll
+
+If you have already installed an earlier version of gAlan, I recommend
+deleting it (and probably its preferences file) before installing the
+newer version.
+
+1. Install gcc as per INSTALL.TXT. The steps I took were:
+	a. > mkdir c:\gcc
+	b. > cd c:\gcc
+	c. > unzip gcc-2.95-mingw32.zip
+	d. Added the following two lines to my autoexec.bat:
+
+		SET GCC_EXEC_PREFIX=c:\gcc\lib\gcc-lib\
+		PATH=C:\GCC\BIN;%PATH%
+
+	   Note the lowercase for GCC_EXEC_PREFIX! It seems to be important.
+	e. Rebooted (sigh)
+
+2. You might like to test gcc with a small C program, such as 'hello
+world'.  Once you're satisfied that gcc works ok, you need to install
+glib/gtk+ and audiofile.  I chose to install to my development
+directory, c:\devel, but you could choose anywhere else.
+
+	> cd c:\devel
+	> mkdir gtk
+	> cd gtk
+	> unzip glib-dev-19990726.zip
+	> unzip gtk+-dev-19990726.zip
+	> unzip extralibs-dev-19990828.zip
+
+Note that these zip files put all their contents in a directory called
+'src'.
+
+For libaudiofile, I chose to untar the distribution into c:\devel as
+well - this created a directory c:\devel\audiofile-0.1.7 for me, with
+the subdirectory 'libaudiofile' containing the sources to the library
+itself.
+
+3. Now we get to the interesting bit. Unpack the contents of your
+gAlan source-code tarball into c:\devel. You will get a directory
+called galan-X.Y.Z (with the version number filled in
+appropriately). Once this is done, we configure gAlan.
+
+(NOTE: if you're using WinZip to decompress the tar/gz file, make sure
+that "TAR File Smart CR/LF Conversion" is switched *OFF* in the
+Options/Configuration dialog box. Otherwise, the example files
+included will not decompress properly.)
+
+	> make -f makefile.w32 setup
+	Edit config.h appropriately
+	Edit Makefile.w32 appropriately
+
+There is probably very little that needs to be done to
+config.h. Makefile.w32, on the other hand, may require extensive
+alteration:
+
+* set DEST_DIR to the directory you want the binary and support files
+to be installed into. You'll have to backslashify the directory
+separators, as in
+
+	DEST_DIR = C:\\PROGRA~1\\gAlan
+
+Don't use forward-slashes to separate directory components here - this
+variable is used by the install target to copy files, and the plain
+old DOS 'copy' command doesn't understand forward-slash as a directory
+separator.
+
+(Note that as distributed, gAlan does not put any files in C:\WINDOWS
+or C:\WINDOWS\SYSTEM - it tries to keep itself to itself by only
+installing into DEST_DIR.)
+
+* set DEST_DIR_C to an extra-escaped version of DEST_DIR. You can
+either quadruple-escape backslashes, like this
+
+	DEST_DIR_C = \"C:\\\\PROGRA~1\\\\gAlan\"
+
+or use forward-slashes here, since the only place this variable is
+used is as a #define for the C code:
+
+	DEST_DIR_C = \"C:/PROGRA~1/gAlan\"
+
+You need to put \"...\" around the contents of DEST_DIR_C, though -
+this is to make it appear as a string to the C code.
+
+* set GTK_BASE_DIR to the directory you unpacked the
+"*-dev-1999????.zip" files into. If you didn't follow the instructions
+above (fair enough), you will need to alter the definitions of
+INCLUDES and LIBDIRS too.
+
+* set LIBAUDIOFILE_DIR to the directory containing the *source files*
+for the audiofile library. On my system, that's
+c:\devel\audiofile-0.1.7\libaudiofile.
+
+* check to make sure that the versions of glib, gmodule, gdk and gtk+
+are correctly accounted for in the LIBS definition.
+
+4. Configuration done - try a compile!
+
+	> cd c:\devel\galan-X.Y.Z
+	> make -f makefile.w32
+
+If compiling libaudiofile fails, you'll probably have to edit the
+files Makefile.libaudiofile and config.h.libaudiofile included in the
+gAlan distribution to kludge it together.
+
+Note that as of version 0.1.7, libaudiofile has a slight limitation
+that stops it working for writing audio files on Win32 (although
+reading works fine). You'll have to edit one of the files from
+audiofile-0.1.7 - see section 3 at the bottom of this file for
+details.
+
+You might get an error about "Out of environment space". In this case,
+try changing the allocated environment space to something like
+4096. You can find the environment setting in the properties tab of
+the command prompt, under 'Memory'.
+
+You might also get cpp.exe complaining that it has too many
+command-line options. This is (probably?) caused by too long a
+command-line... you might have to put some of the EXTRA_DEFS into
+config.h, and maybe consolidate some of the include directories
+etc. in order to shorten it.
+
+You can ignore warnings from dllwrap saying:
+	Warning: no export definition file provided
+	dllwrap will create one, but may not be what you want
+
+- in this case, it *is* what we want.
+
+Other than that, if it doesn't work, fix it :-) and try again. It's
+changing too rapidly for me to even attempt working through 'common'
+problems here yet.
+
+5. Once it compiles, you can install it.
+
+	> make -f makefile.w32 install
+
+or, if you don't want debug information (more than quadruples the
+.exe/.dll file size, usually),
+
+	> make -f makefile.w32 install-strip
+
+You will now need to hunt through your unpacked glib/gtk+ directories
+for the .DLL files mentioned above, in step 0. (Note that
+libaudiofile.dll should be sitting in the directory named in the
+makefile as $(LIBAUDIOFILE_DIR).) Copy them into the same directory
+that galan.exe ends up in after the install. If you unpacked all the
+glib/gtk+ archives into a single directory, and that directory is
+named by GTK_BASE_DIR, then you can use
+
+	> make -f makefile.w32 install-dll
+
+or
+
+	> make -f makefile.w32 install-dll-strip
+
+to install the program and DLLs together. (This does the right thing
+with regard to both glib/gtk+ and libaudiofile.) Otherwise use the
+'install' target as above, and copy the DLLs by hand.
+
+============================================================================
+SECTION 3. WHAT NEEDS CHANGING IN LIBAUDIOFILE
+
+Libaudiofile 0.1.7, as shipped, needs changing to work with
+Win32. Newer versions may have addressed the problem.
+
+libaudiofile/audiofile.c, function afOpenFile: there is a piece of
+code that looks like this:
+
+	if (!strcmp(mode, "w"))
+		return _afOpenFileWrite(filename, mode, setup);
+
+It needs changing to read
+
+	if (strchr(mode, 'w'))
+		return _afOpenFileWrite(filename, mode, setup);
+
+This is because clients on Win32 need to specify "wb" as the write
+mode (and "rb" as the read mode), because Microsoft in their infinite
+wisdom continue to leave the default fopen() mode set to *TEXT* unless
+you specify binary with the extra "b" flag. This is braindead
+behaviour, which makes life difficult when moving code back and forth
+between Win32 and other, less idiosyncratic systems.
+
+I've emailed Michael Pruett with details of this - with any luck,
+libaudiofile will fix this problem in a later release.

@@ -1,0 +1,15 @@
+Things to fix for the Win32 port of gAlan
+==========================================
+
+- gtk_item_factory_get_item() doesn't seem to appear in the libraries. Why not?
+  (I've #ifdef'd-out on NATIVE_WIN32 all use of this function.)
+
+- third (middle, or chord) button doesn't work. Why not? Rearrange buttons
+  so 3rd button is not necessary. (shouldn't cause any major usability issues)
+
+- why does gdk_draw_arc need 72000 on Win32 and 36000 on Linux?
+
+- the audio output on Win32 is *TERRIBLE*. It works for simple meshes, but for
+  anything interesting you get clicks and scratches galore. I need to find
+  a better way of doing Windows audio output... this one bites. Rest assured,
+  the Linux version is *much* better (ie. good).

@@ -1,0 +1,140 @@
+===========================================================================
+Release protocol
+===========================================================================
+
+1. Clean out existing binaries: make maintainer-clean
+2. Test the distribution for yourself: ./configure, make, galan
+   (testing it on Win32 might not be a bad idea, either)
+   (you should also test the tutorial example and any other saved
+   files you can lay your hands on)
+3. Until satisfied, make changes and return to 1. :-)
+4. Update the version number:
+	a. change line 3 of configure.in
+	b. change the #define VERSION in config.h.w32
+	c. change the version entry in galan.spec
+	d. change the SSI directives in the webpages
+5. Get automake to test the distribution: make distcheck
+6. If this fails, fix it and go back to 1 or 5.
+7. Inspect the distribution closely
+	- are any new files missing?
+	- is everything clearly copyrighted and GPLed?
+8. Check the lot into CVS and update tags
+9. Upload the tarball.
+10. Update the webpage.
+
+11. ...optionally :-), prepare RPMs and Win32 binaries.
+
+===========================================================================
+Important things to do (not in any particular order)
+===========================================================================
+
+Infrastructure-related:
+----------------------------------------
+
+* test the latency preference on Win32 - for that matter, reinstall Windows
+  so that builds proceed correctly ;-(
+
+* add BPM control to clock? (Is BPM even a sensible idea? I suppose
+  so, but...)
+
+* make controls appear in a spot not already occupied...
+	* use the algorithm from smart-placement.jl in sawmill
+
+* implement a "sample library" directory and make paths relative to that
+
+* implement tabs in the control-panel and allow controls to be sent to
+  each tab separately.
+
+* save, load
+	* make loading more robust across incompatible changes
+	* make sure can save/load...
+		* samples independently
+		* patterns independently
+	* save/load performances...
+
+* fix up that fucking problem with dragging controls around the control panel
+
+* variable output sample-rate/bit-depth/number-of-channels etc. to cope
+  with slower machines
+
+* make sure you can drive the program entirely from the keyboard!
+	* shortcuts for 'important' things?
+	* menu-popup-keys for the less-common things?
+
+* clean up sheet.c etc, and allow multiple sheets (subroutines)
+* make sure off-line processing works nicely
+* rename some of the plugins more sensibly
+
+* implement alsa_output once ALSA works on my soundcard
+
+* implement those glue-diamonds so you can 'bend links round corners'
+	- not as urgent given subroutines?
+
+* muting of individual components? individual links?
+
+Documentation
+----------------------------------------
+* glossary of synthesis terms
+
+Sound-related:
+----------------------------------------
+
+* implement some cool generators/components
+	to do:
+	* A proper LFO!
+	* 5-voice (n-voice?) trigger sequencer?
+	* 5-voice (n-voice?) sample player? ('drum kit')
+	* 'loop' generator (RTRA? ...needs more thought)
+	* compressor/expander/gate/limiter
+	* phaser
+	* EQ-3, EQ-5... EQ like in xmms
+	* FM synth with, say, 5 modulators + vibrato
+	* Bell, Gaussian envelopes
+	* CD input source
+
+	done:
+	* RAW/WAV-file output device
+	* envelope generator
+	* (note/level) pattern memory/sequencer
+	* (trigger) pattern memory/sequencer
+	* (VCF) filter component a la 303
+	* pattern selector
+	* sample player (monophonic)
+	* add pitch control to sample player
+	* knob component
+	* slider component
+	* gain component
+	* VCA-style envelope-controlled gain component
+	* multitap delay a la Freebirth
+	* sample-reverser
+	* /dev/dsp sample source
+
+	maybe later:
+	* sample player (polyphonic)
+	* midi???
+	* network-messages --> distributed gAlan?
+
+===========================================================================
+Less important things to do
+===========================================================================
+
+* libtoolize the whole thing. I tried this once and couldn't get it to work
+  right. What's more, I couldn't find any help on the web at all. GIMP does
+  things very differently. What other software uses plugins like I am?
+
+* use more of glib and less adhockery.
+
+* implement 'entry' controls?
+* allow individual controls to have their own entries in their popup menus
+* change the text-entry part of controls to a spinbutton
+* test on a slower machine (this is probably quite important, really)
+	- works relatively nicely on a P75 running Win95... relatively
+
+* add some graphical indication (other than icons) to the user of what
+  generator-class a component is a wrapper for an instance of - it can
+  get bloody confusing
+
+* pretty icons etc. (general prettification of UI)
+
+* make gtkknob and gtkslider share code properly. There's a hell of a lot in
+  common between the two.

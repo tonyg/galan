@@ -48,7 +48,7 @@ AM_PATH_GTK(1.2.0, ,
 
 AM_PATH_GDK_PIXBUF()
 
-AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.so", AC_MSG_RESULT(Alsa not found))
+AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.so alsa_midi.so", AC_MSG_RESULT(Alsa not found))
 
 CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"

@@ -685,9 +685,9 @@ PRIVATE void add_gsheet(char *plugin, char *leafname) {
   comp_add_newmenu_item( menuname, &FileSheetComponentClass, id );
 }
 
-PRIVATE void load_all_gsheets(char *dir);	/* forward decl */
+PRIVATE void load_all_gsheets(char *dir, char *menupos );	/* forward decl */
 
-PRIVATE int check_gsheet_validity(char *name) {
+PRIVATE int check_gsheet_validity(char *name, char *menupos, char *dirname ) {
   struct stat sb;
 
   if( strlen(name) < 8 || strcmp(name+(strlen(name)-7), ".gsheet" ) )
@@ -696,14 +696,18 @@ PRIVATE int check_gsheet_validity(char *name) {
   if (stat(name, &sb) == -1)
     return 0;
 
-  if (S_ISDIR(sb.st_mode))
-    load_all_gsheets(name);
+  if (S_ISDIR(sb.st_mode)) {
+      // XXX: how do i get this name nicely ?
+      char *newmenupos = g_strdup_printf( "%s/%s", menupos, dirname );
+      load_all_gsheets(name, newmenupos );
+      free( newmenupos );
+  }
 
   return S_ISREG(sb.st_mode);
 }
 
 
-PRIVATE void load_all_gsheets(char *dir) {
+PRIVATE void load_all_gsheets(char *dir, char *menupos) {
   DIR *d = opendir(dir);
   struct dirent *de;
 
@@ -718,14 +722,15 @@ PRIVATE void load_all_gsheets(char *dir) {
       /* Don't load 'hidden' files or directories */
       continue;
 
-    fullname = safe_malloc(strlen(dir) + strlen(de->d_name) + 2);	/* "/" and the NUL byte */
+    //fullname = safe_malloc(strlen(dir) + strlen(de->d_name) + 2);	/* "/" and the NUL byte */
+    fullname = g_strdup_printf( "%s%s%s", dir, G_DIR_SEPARATOR_S, de->d_name ); 
 
-    strcpy(fullname, dir);
-    strcat(fullname, G_DIR_SEPARATOR_S);
-    strcat(fullname, de->d_name);
+    //strcpy(fullname, dir);
+    //strcat(fullname, G_DIR_SEPARATOR_S);
+    //strcat(fullname, de->d_name);
 
-    if (check_gsheet_validity(fullname))
-      add_gsheet(fullname, de->d_name);
+    if (check_gsheet_validity(fullname, menupos, de->d_name))
+      add_gsheet(fullname, menupos);
 
     free(fullname);
   }

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/main.c)
 AC_CONFIG_SRCDIR([src/main.c])
-AM_INIT_AUTOMAKE(galan, 0.3.0-test2)
+AM_INIT_AUTOMAKE(galan, 0.3.0-test3)
 
 AM_CONFIG_HEADER( config.h )
 
@@ -64,6 +64,7 @@ LDFLAGS="$alsa_save_LDFLAGS"
 LIBS="$alsa_save_LIBS"
 
 dnl AM_PATH_GTKGL(, AC_MSG_RESULT(GtkGL not found))
+PKG_CHECK_MODULES( GTKGL, gtkgl-2.0 >= 1.99.0, have_gtkgl=yes, AC_MSG_RESULT(gtkgl not found) )
 
 AM_CONDITIONAL(compileGL, test x$have_gtkgl = xyes )
 

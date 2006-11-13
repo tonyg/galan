@@ -375,7 +375,9 @@ PRIVATE void destroy_instance(Generator *g) {
 
 	if( jack_instance_count == 1 ) {
 	    gen_deregister_clock(jack_clock);
+	    jack_clock = NULL;
 	    jack_client_close( jack_client );
+	    jack_client = NULL;
 	}
 
 	free(data);
@@ -398,7 +400,9 @@ PRIVATE void playport_destroy_instance(Generator *g) {
 	jack_port_unregister( jack_client, data->port );
 	if( jack_instance_count == 1 ) {
 	    gen_deregister_clock(jack_clock);
+	    jack_clock = NULL;
 	    jack_client_close( jack_client );
+	    jack_client = NULL;
 	}
 
 	free(data);
@@ -415,7 +419,9 @@ PRIVATE void recport_destroy_instance(Generator *g) {
     jack_port_unregister( jack_client, data->port );
     if( jack_instance_count == 1 ) {
 	gen_deregister_clock(jack_clock);
+	jack_clock = NULL;
 	jack_client_close( jack_client );
+	jack_client = NULL;
     }
 
     free(data);
@@ -670,7 +676,9 @@ PRIVATE void midiinport_destroy_instance(Generator *g) {
     jack_port_unregister( jack_client, data->port );
     if( jack_instance_count == 1 ) {
 	gen_deregister_clock(jack_clock);
+	jack_clock = NULL;
 	jack_client_close( jack_client );
+	jack_client = NULL;
     }
 
     free(data);

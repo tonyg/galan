@@ -35,9 +35,10 @@ gAlan tries to autodetect various libraries and builds plugins for these:
 - jack
 - alsa
 - libsndfile
-- gtkglarea (not working in 0.3)
+- gtkglarea (seems to be working in 0.3)
 - libvorbis
 - liblrdf
+- fst (windows vst plugins)
 
 if you have an SB Live you can try ./configure --enable-emu10k1
 which should build the emu components.

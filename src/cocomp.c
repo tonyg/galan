@@ -109,6 +109,8 @@ PRIVATE Component *cocomp_clone( Component *c, Sheet *sheet ) {
     free( dstdata->name );
     dstdata->name = safe_string_dup( data->name );
     cocomp_resize( clone );
+
+    return clone;
 }
 
 PRIVATE void cocomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *db) {

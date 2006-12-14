@@ -37,7 +37,7 @@
 #define GAUGE_SIZE 32
 #define GRANULARITY 1
 
-PRIVATE GtkWidget *control_panel = NULL;
+PUBLIC GtkWidget *control_panel = NULL;
 PRIVATE ControlPanel *global_panel = NULL;
 PRIVATE GtkWidget *control_notebook = NULL;
 PRIVATE GList *control_panels = NULL;
@@ -130,6 +130,9 @@ PUBLIC void control_moveto(Control *c, int x, int y) {
 
     gtk_layout_move(GTK_LAYOUT(panel->fixedwidget),
 		c->whole, x, y);
+
+    if( c->move_callback )
+	c->move_callback( c );
 
     c->x = x;
     c->y = y;
@@ -524,6 +527,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   c->g = g;
   c->data = NULL;
 
+  c->move_callback = NULL;
 
   switch (desc->kind) {
     case CONTROL_KIND_SLIDER:
@@ -628,6 +632,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
     gtk_signal_connect_after(GTK_OBJECT(c->whole), "map", GTK_SIGNAL_FUNC(control_map_handler), c);
 
     g_object_ref( G_OBJECT(c->whole) );
+    g_object_set_data( G_OBJECT(c->whole), "Control", c );
     gtk_container_add(GTK_CONTAINER(c->whole), c->title_frame );
     gtk_widget_show( c->whole );
 
@@ -682,7 +687,6 @@ PUBLIC void control_kill_control(Control *c) {
     gen_deregister_control(c->g, c);
   //gdk_threads_leave();
   //
-
 
   safe_free(c);
 }
@@ -982,6 +986,15 @@ PRIVATE gboolean sizerbox_handler(GtkWidget *eventbox, GdkEvent *event, ControlP
     }
 }
 
+PRIVATE void control_invoke_move_callback( GtkWidget *control_widget, gpointer user_data ) {
+    Control *c = g_object_get_data( G_OBJECT(control_widget), "Control" );
+    if( c && c->move_callback )
+	c->move_callback( c );
+}
+
+PRIVATE void control_panel_scroll_handler( GtkAdjustment *adjustment, ControlPanel *cp ) {
+    gtk_container_foreach( GTK_CONTAINER(cp->fixedwidget), control_invoke_move_callback, NULL );
+}
 
 PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *sheet ) {
 
@@ -990,6 +1003,7 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
     panel->name = safe_string_dup(name);
 
     panel->fixedwidget = gtk_layout_new(NULL,NULL);
+
 
     panel->w = 0;
     panel->h = 0;
@@ -1009,6 +1023,11 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
     else
 	panel->visible = FALSE;
 
+    g_signal_connect_after( gtk_layout_get_hadjustment( GTK_LAYOUT( panel->fixedwidget ) ),
+	    "value-changed", (GCallback) control_panel_scroll_handler, panel );
+    g_signal_connect_after( gtk_layout_get_vadjustment( GTK_LAYOUT( panel->fixedwidget ) ),
+	    "value-changed", (GCallback) control_panel_scroll_handler, panel );
+	    
     panel->sheet = sheet;
 
     gtk_widget_show(panel->fixedwidget);
@@ -1058,7 +1077,7 @@ PUBLIC ControlPanel *control_panel_unpickle(ObjectStoreItem *item) {
 		cp->current_bg = safe_string_dup( cp->current_bg );
 	    } else {
 		char *bg_basename = g_path_get_basename( cp->current_bg );
-		char *bg_in_pixmap_dir = g_build_filename( pixmap_path, bg_basename );
+		char *bg_in_pixmap_dir = g_build_filename( pixmap_path, bg_basename, NULL );
 
 		if( g_file_test( bg_in_pixmap_dir, G_FILE_TEST_EXISTS ) ) {
 		    cp->current_bg = bg_in_pixmap_dir;
@@ -1108,16 +1127,18 @@ PRIVATE gpointer update_processor( gpointer data ) {
     return NULL;
 }
 
-PUBLIC void init_control(void) {
-
+PUBLIC void init_control_thread(void) {
   GError *err;
+  update_thread = g_thread_create( update_processor, NULL, TRUE, &err );
+}
+
+PUBLIC void init_control(void) {
 
   pixmap_path = getenv("GALAN_PIXMAP_PATH");
   if( ! pixmap_path )
       pixmap_path = SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "pixmaps";
 
   update_queue = g_async_queue_new();
-  update_thread = g_thread_create( update_processor, NULL, TRUE, &err );
   
   control_panel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(control_panel), "gAlan Control Panel");

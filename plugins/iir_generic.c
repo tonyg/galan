@@ -156,10 +156,10 @@ PRIVATE void evt_coeffs_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
   int i,len;
 
-  RETURN_UNLESS( event->kind == AE_NUMARRAY );
-  RETURN_UNLESS( (event->d.array.len & 1) == 0 );
+  RETURN_UNLESS( event->kind == AE_DBLARRAY );
+  RETURN_UNLESS( (event->d.darray.len & 1) == 0 );
 
-  len = event->d.array.len / 2;
+  len = event->d.darray.len / 2;
 
   if( len != data->len ) {
       if( data->len > 1 )
@@ -177,9 +177,9 @@ PRIVATE void evt_coeffs_handler(Generator *g, AEvent *event) {
 	  data->state[i] = 0;
   }
   for( i=0; i<data->len; i++ )
-      data->coeffs[i] = event->d.array.numbers[i];
+      data->coeffs[i] = event->d.darray.numbers[i];
   for( i=0; i<data->len; i++ )
-      data->zcoeffs[i] = event->d.array.numbers[i+data->len];
+      data->zcoeffs[i] = event->d.darray.numbers[i+data->len];
 }
 
 PRIVATE void evt_reset_handler(Generator *g, AEvent *event) {

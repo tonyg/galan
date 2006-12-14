@@ -42,6 +42,7 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <gmodule.h>
+#include <glib.h>
 
 #include "global.h"
 #include "generator.h"
@@ -107,7 +108,7 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 		int bufbytes    = event->d.integer * sizeof(SAMPLE);
 		int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->xsize);
 
-		buf    = safe_malloc(bufbytes);
+		buf    = g_alloca(bufbytes);
 
 		if (!gen_read_realtime_input(g, 0, -1, buf, event->d.integer))
 		    memset(buf, 0, bufbytes);
@@ -135,7 +136,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 		    data->phase = 0;
 		    data->go = FALSE;
 		}
-		free(buf);
 	    }
 
 	    break;
@@ -198,7 +198,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
   binarylength = objectstore_item_get_binary(item, "sample_data", (void **) &samplebuf);
   if( binarylength > 0 )
-      for( i=0; i<data->xsize; i++ ) {
+      for( i=0; i<data->xsize * SAMPLE_RATE; i++ ) {
 	  data->samplebuf[i] = samplebuf[i];
 	  data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
       }
@@ -346,8 +346,10 @@ PRIVATE void done_scope(Control *control) {
 PRIVATE void refresh_scope(Control *control) {
     Data *data = control->g->data;
     int intbufbytes = sizeof(gint8)*(SAMPLE_RATE*data->xsize);
+
     sample_display_set_data_8( (SampleDisplay *)control->data,
 	    data->intbuf, intbufbytes, TRUE );
+
     sample_display_set_loop( (SampleDisplay *)control->data, data->loop_start, data->loop_end );
 }
 
@@ -465,7 +467,7 @@ PRIVATE void evt_receive_buffer_handler(Generator *g, AEvent *event) {
       //g_printf( "here %d\n", event->d.array.len );
   }
   
-  memcpy( data->samplebuf, event->d.array.numbers, event->d.array.len*sizeof( gdouble )  );
+  memcpy( data->samplebuf, event->d.array.numbers, event->d.array.len*sizeof( SAMPLE )  );
   for( i=0; i<event->d.array.len; i++ )
       data->intbuf[i] = CLIP_SAMPLE(event->d.array.numbers[i]) * 127;
 

@@ -43,6 +43,7 @@
 #define SIG_RIGHT		1
 
 #define EVT_RECORD		0
+#define EVT_NAME		1
 
 typedef struct Data {
   char *filename;
@@ -175,36 +176,57 @@ PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
   gtk_widget_destroy(fs);	/* %%% should this be gtk_widget_hide? uber-paranoia */
 }
 
-PRIVATE void evt_record_handler(Generator *g, AEvent *event) {
-  gboolean start = (event->d.number > 0.5);
-  Data *data = g->data;
+PRIVATE void evt_name_handler( Generator *g, AEvent *event ) {
 
-  if (start) {
-    GtkWidget *fs = gtk_file_selection_new("Select Output WAV File");
-
-    gtk_object_set_data(GTK_OBJECT(fs), "Generator", g);
-    gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
-		       GTK_SIGNAL_FUNC(access_output_file), fs);
-    gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
-			      GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
-
-    if (data->filename != NULL)
-      gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), data->filename);
-
-    gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
-    gtk_widget_show(fs);
-  } else {
-    if (data->output != NULL) {
-      sf_close(data->output);
-      data->output = NULL;
+    Data *data = g->data;
+    if( event->kind != AE_STRING ) {
+	g_warning( "not a string event when setting name !!!" );
+	return;
     }
 
-    popup_msgbox("Recording Complete", MSGBOX_OK, 0, MSGBOX_OK,
-		 "Recorded %g seconds (%d frames) of data to file\n"
-		 "%s",
-		 (float) data->frames_recorded / (SAMPLE_RATE), data->frames_recorded,
-		 data->filename ? data->filename : "<anonymous>");
-  }
+    	    if( data->filename )
+	    	g_free( data->filename );
+	    data->filename = safe_string_dup( event->d.string );
+}
+
+PRIVATE void evt_record_handler(Generator *g, AEvent *event) {
+    gboolean start = (event->d.number > 0.5);
+    Data *data = g->data;
+    FILE *f;
+
+    if (start) {
+
+	f = fopen(data->filename, "rb");
+
+	data->output = sf_open( data->filename, SFM_WRITE, &data->setup );
+	data->frames_recorded = 0;
+
+	//    GtkWidget *fs = gtk_file_selection_new("Select Output WAV File");
+
+	//    gtk_object_set_data(GTK_OBJECT(fs), "Generator", g);
+	//    gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
+	//		       GTK_SIGNAL_FUNC(access_output_file), fs);
+	//    gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
+	//			      GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
+
+	//    if (data->filename != NULL)
+	//      gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), data->filename);
+
+	//    gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
+	//    gtk_widget_show(fs);
+    } else {
+	if (data->output != NULL) {
+	    sf_close(data->output);
+	    data->output = NULL;
+	}
+    }
+
+	//   popup_msgbox("Recording Complete", MSGBOX_OK, 0, MSGBOX_OK,
+	//		 "Recorded %g seconds (%d frames) of data to file\n"
+	//		 "%s",
+	//		 (float) data->frames_recorded / (SAMPLE_RATE), data->frames_recorded,
+	//		 data->filename ? data->filename : "<anonymous>");
+	//  }
 }
 
 PRIVATE InputSignalDescriptor input_sigs[] = {
@@ -225,12 +247,13 @@ PRIVATE ControlDescriptor controls[] = {
 };
 
 PRIVATE void setup_class(void) {
-  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, TRUE, 1, 0,
+  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, TRUE, 2, 0,
 					     input_sigs, output_sigs, controls,
 					     init_instance, destroy_instance,
 					     (AGenerator_pickle_t) init_instance, NULL);
 
   gen_configure_event_input(k, EVT_RECORD, "Record", evt_record_handler);
+  gen_configure_event_input(k, EVT_NAME, "NAME", evt_name_handler);
 
   gencomp_register_generatorclass(k, TRUE, GENERATOR_CLASS_PATH, NULL, NULL);
 }

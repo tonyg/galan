@@ -23,6 +23,8 @@
 
 #include "sample-display.h"
 
+#include <string.h>
+
 #include <gtk/gtksignal.h>
 #include <gtk/gtkmain.h>
 
@@ -92,6 +94,7 @@ sample_display_set_data (SampleDisplay *s,
     g_return_if_fail(s != NULL);
     g_return_if_fail(IS_SAMPLE_DISPLAY(s));
 
+    gboolean len_changed = ( s->datalen != len );
     if(!data || !len) {
 	s->datalen = 0;
     } else {
@@ -123,15 +126,17 @@ sample_display_set_data (SampleDisplay *s,
     s->old_mixerpos = -1;
     s->mixerpos = -1;
 	
-    s->win_start = 0;
-    s->win_length = len;
-    gtk_signal_emit(GTK_OBJECT(s), sample_display_signals[SIG_WINDOW_CHANGED], s->win_start, s->win_start + s->win_length);
-	
-    s->sel_start = -1;
-    s->old_ss = s->old_se = -1;
-    s->selecting = 0;
-    
-    s->loop_start = -1;
+    if( len_changed ) {
+	s->win_start = 0;
+	s->win_length = len;
+	gtk_signal_emit(GTK_OBJECT(s), sample_display_signals[SIG_WINDOW_CHANGED], s->win_start, s->win_start + s->win_length);
+
+	s->sel_start = -1;
+	s->old_ss = s->old_se = -1;
+	s->selecting = 0;
+
+	s->loop_start = -1;
+    }
 
     gtk_widget_queue_draw(GTK_WIDGET(s));    
 }
@@ -352,8 +357,8 @@ sample_display_draw_data (GdkDrawable *win,
 	while(width >= 0) {
 	    d = ((gint16*)s->data)[OFFSET_RANGE(s->datalen, XPOS_TO_OFFSET(x))];
 	    gdk_draw_line(win, gc,
-			  x - 1, ((c + 32768) * sh) >> 16,
-			  x,     ((d + 32768) * sh) >> 16);
+			  x - 1, ((32768 - c) * sh) >> 16,
+			  x,     ((32768 - d) * sh) >> 16);
 	    c = d;
 	    x++;
 	    width--;
@@ -364,8 +369,8 @@ sample_display_draw_data (GdkDrawable *win,
 	while(width >= 0) {
 	    d = ((gint8*)s->data)[OFFSET_RANGE(s->datalen, XPOS_TO_OFFSET(x))];
 	    gdk_draw_line(win, gc,
-			  x - 1, ((c + 128) * sh) >> 8,
-			  x,     ((d + 128) * sh) >> 8);
+			  x - 1, ((128 - c) * sh) >> 8,
+			  x,     ((128 - d) * sh) >> 8);
 	    c = d;
 	    x++;
 	    width--;

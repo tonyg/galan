@@ -36,6 +36,8 @@
 #include "shcomp.h"
 #include "control.h"
 #include "prefs.h"
+#include "galan_jack.h"
+#include "galan_lash.h"
 
 //PRIVATE GStaticMutex malloc_mutex = G_STATIC_MUTEX_INIT;
 PUBLIC GThread *main_thread;
@@ -129,6 +131,8 @@ PUBLIC int galan_main(int argc, char *argv[]) {
 
   gtk_rc_parse_string( "style \"trans\" { bg_pixmap[NORMAL] = \"<parent>\" } \nwidget \"control_panel.*.GtkLayout.*\" style \"trans\" " );
 
+  init_lash( argc, argv );
+  init_jack();
   init_generator();
   init_event();
   init_clock();
@@ -142,6 +146,9 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   init_prefs();
   init_objectstore();
   init_plugins();
+  
+  init_generator_thread();
+  init_control_thread();
 
   if( argc > 1 )
       load_sheet_from_name( argv[1] );
@@ -152,20 +159,8 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   }
 
   gdk_threads_enter();
-  //{
-  //    gboolean quit = FALSE;
-  //    while( quit == FALSE ) {
-//	  while( gtk_events_pending() )
-//	      gtk_main_iteration();
-//	  gdk_threads_leave();
-//	  g_thread_yield();
-//	  gdk_threads_enter();
-	  //g_print( "hello quit=%d\n" , quit );
-//    }
-		  
-//  }
   gtk_main();
-gdk_threads_leave();
+  gdk_threads_leave();
 
   done_objectstore();
   done_prefs();
@@ -177,6 +172,8 @@ gdk_threads_leave();
   done_gui();
   done_clock();
   done_generator();
+  done_jack();
+  done_lash();
 
   return EXIT_SUCCESS;
 }

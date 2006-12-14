@@ -352,9 +352,11 @@ PUBLIC void comp_paint_connections(Component *c, GdkRectangle *area,
     while (o != NULL) {
       Connector *other = comp_get_connector(o->data);
 
-      gdk_draw_line(drawable, style->white_gc,
-		    con->x + c->x, con->y + c->y,
-		    other->x + other->ref.c->x, other->y + other->ref.c->y);
+      if( other != NULL ) {
+	  gdk_draw_line(drawable, style->white_gc,
+		  con->x + c->x, con->y + c->y,
+		  other->x + other->ref.c->x, other->y + other->ref.c->y);
+      }
 
       o = g_list_next(o);
     }

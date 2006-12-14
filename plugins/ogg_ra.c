@@ -20,10 +20,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/soundcard.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 #include <gdk/gdk.h>
@@ -58,6 +54,8 @@ typedef struct Buffer {
     SAMPLETIME timestamp;
     SAMPLETIME len;
     SAMPLE *lbuffer, *rbuffer;
+    char *new_name;
+    gboolean atend;
 } Buffer;
 
 typedef struct Data {
@@ -72,6 +70,7 @@ typedef struct Data {
   gboolean bufferfull;
   gboolean playing;
   gboolean atend;
+  gboolean thread_atend;
   gchar *curstreamname;
 
   gboolean done_thread;
@@ -88,6 +87,8 @@ PRIVATE Buffer *buffer_new( int len ) {
     retval->len = len;
     retval->lbuffer = safe_malloc( sizeof( SAMPLE ) * len );
     retval->rbuffer = safe_malloc( sizeof( SAMPLE ) * len );
+    retval->new_name = NULL;
+    retval->atend = FALSE;
     
     return retval;
 }
@@ -104,6 +105,8 @@ PRIVATE void buffer_change_len( Buffer *buf, SAMPLETIME newlen ) {
 PRIVATE void buffer_free( Buffer *buf ) {
     safe_free( buf->lbuffer );
     safe_free( buf->rbuffer );
+    if( buf->new_name )
+	free( buf->new_name );
 
     safe_free( buf );
 }
@@ -138,7 +141,7 @@ PRIVATE gboolean open_stream( Data *data ) {
   }
 
   //data->bufferfull = FALSE;
-  data->atend = FALSE;
+  data->thread_atend = FALSE;
 
 
   return TRUE;
@@ -161,7 +164,7 @@ PRIVATE void fill_buffer( Generator *g, Buffer *buf ) {
     OUTPUTSAMPLE buff[2048];
     Data *data = g->data;
 
-    if( data->atend )
+    if( data->thread_atend )
 	return;
     
     if( !data->playing )
@@ -170,11 +173,22 @@ PRIVATE void fill_buffer( Generator *g, Buffer *buf ) {
     end = y = 0;
 
     do {
+	buf->atend = FALSE;
 	readNSamples = MIN(buf->len - y, 1024) * 2;
 	i = ov_read( &(data->vf), (char *)buff, readNSamples * sizeof(OUTPUTSAMPLE), 0,2,1, &current_selection );
 
 	if( i == 0 ) {
-	    data->atend = TRUE;
+	    if( y == 0 ) {
+		data->thread_atend = TRUE;
+		buf->atend = TRUE;
+	    } else {
+		if( y < buf->len ) {
+		    memset( &(buf->lbuffer[y]), 0, sizeof( SAMPLE ) * (buf->len - y ) );
+		    memset( &(buf->rbuffer[y]), 0, sizeof( SAMPLE ) * (buf->len - y ) );
+		    y = buf->len;
+		}
+		
+	    }
 	    end = TRUE;
 	    
 	    //ev->d.number = 1;
@@ -237,6 +251,16 @@ PRIVATE gpointer threado( Generator *g ) {
 	Buffer *buf = g_async_queue_pop( data->free );
 
 	//g_print( "play_time = %d\n", curr_playtime );
+	
+	if( buf->new_name ) {
+
+		close_stream( data );
+		free( data->curstreamname );
+		data->curstreamname = buf->new_name;
+		buf->new_name = NULL;
+		data->playing = open_stream( data );
+	}
+
 
 	if( buf->timestamp != curr_playtime ) {
 	    //g_print( "skip\n" );
@@ -259,7 +283,7 @@ PRIVATE gboolean init_instance(Generator *g) {
   
   g->data = data;
 
-  data->len = 44100;
+  data->len = SAMPLE_RATE;
   data->playing = FALSE;
   data->curstreamname = NULL;
   data->bufferfull = FALSE;
@@ -285,7 +309,7 @@ PRIVATE void destroy_instance(Generator *g) {
 
   if (data != NULL) {
 
-    data->done_thread = FALSE;
+    data->done_thread = TRUE;
     g_thread_join( data->thread );
 
     close_stream( data );
@@ -306,6 +330,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->curr_timestamp = objectstore_item_get_integer( item, "ogg_ra_curr_timestamp", 0 );
   data->playing = objectstore_item_get_integer( item, "ogg_ra_playing", FALSE );
   data->curstreamname = safe_string_dup( objectstore_item_get_string( item, "ogg_ra_curstreamname", NULL ) );
+  data->done_thread = FALSE;
 
   data->buffers[0] = buffer_new( data->len );
   data->buffers[1] = buffer_new( data->len );
@@ -344,7 +369,20 @@ PRIVATE gboolean leftoutput_generator(Generator *g, OutputSignalDescriptor *sig,
   if( data->atend )
       return FALSE;
 
-  if (data->current_buf->len == 0 || offset >= data->current_buf->len || !data->bufferfull )
+  if( !data->bufferfull ) {
+      data->current_buf = g_async_queue_try_pop( data->done );
+      if( !data->current_buf ) {
+	  return FALSE;
+      } else {
+	  data->bufferfull = TRUE;
+	  if( data->current_buf->atend ) {
+	      data->atend = TRUE;
+	      return FALSE;
+	  }
+      }
+  }
+  
+  if (!data->current_buf || data->current_buf->len == 0 || offset >= data->current_buf->len || !data->bufferfull )
     return FALSE;
 
   len = MIN(MAX(data->current_buf->len - offset, 0), buflen);
@@ -367,7 +405,20 @@ PRIVATE gboolean rightoutput_generator(Generator *g, OutputSignalDescriptor *sig
   if( data->atend )
       return FALSE;
 
-  if (data->current_buf->len == 0 || offset >= data->current_buf->len || !data->bufferfull )
+  if( !data->bufferfull ) {
+      data->current_buf = g_async_queue_try_pop( data->done );
+      if( !data->current_buf ) {
+	  return FALSE;
+      } else {
+	  data->bufferfull = TRUE;
+	  if( data->current_buf->atend ) {
+	      data->atend = TRUE;
+	      return FALSE;
+	  }
+      }
+  }
+  
+  if (!data->current_buf || data->current_buf->len == 0 || offset >= data->current_buf->len || !data->bufferfull )
     return FALSE;
 
   len = MIN(MAX(data->current_buf->len - offset, 0), buflen);
@@ -395,8 +446,8 @@ PRIVATE void evt_fillbuffer( Generator *g, AEvent *ev ) {
     if( data->atend )
 	return;
     
-    if( !data->playing )
-	return;
+//    if( !data->playing )
+//	return;
 
     if( data->bufferfull ) {
 
@@ -404,13 +455,22 @@ PRIVATE void evt_fillbuffer( Generator *g, AEvent *ev ) {
 	//g_print( "push.timestamp = %d\n", data->current_buf->timestamp );
 	g_async_queue_push( data->free, data->current_buf );
     }
-    else
 	//g_print( "buffer empty\n" );
 
-    data->current_buf = g_async_queue_pop( data->done );
-    //g_print( "popped.timestamp = %d\n", data->current_buf->timestamp );
+    data->current_buf = g_async_queue_try_pop( data->done );
 
-    data->bufferfull = TRUE;
+    if( data->current_buf ) {
+
+	data->bufferfull = TRUE;
+	if( data->current_buf->atend )
+	    data->atend = TRUE;
+
+    } else {
+
+	data->bufferfull = FALSE;
+
+    }
+
 }
 
 PRIVATE void evt_bufflen_handler (Generator *g, AEvent *event) {
@@ -420,6 +480,10 @@ PRIVATE void evt_bufflen_handler (Generator *g, AEvent *event) {
     // own both buffers to stop reader thread.
     // the data->current_buffer is already owned by the main thread
 
+    if( !data->bufferfull ) {
+	data->current_buf = g_async_queue_pop( data->done );
+    }
+	
     Buffer *tmp = g_async_queue_pop( data->done );
 
     //g_async_queue_pop( data->done );
@@ -430,6 +494,9 @@ PRIVATE void evt_bufflen_handler (Generator *g, AEvent *event) {
     buffer_change_len( data->buffers[0], data->len );
     buffer_change_len( data->buffers[1], data->len );
     data->bufferfull = FALSE;
+    data->current_buf->timestamp = (data->curr_timestamp += data->len);
+    g_async_queue_push( data->free, data->current_buf );
+    tmp->timestamp = (data->curr_timestamp += data->len);
     g_async_queue_push( data->free, tmp );
 }
 
@@ -443,6 +510,7 @@ PRIVATE void evt_seek_handler (Generator *g, AEvent *event) {
     data->curr_timestamp = event->d.number * SAMPLE_RATE;
 
     data->atend = FALSE;
+    data->thread_atend = FALSE;
 }
 
 PRIVATE void evt_name_handler( Generator *g, AEvent *event ) {
@@ -454,41 +522,19 @@ PRIVATE void evt_name_handler( Generator *g, AEvent *event ) {
     }
     g_print( "changing name to: %s\n", event->d.string );
 
-    if( data->playing ) {
-	if( strcmp( data->curstreamname, event->d.string ) ) {
-
-	    // own both buffers to stop reader thread.
-	    // the data->current_buffer is already owned by the main thread
-
-	    Buffer *tmp = g_async_queue_pop( data->done );
-
-	    g_print( "have all buffers\n" );
-	    g_print( "pop.timestamp = %d\n", tmp->timestamp );
-
-	    close_stream( data );
-	    data->curstreamname = safe_string_dup( event->d.string );
-	    data->playing = open_stream( data );
-	    data->curr_timestamp = 0;
-
-	    tmp->timestamp = 0;
-
-	    g_print( "push ts=0\n" );
-	    
-	    g_async_queue_push( data->free, tmp );
-	}
-    } else {
-	// own both buffers to stop reader thread.
-	// the data->current_buffer is already owned by the main thread
-
-	Buffer *tmp = g_async_queue_pop( data->done );
-
-	data->curstreamname = safe_string_dup( event->d.string );
-	data->playing = open_stream( data );
-	data->curr_timestamp = 0;
-
-	tmp->timestamp = 0;
-	g_async_queue_push( data->free, tmp );
+    // FIXME: better use a name_change_pending flag.
+    // and use switch buffer to change the name.
+    if( !data->bufferfull ) {
+	data->current_buf = g_async_queue_pop( data->done );
+	data->bufferfull = TRUE;
     }
+
+    data->current_buf->new_name = safe_string_dup( event->d.string );
+    data->curr_timestamp = 0;
+	
+    data->atend = FALSE;
+    data->thread_atend = FALSE;
+    //data->playing = TRUE;
 }
 
 PRIVATE OutputSignalDescriptor output_sigs[] = {

@@ -281,13 +281,13 @@ PRIVATE void edit_clone_comp( Component *c, gpointer userdata ) {
 
 //---------------------------------------------------------------------------
 
-PRIVATE GFunc *edit_func[] = { (GFunc *) edit_delete_comp,
-			       (GFunc *) edit_clone_comp   };
+PRIVATE GFunc edit_func[] = { (GFunc) edit_delete_comp,
+			       (GFunc) edit_clone_comp   };
 
 PRIVATE void edit_selected( gpointer userdata, guint action, GtkWidget *widget ) {
     Sheet *sheet = gui_get_active_sheet();
 
-    g_list_foreach( sheet->selected_comps, edit_func[action], NULL );
+    g_list_foreach( sheet->selected_comps, (edit_func[action]), NULL );
 }
 
 PRIVATE void clone_selected( gpointer userdata, guint action, GtkWidget *widget ) {

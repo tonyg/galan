@@ -39,7 +39,8 @@
 #define NUM_EVENT_INPUTS	2
 
 #define EVT_OUTPUT		0
-#define NUM_EVENT_OUTPUTS	1
+#define EVT_NEOUT		1
+#define NUM_EVENT_OUTPUTS	2
 
 typedef struct Data {
   gdouble comp;
@@ -78,6 +79,8 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   if( event->d.number == data->comp ) {
       event->d.number = 1;
       gen_send_events(g, EVT_OUTPUT, -1, event);
+  } else {
+      gen_send_events(g, EVT_NEOUT, -1, event);
   }
 }
 
@@ -103,6 +106,7 @@ PRIVATE void setup_class(void) {
   gen_configure_event_input(k, EVT_INPUT, "Input", evt_input_handler);
   gen_configure_event_input(k, EVT_COMP, "Compare", evt_comp_handler);
   gen_configure_event_output(k, EVT_OUTPUT, "Output");
+  gen_configure_event_output(k, EVT_NEOUT, "Not Eq Output");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
 				  NULL,

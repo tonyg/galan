@@ -23,6 +23,7 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
+#include <glib.h>
 
 #include "global.h"
 #include "generator.h"
@@ -30,10 +31,14 @@
 #include "control.h"
 #include "gencomp.h"
 
+#if SAMPLE == double
 #if FFTW_PREFIX == 1
 #include <drfftw.h>
 #else
 #include <rfftw.h>
+#endif
+#else
+#include <srfftw.h>
 #endif
 
 #define GENERATOR_CLASS_NAME	"ifftw"
@@ -90,7 +95,7 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   fftw_real *out;
   AEvent send_ev;
 
-  RETURN_UNLESS( event->kind == AE_DBLARRAY );
+  RETURN_UNLESS( event->kind == AE_NUMARRAY );
   //RETURN_UNLESS( (event->d.array.len & 1) == 0 );
 
   if( event->d.array.len != data->lastN ) {
@@ -104,20 +109,18 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   }
 
   // TODO: make this alloca...
-  out = safe_malloc( sizeof( fftw_real ) * data->lastN );
+  out = g_alloca( sizeof( fftw_real ) * data->lastN );
   
-  rfftw_one( data->plan, event->d.darray.numbers, out );
+  rfftw_one( data->plan, event->d.array.numbers, out );
   
 
-  gen_init_aevent(&send_ev, AE_DBLARRAY, NULL, 0, NULL, 0, event->time);
+  gen_init_aevent(&send_ev, AE_NUMARRAY, NULL, 0, NULL, 0, event->time);
   
-  send_ev.d.darray.len = data->lastN;
-  send_ev.d.darray.numbers = out;
+  send_ev.d.array.len = data->lastN;
+  send_ev.d.array.numbers = out;
 
 
   gen_send_events(g, EVT_OUTPUT, -1, &send_ev);
-
-  free(out);
 }
 
 PRIVATE ControlDescriptor controls[] = {

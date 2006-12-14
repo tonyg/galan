@@ -1092,17 +1092,20 @@ PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
 PUBLIC Sheet *sheet_clone( Sheet *sheet ) {
 
     Sheet *clone = create_sheet();
+    ControlPanel *cp;
 
     free( clone->name );
     clone->name = safe_string_dup( sheet->name );
     update_sheet_name( sheet );
 
-    ControlPanel *cp = clone->control_panel = control_panel_new( clone->name, TRUE, clone );
+    cp = clone->control_panel = control_panel_new( clone->name, TRUE, clone );
     clone->visible = FALSE;
     gtk_layout_move( GTK_LAYOUT( cp->fixedwidget ), cp->sizer_ebox, sheet->control_panel->sizer_x+16, sheet->control_panel->sizer_y+16 );
+
     if( sheet->control_panel->current_bg ) {
 	cp->current_bg = safe_string_dup( sheet->control_panel->current_bg );
-	control_update_bg( sheet->panel_control );
+	if( clone->panel_control_active )
+	    control_update_bg( clone->panel_control );
     }
 
     comp_clone_list( sheet->components, clone );

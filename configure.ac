@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(galan, 0.3.0_beta5, torbenh@users.sourceforge.net)
+AC_INIT(galan, 0.3.0_beta8, torbenh@users.sourceforge.net)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE
 
@@ -34,20 +34,27 @@ OPTIONAL_PLUGINS=
 AC_CHECK_HEADER(esd.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} esd_output.la")
 AC_CHECK_HEADER(vorbis/vorbisfile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} ogg_ra.la")
 AC_CHECK_HEADERS(audiofile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} pcm_out.la voice.la")
-AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} oss_output.la oss_input.la")
+AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} joyport.la oss_output.la oss_input.la midi_seq_clock.la midiclock.la")
 
-AC_CHECK_HEADERS(drfftw.h, [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
-			       FFTW_WITH_PREFIX="yes"
-			       FFTW_LIBS="-ldrfftw -ldfftw"
-                               AC_SUBST(FFTW_LIBS)
-                               AC_DEFINE( FFTW_PREFIX, 1, "include drfftw.h" ) ])
+dnl PKG_CHECK_MODULES(FST, libfst >= 1.3, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fst.la", AC_MSG_RESULT(fst not found))
 
-AC_CHECK_HEADERS(rfftw.h,  [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+dnl AC_CHECK_HEADERS(drfftw.h, [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+dnl 			       FFTW_WITH_PREFIX="yes"
+dnl 			       FFTW_LIBS="-ldrfftw -ldfftw"
+dnl                                AC_SUBST(FFTW_LIBS)
+dnl                                AC_DEFINE( FFTW_PREFIX, 1, "include drfftw.h" ) ])
+dnl 
+dnl AC_CHECK_HEADERS(rfftw.h,  [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
+dnl 			       FFTW_WITH_PREFIX="no" 
+dnl 			       FFTW_LIBS="-lfftw -lrfftw"
+dnl 			       AC_SUBST(FFTW_LIBS)
+dnl 			       AC_DEFINE( FFTW_PREFIX, 0, "include rfftw.h" ) ] )
+
+AC_CHECK_HEADERS(srfftw.h,  [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
 			       FFTW_WITH_PREFIX="no" 
-			       FFTW_LIBS="-lfftw -lrfftw"
+			       FFTW_LIBS="-lsfftw -lsrfftw"
 			       AC_SUBST(FFTW_LIBS)
-			       AC_DEFINE( FFTW_PREFIX, 0, "include rfftw.h" ) ] )
-
+			       AC_DEFINE( FFTW_PREFIX, 0, "include srfftw.h" ) ] )
 dnl Feature tests
 dnl ===========================================================================
 
@@ -61,15 +68,14 @@ AC_ARG_ENABLE(emu10k1,
 [  --enable-emu10k1        Compile emu10k1 support],
 	OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} emu10k1.la" )
 
-dnl AM_PATH_GTK(1.2.0, ,
-dnl	    AC_MSG_ERROR(Cannot find GTK: is gtk-config in path?))
 	    
 PKG_CHECK_MODULES( GTK, gtk+-2.0 >= 2.0 )
 PKG_CHECK_MODULES( GTHREAD, gthread-2.0 >= 2.0 )
+PKG_CHECK_MODULES( GMODULE, gmodule-2.0 >= 2.0 )
 
-dnl AM_PATH_GDK_PIXBUF()
+PKG_CHECK_MODULES( LASH, lash-1.0 >= 0.5 )
 
-AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_out.la alsa_out_callback.la alsa_midi.la", AC_MSG_RESULT(Alsa not found))
+AM_PATH_ALSA(0.9.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} alsa_midi.la", AC_MSG_RESULT(Alsa not found))
 
 CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"
@@ -89,6 +95,8 @@ fi
 
 PKG_CHECK_MODULES( SNDFILE, sndfile >= 1.0.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} sndfile_in.la sndfile_out.la", AC_MSG_RESULT(sndfile not found) )
 PKG_CHECK_MODULES( JACK, jack >= 0.34.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} jack.la", AC_MSG_RESULT(jack not found) )
+
+PKG_CHECK_MODULES( CANVAS, libgnomecanvas-2.0 >= 2.0, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} canvascontrol.la", AC_MSG_RESULT(libgnomecanvas not found) )
 
 AC_CHECK_HEADER(jack/miditypes.h,
 		AC_DEFINE(HAVE_JACKMIDI_H, 1, "whether there is jack_midi support")

@@ -21,11 +21,15 @@
 
 #include <math.h>
 
-#define SAMPLE_RATE		48000
+#define SAMPLE_RATE		gen_get_sample_rate()
 
 #if WANT_FLOATING_POINT_SAMPLES
 
+
 #define SAMPLE float
+#define HAVE_FLOAT_SAMPLE 1
+#undef HAVE_DOUBLE_SAMPLE
+
 #define SAMPLE_ADD(a,b)		((a)+(b))
 #define SAMPLE_MUL(a,b)		((a)*(b))
 #define SAMPLE_UNIT		((SAMPLE) +1)
@@ -114,6 +118,7 @@ typedef enum AEventKind {
   AE_STRING,		/**< a string message  */
   AE_NUMARRAY,		/**< an array message  */
   AE_DBLARRAY,		/**< a double array message  */
+  AE_MIDIEVENT,		/**< a midi event  */
 
   AE_LAST_EVENT_KIND	/**< end-of-enum marker */
 } AEventKind;
@@ -141,7 +146,12 @@ typedef struct darr {
     double *numbers;
 } DArray;
 
-struct AEvent {		/**< audio event */
+typedef struct midiev {
+    char midistring[4];
+    int len;
+} MidiEv;
+
+struct AEvent {			/**< audio event */
   AEventKind kind;		/**< what kind of event? */
   Generator *src, *dst;
   int src_q, dst_q;
@@ -155,6 +165,7 @@ struct AEvent {		/**< audio event */
     gchar *string;		/**< AE_STRING */
     Array array;		/**< AE_NUMARRAY */
     DArray darray;		/**< AE_DBLARRAY */
+    MidiEv midiev;		/**< AE_MIDIEVENT */
   } d;
 };
 
@@ -239,7 +250,7 @@ struct Generator {
   //EventQ *input_events;
   /* Sample caching for multiple (realtime) reads */
   /* note that we don't cache randomaccess signal generators */
-  SAMPLETIME last_sampletime;
+  SAMPLETIME *last_sampletime;
   SAMPLE **last_buffers;
   int *last_buflens;
   gboolean *last_results;
@@ -365,6 +376,8 @@ extern void gen_mainloop_do_checks(void);
 
 /*=======================================================================*/
 /* Master clock system (most of these externs are in clock.c) */
+
+extern int  gen_get_sample_rate(void);
 
 extern void gen_register_clock_listener(GHookFunc hook, gpointer data);
 extern void gen_deregister_clock_listener(GHookFunc hook, gpointer data);

@@ -45,6 +45,9 @@ enum ControlKind {
   CONTROL_MAX_KIND
 };
 
+struct Control;
+typedef void (* ControlMove_cb)(struct Control *);
+
 struct ControlPanel {
     GtkWidget *scrollwin, *fixedwidget;
     char *name;
@@ -57,7 +60,6 @@ struct ControlPanel {
     int sizer_moving;
     int sizer_visible;
     char *current_bg;
-
 };
 
 struct ControlDescriptor {
@@ -102,10 +104,13 @@ struct Control {
   GtkWidget *ebox;			/* An Eventbox for speed */
 
   ControlPanel *this_panel;
+  ControlMove_cb move_callback;
   Generator *g;				/* source for output events; owner of control _OR_
 					   target of output events; also owner of control?? */
   void *data;				/* user data (mostly for userdef'd controls) */
 };
+
+extern GtkWidget *control_panel;
 
 extern Control *control_new_control(ControlDescriptor *desc, Generator *g, ControlPanel *panel );
 extern void control_kill_control(Control *c);

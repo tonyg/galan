@@ -5,7 +5,6 @@
 
 /*****************************************************************************/
 
-#include <dlfcn.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -128,12 +127,16 @@ PRIVATE void run_plugin( Generator *g, int buflen ) {
 	  
 	  gen_init_aevent(&event, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() );
 
+#ifdef G_OS_WIN32
+	      event.d.number = data->outevents[i];
+#else
 	  if( isnan(data->outevents[i]) || isinf( data->outevents[i]) ) {
 	      printf( "nan ... \n" );
 	      event.d.number = 0.0;
 	  } else {
 	      event.d.number = data->outevents[i];
 	  }
+#endif //G_OS_WIN32
 	  
 	  gen_send_events(g, i, -1, &event);
 
@@ -492,11 +495,11 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
 
 /*****************************************************************************/
 
-AGenerator_t output_generators[] = { output_generator0, output_generator1, output_generator2, output_generator3,
+PRIVATE AGenerator_t output_generators[] = { output_generator0, output_generator1, output_generator2, output_generator3,
 				     output_generator4, output_generator5, output_generator6, output_generator7 };
 PRIVATE int plugin_count=0;
 
-PUBLIC void control_LADSPA_Data_updater(Control *c) {
+PRIVATE void control_LADSPA_Data_updater(Control *c) {
     Data *data=c->g->data;
 
     control_set_value(c, (data->inevents[(int) c->desc->refresh_data]));
@@ -717,7 +720,7 @@ PRIVATE void init_one_plugin( const char *filename, void *handle, LADSPA_Descrip
 
 
   if (!fDescriptorFunction) {
-    const char * pcError = dlerror();
+    const char * pcError = g_module_error();
     if (pcError) 
       fprintf(stderr,
 	      "Unable to find ladspa_descriptor() function in plugin file "

@@ -849,6 +849,7 @@ PUBLIC int objectstore_datum_array_length(ObjectStoreDatum *array) {
  */
 
 PUBLIC ObjectStoreDatum *objectstore_datum_array_get(ObjectStoreDatum *array, int index) {
+  RETURN_VAL_UNLESS(array, NULL);
   RETURN_VAL_UNLESS(array->kind == OSI_KIND_ARRAY, NULL);
   g_return_val_if_fail(index >= 0, NULL);
   g_return_val_if_fail(index < array->d.array.count, NULL);

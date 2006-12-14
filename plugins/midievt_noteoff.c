@@ -23,7 +23,6 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
-#include <glib.h>
 #include <gmodule.h>
 
 #include "global.h"
@@ -32,118 +31,73 @@
 #include "control.h"
 #include "gencomp.h"
 
-#define GENERATOR_CLASS_NAME	"arrmul"
-#define GENERATOR_CLASS_PATH	"Array/Multiply"
+#define GENERATOR_CLASS_NAME	"midievt_noteoff"
+#define GENERATOR_CLASS_PATH	"MIDI Events/NoteOff"
 
-#define EVT_INPUT		0
-#define EVT_FACTOR		1
+#define EVT_NOTE		0
+#define EVT_CHANNEL		1
 #define NUM_EVENT_INPUTS	2
 
 #define EVT_OUTPUT		0
 #define NUM_EVENT_OUTPUTS	1
 
 typedef struct Data {
-  int len;
-  gdouble *factor;
+    char channel;
 } Data;
 
 PRIVATE int init_instance(Generator *g) {
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
 
-  data->factor = NULL;
-  data->len = 0;
+  data->channel = 0;
 
   return 1;
 }
 
 PRIVATE void destroy_instance(Generator *g) {
-    Data *data = g->data;
-    if( data->factor )
-	free( data->factor );
-    free(data);
+  free(g->data);
 }
 
 PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
   Data *data = safe_malloc(sizeof(Data));
-  ObjectStoreDatum *array;
-  int i;
-
   g->data = data;
 
-  array = objectstore_item_get(item, "arrmul_factor");
-
-  data->len = objectstore_item_get_double(item, "arrmul_len", 0);
-  data->factor = safe_malloc( sizeof( gdouble ) * data->len );
-  for(i=0; i<data->len; i++ )
-      data->factor[i] = objectstore_datum_double_value( 
-	      objectstore_datum_array_get(array, i)      );
+  data->channel = objectstore_item_get_double(item, "channel", 0);
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-
-    ObjectStoreDatum *array;
-    Data *data = g->data;
-    int i;
-
-    array = objectstore_datum_new_array(data->len);
-    objectstore_item_set_integer(item, "arrmul_len", data->len);
-    objectstore_item_set(item, "arrmul_factor", array);
-    for (i = 0; i < data->len; i++) {
-      objectstore_datum_array_set(array, i,
-	      objectstore_datum_new_double( data->factor[i]) );
-    }
+  Data *data = g->data;
+  objectstore_item_set_double(item, "channel", data->channel);
 }
 
-PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
-    int i;
+PRIVATE void evt_note_handler(Generator *g, AEvent *event) {
+    char note;
     Data *data = g->data;
 
     switch( event->kind ) {
-	case AE_NUMARRAY:
-	    if( event->d.array.len != data->len )
-		
-		g_print( "arrmul dimension mismatch (data->len, event->len ) = ( %d, %d )\n", data->len, event->d.array.len );
-	    else {
-
-		for( i=0; i<data->len; i++ )
-		    event->d.array.numbers[i] *= data->factor[i];
-
-		gen_send_events(g, EVT_OUTPUT, -1, event);
-	    }
+	case AE_NUMBER:
+	    note = ((char) event->d.number) & 0x7f;
+	    event->kind = AE_MIDIEVENT;
+	    event->d.midiev.len = 2;
+	    event->d.midiev.midistring[0] = 0x80 | (data->channel & 0x0f);
+	    event->d.midiev.midistring[1] = note;
+	    gen_send_events(g, EVT_OUTPUT, -1, event);
 	    break;
 	default:
-	    g_warning( "arrmul does not support this eventkind\n" );
+	    g_warning( "midi_note does not know this eventkind\n" );
 	    break;
     }
 }
 
-PRIVATE void evt_factor_handler(Generator *g, AEvent *event) {
-    Data *data = g->data;
-    int i;
-
-    switch( event->kind ) {
-	case AE_NUMARRAY:
-	    if( event->d.array.len != data->len ) {
-		free( data->factor );
-		data->len = event->d.array.len;
-		data->factor = safe_malloc( sizeof( gdouble ) * data->len );
-	    }
-
-	    // use memcpy here;
-	    for( i=0; i<data->len; i++ )
-		data->factor[i] = event->d.array.numbers[i];
-
-	    break;
-	default:
-	    g_warning( "arrmul does not support this eventkind\n" );
-	    break;
-    }
+PRIVATE void evt_channel_handler(Generator *g, AEvent *event) {
+  ((Data *) g->data)->channel = (char) event->d.number & 0x0f;
 }
 
 PRIVATE ControlDescriptor controls[] = {
   /* { kind, name, min,max,step,page, size,editable, is_dst,queue_number,
        init,destroy,refresh,refresh_data }, */
+//  { CONTROL_KIND_KNOB, "velocity", -1,1,0.1,0.01, 0,TRUE, TRUE, EVT_ADDEND,
+//    NULL,NULL, control_double_updater, (gpointer) offsetof(Data, addend) },
   { CONTROL_KIND_NONE, }
 };
 
@@ -154,8 +108,8 @@ PRIVATE void setup_class(void) {
 					     init_instance, destroy_instance,
 					     unpickle_instance, pickle_instance);
 
-  gen_configure_event_input(k, EVT_INPUT, "Input", evt_input_handler);
-  gen_configure_event_input(k, EVT_FACTOR, "Factor", evt_factor_handler);
+  gen_configure_event_input(k, EVT_NOTE, "Note", evt_note_handler);
+  gen_configure_event_input(k, EVT_CHANNEL, "Channel", evt_channel_handler);
   gen_configure_event_output(k, EVT_OUTPUT, "Output");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
@@ -163,6 +117,6 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_arrmul(void) {
+PUBLIC void init_plugin_midievt_noteoff(void) {
   setup_class();
 }

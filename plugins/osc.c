@@ -56,13 +56,16 @@ typedef struct WavFormData {
 	GtkWidget *sin_button, *sqr_button, *saw_button, *tri_button;
 } WavFormData;
 
-PRIVATE SAMPLE sample_table[OSC_NUM_KINDS][SAMPLE_RATE];
+PRIVATE SAMPLE *sample_table[OSC_NUM_KINDS];
 
 PRIVATE void setup_tables(void) {
   const gdouble rad_per_sample = 2.0 * M_PI / SAMPLE_RATE;
   const gdouble saw_step = (SAMPLE_MAX - SAMPLE_MIN) / SAMPLE_RATE;
   const gdouble tri_step = 2*saw_step;
   int i;
+
+  for( i=0; i<OSC_NUM_KINDS; i++ )
+      sample_table[i] = safe_malloc( sizeof(SAMPLE) * SAMPLE_RATE );
 
   for (i = 0; i < SAMPLE_RATE; i++)
     sample_table[OSC_KIND_SIN][i] = SAMPLE_MUL(SAMPLE_UNIT, sin(i * rad_per_sample));

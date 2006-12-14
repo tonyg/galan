@@ -202,12 +202,17 @@ PRIVATE void iscomp_pickle(Component *c, ObjectStoreItem *item, ObjectStore *db)
 PRIVATE Component *iscomp_clone( Component *c, Sheet *sheet ) {
     ISCompInitData id;
     ISCompData *srcdata = c->data;
+    ISCompData *clonedata;
     Component *clone;
 
     id.reftype = srcdata->reftype;
     id.poly = srcdata->poly;
     
     clone = comp_new_component(  c->klass, &id, sheet, 0, 0 );
+    clonedata = clone->data;
+    g_free( clonedata->name );
+	clonedata->name = safe_string_dup( srcdata->name );
+    
     iscomp_resize(clone);
     //sheet_queue_redraw_component( c->sheet, c );
 
@@ -221,8 +226,7 @@ PRIVATE Component *iscomp_clone( Component *c, Sheet *sheet ) {
 #define FULLCIRCLE_DEGREES_NUMBER	36000
 #endif
 
-PRIVATE void iscomp_paint(Component *c, GdkRectangle *area,
-			   GdkDrawable *drawable, GtkStyle *style, GdkColor *colors) {
+PRIVATE void iscomp_paint(Component *c, GdkRectangle *area, GdkDrawable *drawable, GtkStyle *style, GdkColor *colors) {
   ISCompData *d = c->data;
   GList *l = c->connectors;
   GdkGC *gc = style->black_gc;
@@ -348,8 +352,19 @@ PRIVATE int iscomp_contains_point(Component *c, gint x, gint y) {
   return iscomp_find_connector_at(c, x, y, NULL);
 }
 
-PRIVATE gboolean iscomp_accept_outbound(Component *c, ConnectorReference *src,
-					 ConnectorReference *dst) {
+
+
+/**
+ * \brief tries to establich a connection between \a src and \a dst.
+ *
+ * Note that galan graphs are directed.
+ *
+ * \param c The component with the source connector.
+ * \param src from ConnectorReference.
+ * \param dst to ConnectorReference.
+ */
+
+PRIVATE gboolean iscomp_accept_outbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
   ISCompData *data = c->data;
 
   if( data->ref != NULL )
@@ -360,8 +375,7 @@ PRIVATE gboolean iscomp_accept_outbound(Component *c, ConnectorReference *src,
   return TRUE;
 }
 
-PRIVATE gboolean iscomp_accept_inbound(Component *c, ConnectorReference *src,
-					ConnectorReference *dst) {
+PRIVATE gboolean iscomp_accept_inbound(Component *c, ConnectorReference *src, ConnectorReference *dst) {
   ISCompData *data = c->data;
 
   if( data->ref != NULL )

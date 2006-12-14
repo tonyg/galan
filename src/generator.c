@@ -57,6 +57,11 @@ PRIVATE GAsyncQueue *gen_kill_queue_stage2;
 
 PRIVATE GThread *kill_thread;
 
+PRIVATE int gen_samplerate = 44100;
+
+PUBLIC int gen_get_sample_rate( void ) {
+    return gen_samplerate;
+}
 
 /**
  * \brief Initialize an AEvent.
@@ -306,7 +311,7 @@ PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
 
   //g->input_events = NULL;
 
-  g->last_sampletime = 0;
+  g->last_sampletime = safe_calloc( k->out_sig_count, sizeof( SAMPLETIME) );
   g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
   g->last_buflens = safe_calloc(k->out_sig_count, sizeof(int));
   g->last_results = safe_calloc(k->out_sig_count, sizeof(gboolean));
@@ -397,14 +402,6 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
     int i;
     while( (g = g_async_queue_pop( gen_kill_queue_stage2 )) != (gpointer) -1 )
     {
-	if (g->klass->destroy_instance != NULL)
-	    g->klass->destroy_instance(g);
-
-
-	for (i = 0; i < g->klass->out_sig_count; i++)
-	    if (g->last_buffers[i] != NULL)
-		safe_free(g->last_buffers[i]);
-
 	if (g->controls != NULL) {
 	    GList *c = g->controls;
 	    g->controls = NULL;
@@ -419,6 +416,14 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
 		c = tmp;
 	    }
 	}
+	if (g->klass->destroy_instance != NULL)
+	    g->klass->destroy_instance(g);
+
+
+	for (i = 0; i < g->klass->out_sig_count; i++)
+	    if (g->last_buffers[i] != NULL)
+		safe_free(g->last_buffers[i]);
+
 
 	safe_free(g->name);
 	safe_free(g->in_events);
@@ -505,7 +510,8 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
     g->in_signals = make_event_list(k->in_sig_count);
     g->out_signals = make_event_list(k->out_sig_count);
 
-    g->last_sampletime = 0;
+
+    g->last_sampletime = safe_calloc( k->out_sig_count, sizeof( SAMPLETIME) );
     g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
     g->last_buflens = safe_calloc(k->out_sig_count, sizeof(int));
     g->last_results = safe_calloc(k->out_sig_count, sizeof(gboolean));
@@ -985,7 +991,7 @@ PUBLIC gboolean gen_read_realtime_output(Generator *g, gint index, SAMPLE *buffe
     return g->klass->out_sigs[index].d.realtime(g, buffer, buflen);
   else {
     /* Cache for multiple outputs... you never know who'll be reading you, or how often */
-    if (g->last_buffers[index] == NULL || g->last_sampletime < gen_get_sampletime()) {
+    if (g->last_buffers[index] == NULL || g->last_sampletime[index] < gen_get_sampletime()) {
 	
       /* Cache is not present, or expired */
 	
@@ -1001,7 +1007,7 @@ PUBLIC gboolean gen_read_realtime_output(Generator *g, gint index, SAMPLE *buffe
       //------------------------------------------------------------------
 
       g->last_buflens[index] = buflen;
-      g->last_sampletime = gen_get_sampletime();
+      g->last_sampletime[index] = gen_get_sampletime();
       g->last_results[index] =
 	g->klass->out_sigs[index].d.realtime(g, g->last_buffers[index], buflen);
     } else if (g->last_buflens[index] < buflen) {
@@ -1265,6 +1271,10 @@ PRIVATE InputSignalDescriptor input_sigs[] = {
   { "Input6", SIG_FLAG_REALTIME },
   { "Input7", SIG_FLAG_REALTIME },
   { "Input8", SIG_FLAG_REALTIME },
+  { "Input9", SIG_FLAG_REALTIME },
+  { "Input10", SIG_FLAG_REALTIME },
+  { "Input11", SIG_FLAG_REALTIME },
+  { "Input12", SIG_FLAG_REALTIME },
   { NULL, }
 };
 
@@ -1278,6 +1288,10 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
   { "Output6", SIG_FLAG_REALTIME, { dummy_output_generator, } },
   { "Output7", SIG_FLAG_REALTIME, { dummy_output_generator, } },
   { "Output8", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output9", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output10", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output11", SIG_FLAG_REALTIME, { dummy_output_generator, } },
+  { "Output12", SIG_FLAG_REALTIME, { dummy_output_generator, } },
   { NULL, }
 };
 
@@ -1330,13 +1344,13 @@ PRIVATE void init_dummy_generator( void ) {
 
     int i;
     GeneratorClass *k = gen_new_generatorclass("dummy", FALSE,
-	    20, 20,
+	    120, 120,
 	    input_sigs, output_sigs, dummy_controls,
 	    init_dummy, done_dummy,
 	    (AGenerator_pickle_t) init_dummy, NULL);
 
 
-    for( i=0; i<20; i++ ) {
+    for( i=0; i<120; i++ ) {
 	gen_configure_event_output( k, i, "Out" );
 	gen_configure_event_input( k, i, "In", evt_dummy_handler );
     }
@@ -1346,16 +1360,20 @@ PUBLIC GHashTable *get_generator_classes( void ) {
   return generatorclasses;
 }
 
-PUBLIC void init_generator(void) {
+PUBLIC void init_generator_thread(void) {
 
     GError *err;
+    kill_thread = g_thread_create( (GThreadFunc) gen_kill_generator_stage2_thread, NULL, TRUE, &err );
+}
+PUBLIC void init_generator(void) {
+
+    gen_samplerate = jack_get_sample_rate( galan_jack_get_client() );
 
     gen_link_queue = g_async_queue_new();
     gen_unlink_queue = g_async_queue_new();
     gen_kill_queue = g_async_queue_new();
     gen_kill_queue_stage2 = g_async_queue_new();
 
-    kill_thread = g_thread_create( (GThreadFunc) gen_kill_generator_stage2_thread, NULL, TRUE, &err );
 
     generatorclasses = g_hash_table_new(g_str_hash, g_str_equal);
 

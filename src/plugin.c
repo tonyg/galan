@@ -62,7 +62,7 @@ PRIVATE void load_plugin(char *plugin, char *leafname) {
   if (dotpos != NULL)
     *dotpos = '\0';
 
-  if (!g_module_symbol(handle, initstr, (gpointer *) &initializer)) {
+  if (!g_module_symbol(handle, initstr, (gpointer *) &initializer) ) {
     popup_msgbox("Plugin Error", MSGBOX_OK, 0, MSGBOX_OK,
 		 "Plugin %s has no accessible initializer.\n"
 		 "This is most likely a bug in the plugin.\n"
@@ -85,7 +85,7 @@ PRIVATE void load_all_plugins(char *dir);	/* forward decl */
 PRIVATE int check_plugin_validity(char *name) {
   struct stat sb;
 
-#ifdef NATIVE_WIN32
+#ifdef G_OS_WIN32
   if( strcmp(name+(strlen(name)-4), ".dll" ) )
     return 0;
 #else

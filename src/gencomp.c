@@ -409,10 +409,20 @@ PRIVATE void gencomp_paint(Component *c, GdkRectangle *area,
 // XXX: There is only style->font_desc
 //      Get some pango layout and render it here...
 //
-  gdk_draw_text(drawable, gtk_style_get_font(style), gc,
+  {
+  PangoLayout *layout = gtk_widget_create_pango_layout( c->sheet->drawingwidget, d->g->name );
+  gdk_draw_layout(drawable, gc,
+		c->x + GENCOMP_BORDER_WIDTH + (GENCOMP_CONNECTOR_WIDTH>>1),
+		c->y + GENCOMP_BORDER_WIDTH, 
+		layout);
+  g_object_unref( G_OBJECT( layout ) );
+  }
+
+/*  gdk_draw_text(drawable, gtk_style_get_font(style), gc,
 		c->x + GENCOMP_BORDER_WIDTH + (GENCOMP_CONNECTOR_WIDTH>>1),
 		c->y + GENCOMP_BORDER_WIDTH + GENCOMP_TITLEHEIGHT - 3,
 		d->g->name, strlen(d->g->name));
+		*/
 
   if (d->icon != NULL)
     gdk_draw_pixmap(drawable, gc, d->icon, 0, 0,
@@ -703,9 +713,7 @@ PUBLIC ComponentClass GeneratorComponentClass = {
  *
  */
 
-PUBLIC void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer,
-					    char *menupath, char *iconpath,
-					    PropertiesCallback propgen) {
+PUBLIC void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer, char *menupath, char *iconpath, PropertiesCallback propgen) {
   GenCompInitData *id = safe_malloc(sizeof(GenCompInitData));
 
   id->k = k;

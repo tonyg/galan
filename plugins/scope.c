@@ -28,11 +28,11 @@
  * to... (well.. should be in rart.c for loops)
  *
  * missing features:
- *  - display n*SAMPLE_RATE samples
- *  - trigger
  *  - resizing
  *  - you know what a hardware scope can do :-)
  */
+ 
+/* 2006-11-17 resize via properties of scope added by Nicolai Lissner <nlissne@linux01.gwdg.de> */
 
 #include <stdlib.h>
 #include <string.h>
@@ -48,6 +48,7 @@
 #include "comp.h"
 #include "control.h"
 #include "gencomp.h"
+#include "msgbox.h"
 
 #include "sample-display.h"
 
@@ -72,6 +73,8 @@ typedef struct Data {
   gint32 phase;
   gdouble ysize; /* sizeof(intbuf) = ysize * SAMPLE_RATE */
   gdouble xsize;
+  gint32 width; /* the size of the scope in pixels */
+  gint32 height;
 
     /* transient the table size is yscale */
   gint8  *intbuf;
@@ -139,6 +142,8 @@ PRIVATE gboolean init_instance(Generator *g) {
   data->phase = 0;
   data->ysize = 0.1;
   data->xsize = 1;
+  data->width = 120;
+  data->height = 90;
 
   data->intbuf = safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->ysize+1));
   gen_register_realtime_fn(g, realtime_handler);
@@ -161,6 +166,8 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->phase = objectstore_item_get_integer(item, "scope_phase", 0);
   data->ysize = objectstore_item_get_double(item, "scope_ysize", 0.1);
   data->xsize = objectstore_item_get_double(item, "scope_xsize", 1.0);
+  data->width = objectstore_item_get_integer(item, "scope_width", 120);
+  data->height = objectstore_item_get_integer(item, "scope_height", 90);
   data->intbuf = (gint8 *)safe_malloc( sizeof(gint8)*(SAMPLE_RATE*data->ysize+1));
   gen_register_realtime_fn(g, realtime_handler);
 }
@@ -171,16 +178,23 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
   objectstore_item_set_integer(item, "scope_phase", data->phase);
   objectstore_item_set_double(item, "scope_ysize", data->ysize);
   objectstore_item_set_double(item, "scope_xsize", data->xsize);
+  objectstore_item_set_integer(item, "scope_width", data->width);
+  objectstore_item_set_integer(item, "scope_height", data->height);
+}
+PRIVATE void scope_update_pixelsize(Control *c) {
+  Data *data= c->g->data;
+  if (c->desc->kind == CONTROL_KIND_USERDEF)
+    gtk_widget_set_usize( c->widget, data->width, data->height ); 
 }
 
 
 PRIVATE void init_scope( Control *control ) {
 
 	GtkWidget *sc;
-
 	sc = sample_display_new(FALSE);
 	g_assert( sc != NULL );
 	control->widget = sc;
+	scope_update_pixelsize(control);
 }
 
 PRIVATE void done_scope(Control *control) {
@@ -247,6 +261,45 @@ PRIVATE ControlDescriptor controls[] = {
   { CONTROL_KIND_NONE, }
 };
 
+PRIVATE GtkWidget *build_entry(GtkWidget *vbox, char *text, gdouble value) {
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 2);
+  GtkWidget *label = gtk_label_new(text);
+  GtkWidget *entry = gtk_entry_new();
+  char buf[128];
+
+  gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
+  gtk_widget_show(label);
+  gtk_widget_show(entry);
+  gtk_widget_show(hbox);
+
+  sprintf(buf, "%g", value);
+  gtk_entry_set_text(GTK_ENTRY(entry), buf);
+
+  return entry;
+}
+
+          
+
+PRIVATE void props(Component *c, Generator *g) {
+  Data *data = g->data;
+  GtkWidget *width, *height;
+  GtkWidget *vbox;
+
+  vbox = gtk_vbox_new(FALSE, 2);
+
+  width = build_entry(vbox, "width in pixels:", data->width);
+  height = build_entry(vbox, "height in pixels:", data->height);
+
+  if (popup_dialog(g->name, MSGBOX_OK | MSGBOX_CANCEL, 0, MSGBOX_OK, vbox, NULL, 0) == MSGBOX_OK) {
+    data->width = atoi(gtk_entry_get_text(GTK_ENTRY(width)));
+    data->height = atoi(gtk_entry_get_text(GTK_ENTRY(height)));
+    g_list_foreach(g->controls, (GFunc) scope_update_pixelsize, NULL );                
+  }
+}
+
+
 PRIVATE void setup_class(void) {
   GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE,
 					     NUM_EVENT_INPUTS, NUM_EVENT_OUTPUTS,
@@ -261,7 +314,7 @@ PRIVATE void setup_class(void) {
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
 				  PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
-				  NULL);
+				  props);
 }
 
 PUBLIC void init_plugin_scope(void) {

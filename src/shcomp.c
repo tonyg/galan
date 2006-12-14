@@ -123,6 +123,12 @@ PUBLIC void shcomp_resize(Component *c) {
   c->height = body_vert + 2 * SHCOMP_BORDER_WIDTH + 1;
 }
 
+/**
+ * make InterSheetLinks ->  list<list< Components >>.
+ * but why ? 
+ * what are the components for ?
+ */
+
 PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
 
     gboolean warned = FALSE;
@@ -200,8 +206,10 @@ PRIVATE InterSheetLinks *find_intersheet_links( Sheet *sheet ) {
  */
 
 PRIVATE int shcomp_initialize(Component *c, gpointer init_data) {
+
   ShCompData *d = safe_malloc(sizeof(ShCompData));
   ShCompInitData *id = (ShCompInitData *) init_data;
+
   InterSheetLinks *isl = find_intersheet_links( id->sheet );
 
   d->sheet = id->sheet;
@@ -238,17 +246,20 @@ PRIVATE Component *shcomp_clone(Component *c, Sheet *sheet) {
   
   id.sheet = newsheet;
   retval = comp_new_component( &SheetComponentClass, &id, sheet, 0, 0 );
+
   if( d->sheet->panel_control_active ) {
+
       do_control( retval, 0, NULL );
       newsheet->panel_control->frame_visible = d->sheet->panel_control->frame_visible;
+      
       if( ! (newsheet->panel_control->frame_visible) ) {
 	  gtk_frame_set_shadow_type (GTK_FRAME (newsheet->panel_control->title_frame) , GTK_SHADOW_NONE);
 	  gtk_frame_set_label (GTK_FRAME (newsheet->panel_control->title_frame) , NULL);
 	  gtk_label_set_text(GTK_LABEL(newsheet->panel_control->title_label),"    ");
       }
 
-
       newsheet->panel_control->control_visible = d->sheet->panel_control->control_visible;
+
       if( ! (newsheet->panel_control->control_visible) ) {
 	  gtk_widget_hide( newsheet->panel_control->widget );
       }
@@ -770,24 +781,20 @@ PRIVATE int check_gsheet_validity(char *name, char *menupos, char *dirname ) {
 }
 
 PRIVATE void load_all_gsheets(char *dir, char *menupos) {
-    DIR *d = opendir(dir);
-    struct dirent *de;
+    GDir *d = g_dir_open(dir, 0, NULL);
+    char *filename;
 
     if (d == NULL)
 	/* the plugin directory cannot be read */
 	return;
 
-    while ((de = readdir(d)) != NULL) {
+    while ((filename = g_dir_read_name(d)) != NULL) {
 	char *fullname;
 
-	if (de->d_name[0] == '.')
-	    /* Don't load 'hidden' files or directories */
-	    continue;
+	fullname = g_strdup_printf( "%s%s%s", dir, G_DIR_SEPARATOR_S, filename ); 
 
-	fullname = g_strdup_printf( "%s%s%s", dir, G_DIR_SEPARATOR_S, de->d_name ); 
-
-	if (check_gsheet_validity(fullname, menupos, de->d_name)) {
-	    char *menuname = g_strdup_printf( "%s/%s", menupos, de->d_name );
+	if (check_gsheet_validity(fullname, menupos, filename)) {
+	    char *menuname = g_strdup_printf( "%s/%s", menupos, filename );
 	    add_gsheet(fullname, menuname);
 	    free( menuname );
 	}
@@ -795,7 +802,7 @@ PRIVATE void load_all_gsheets(char *dir, char *menupos) {
 	free(fullname);
     }
 
-    closedir(d);
+    g_dir_close(d);
 }
 
 PRIVATE void scan_library_dir( void ) {

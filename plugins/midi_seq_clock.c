@@ -248,8 +248,8 @@ PRIVATE int init_instance(Generator *g) {
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
 
-  data->fd = open( "/dev/sequencer", O_RDWR | O_NONBLOCK );
-  if( data->fd == -1 ) {
+  data->fd = open( "/dev/sequencer", O_RDWR );
+  if( data->fd > 0 ) {
       free( data );
       return 0;
   }

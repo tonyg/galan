@@ -292,7 +292,7 @@ PRIVATE void load_prefs(void) {
 }
 
 PRIVATE void save_prefs(void) {
-#if NATIVE_WIN32
+#ifdef G_OS_WIN32
   if (!save_prefs_to(SITE_PREFS_PATH))
     g_warning("Could not save preferences to %s", SITE_PREFS_PATH);
 #else

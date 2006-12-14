@@ -57,7 +57,7 @@ typedef struct Data {
 #define DELAY_CONTROL_DELAY	0
 
 PRIVATE ControlDescriptor delay_controls[] = {
-  { CONTROL_KIND_KNOB, "delay", MAXIMUM_REALTIME_STEP/SAMPLE_RATE,1,0.0025,0.001, 0,TRUE, 1,EVT_DELAY,
+  { CONTROL_KIND_KNOB, "delay", 0,1,0.0025,0.001, 0,TRUE, 1,EVT_DELAY,
     NULL,NULL, control_double_updater, (gpointer) offsetof(Data, delay_sec) },
   { CONTROL_KIND_NONE, }
 };
@@ -178,6 +178,9 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
 };
 
 PRIVATE void setup_class(void) {
+
+  delay_controls[0].min = MAXIMUM_REALTIME_STEP/SAMPLE_RATE;
+
   GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE,
 					     NUM_EVT_INPUTS, NUM_EVT_OUTPUTS,
 					     input_sigs, output_sigs, delay_controls,

@@ -42,6 +42,9 @@
 #include <jack/miditypes.h>
 #endif
 
+#include <galan_jack.h>
+#include <galan_lash.h>
+
 #define SIG_LEFT_CHANNEL	0
 #define SIG_RIGHT_CHANNEL	1
 
@@ -92,7 +95,6 @@ typedef struct TransportData {
 PRIVATE int instance_count = 0;
 PRIVATE int jack_instance_count = 0;
 
-int rate = SAMPLE_RATE;				 /* stream rate */
 
 GList *transport_clocks = NULL;
 
@@ -174,22 +176,29 @@ jack_shutdown (void *arg)
 
 PRIVATE void clock_handler(AClock *clock, AClockReason reason) {
 
-  switch (reason) {
-    case CLOCK_DISABLE:
-      jack_deactivate( jack_client );
-      break;
+    switch (reason) {
+	case CLOCK_DISABLE:
+	    jack_deactivate( jack_client );
+	    break;
 
-    case CLOCK_ENABLE:
-      jack_set_process_callback( jack_client, (JackProcessCallback) process_callback, NULL ); 
-      jack_on_shutdown (jack_client, jack_shutdown, 0);
+	case CLOCK_ENABLE:
+	    jack_set_process_callback( jack_client, (JackProcessCallback) process_callback, NULL ); 
+	    jack_on_shutdown (jack_client, jack_shutdown, 0);
 
-      jack_activate( jack_client );
-      break;
+	    jack_activate( jack_client );
 
-    default:
-      g_message("Unreachable code reached (jack_output)... reason = %d", reason);
-      break;
-  }
+	    lash_event_t *event;
+	    if( lash_enabled( galan_lash_get_client() ) ) {
+		event = lash_event_new_with_type(LASH_Jack_Client_Name);
+		lash_event_set_string(event, jack_get_client_name( jack_client ) );
+		lash_send_event( galan_lash_get_client(), event);
+	    }
+	    break;
+
+	default:
+	    g_message("Unreachable code reached (jack_output)... reason = %d", reason);
+	    break;
+    }
 }
 
 PRIVATE void realtime_handler(Generator *g, AEvent *event) {
@@ -200,9 +209,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
       //SAMPLE *l_buf, *r_buf;
       int bufbytes = event->d.integer * sizeof(SAMPLE);
 
-      //l_buf = safe_malloc(bufbytes);
-      //r_buf = safe_malloc(bufbytes);
-
       if (!gen_read_realtime_input(g, SIG_LEFT_CHANNEL, -1, data->l_buf, event->d.integer))
 	memset(data->l_buf, 0, bufbytes);
 
@@ -210,8 +216,6 @@ PRIVATE void realtime_handler(Generator *g, AEvent *event) {
 	memset(data->r_buf, 0, bufbytes);
 
       audio_play_fragment(data, data->l_buf, data->r_buf, event->d.integer);
-      //free(l_buf);
-      //free(r_buf);
 
       break;
     }
@@ -260,7 +264,7 @@ PRIVATE int init_instance(Generator *g) {
   data->r_buf = safe_malloc( sizeof(SAMPLE) * 4096 );
 
   if( jack_client == NULL )
-      jack_client = jack_client_new( "galan" );
+      jack_client = galan_jack_get_client();
   
 
   if (jack_client == NULL) {
@@ -300,10 +304,9 @@ PRIVATE int playport_init_instance(Generator *g) {
   data = safe_malloc(sizeof(OData));
 
   data->buf = safe_malloc( sizeof(SAMPLE) * 4096 );
-  //jack_timestamp = ;
 
   if( jack_client == NULL )
-      jack_client = jack_client_new( "galan" );
+      jack_client = galan_jack_get_client();
   
 
   if (jack_client == NULL) {
@@ -335,7 +338,7 @@ PRIVATE int recport_init_instance(Generator *g) {
     data = safe_malloc(sizeof(OData));
 
     if( jack_client == NULL )
-	jack_client = jack_client_new( "galan" );
+	jack_client = galan_jack_get_client();
 
 
     if (jack_client == NULL) {
@@ -373,13 +376,6 @@ PRIVATE void destroy_instance(Generator *g) {
 	jack_port_unregister( jack_client, data->port_l );
 	jack_port_unregister( jack_client, data->port_r );
 
-	if( jack_instance_count == 1 ) {
-	    gen_deregister_clock(jack_clock);
-	    jack_clock = NULL;
-	    jack_client_close( jack_client );
-	    jack_client = NULL;
-	}
-
 	free(data);
     }
 
@@ -398,12 +394,6 @@ PRIVATE void playport_destroy_instance(Generator *g) {
 	    free( data->buf );
 
 	jack_port_unregister( jack_client, data->port );
-	if( jack_instance_count == 1 ) {
-	    gen_deregister_clock(jack_clock);
-	    jack_clock = NULL;
-	    jack_client_close( jack_client );
-	    jack_client = NULL;
-	}
 
 	free(data);
     }
@@ -417,13 +407,6 @@ PRIVATE void recport_destroy_instance(Generator *g) {
   if (data != NULL) {
 
     jack_port_unregister( jack_client, data->port );
-    if( jack_instance_count == 1 ) {
-	gen_deregister_clock(jack_clock);
-	jack_clock = NULL;
-	jack_client_close( jack_client );
-	jack_client = NULL;
-    }
-
     free(data);
   }
 
@@ -644,7 +627,7 @@ PRIVATE int midiinport_init_instance(Generator *g) {
     data = safe_malloc(sizeof(MidiInData));
 
     if( jack_client == NULL )
-	jack_client = jack_client_new( "galan" );
+	jack_client = galan_jack_get_client();
 
 
     if (jack_client == NULL) {
@@ -674,13 +657,6 @@ PRIVATE void midiinport_destroy_instance(Generator *g) {
   if (data != NULL) {
 
     jack_port_unregister( jack_client, data->port );
-    if( jack_instance_count == 1 ) {
-	gen_deregister_clock(jack_clock);
-	jack_clock = NULL;
-	jack_client_close( jack_client );
-	jack_client = NULL;
-    }
-
     free(data);
   }
 

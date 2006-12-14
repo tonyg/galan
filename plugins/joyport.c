@@ -65,6 +65,7 @@ enum EVT_OUTPUTS {
 };
 
 typedef struct Data {
+  char *dev_name;
   gint fd;  
   gint input_tag;
 } Data;
@@ -93,9 +94,11 @@ PRIVATE void input_callback( Generator *g, gint source, GdkInputCondition condit
       
       case JS_EVENT_AXIS:
 
-	  gen_init_aevent(&event, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() );
-	  event.d.number = ((gdouble) jsevent.value) / 32767;
-	  gen_send_events(g, jsevent.number, -1, &event);
+	  if( jsevent.number < 6 ) {
+	      gen_init_aevent(&event, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() );
+	      event.d.number = ((gdouble) jsevent.value) / 32767;
+	      gen_send_events(g, jsevent.number, -1, &event);
+	  }
 	  
 	  break;
 	  
@@ -109,6 +112,10 @@ PRIVATE void input_callback( Generator *g, gint source, GdkInputCondition condit
 	  else
 	      gen_send_events(g, EVT_BTNUP, -1, &event);
 
+	  break;
+    
+      default:
+	  //printf( "unknown event: type %d, num %d, val %d \n", jsevent.type, jsevent.number, jsevent.value  );
 	  break;
   }
 }
@@ -130,8 +137,9 @@ PRIVATE void input_callback( Generator *g, gint source, GdkInputCondition condit
 PRIVATE int init_instance(Generator *g) {
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
+  data->dev_name = safe_string_dup("/dev/input/js0");
 
-  data->fd = open( "/dev/input/js0", O_RDONLY );
+  data->fd = open( data->dev_name, O_RDONLY );
   data->input_tag = gdk_input_add( data->fd, GDK_INPUT_READ, (GdkInputFunction)  input_callback, (gpointer) g ); 
   return 1;
 }
@@ -141,6 +149,9 @@ PRIVATE void destroy_instance(Generator *g) {
 
   gdk_input_remove( data->input_tag );
   close( data->fd );
+
+  if( data->dev_name )
+      free( data->dev_name );
 
   free(g->data);
 }
@@ -156,13 +167,16 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
+  data->dev_name = safe_string_dup( objectstore_item_get_string(item, "dev_name", "/dev/input/js0" ) );
 
-  data->fd = open( "/dev/input/js0", O_RDONLY );
+  data->fd = open( data->dev_name, O_RDONLY );
   data->input_tag = gdk_input_add( data->fd, GDK_INPUT_READ, (GdkInputFunction) input_callback, g ); 
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
-  //Data *data = g->data;
+  Data *data = g->data;
+  if (data->dev_name != NULL)
+    objectstore_item_set_string(item, "dev_name", data->dev_name);
 }
 
 /*
@@ -179,6 +193,36 @@ PRIVATE ControlDescriptor controls[] = {
      { CONTROL_KIND_NONE, }
 };
 
+// Properties...
+
+PRIVATE void propgen(Component *c, Generator *g) {
+  Data *data = g->data;
+
+  GtkWidget *hb = gtk_hbox_new(FALSE, 5);
+  GtkWidget *label = gtk_label_new("Joystick Device:");
+  GtkWidget *text = gtk_entry_new();
+
+  gtk_box_pack_start(GTK_BOX(hb), label, TRUE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hb), text, TRUE, FALSE, 0);
+
+  gtk_widget_show(label);
+  gtk_widget_show(text);
+
+  gtk_entry_set_text(GTK_ENTRY(text), data->dev_name );
+
+  popup_dialog("Properties", MSGBOX_DISMISS, 0, MSGBOX_DISMISS, hb, NULL, 0);
+
+  if( data->dev_name )
+      free( data->dev_name );
+
+  data->dev_name = safe_string_dup(gtk_entry_get_text(GTK_ENTRY(text)));
+
+  gdk_input_remove( data->input_tag );
+  close( data->fd );
+
+  data->fd = open( data->dev_name, O_RDONLY );
+  data->input_tag = gdk_input_add( data->fd, GDK_INPUT_READ, (GdkInputFunction)  input_callback, (gpointer) g ); 
+}
 
 /*
  * setup Class
@@ -205,7 +249,7 @@ PRIVATE void setup_class(void) {
   gen_configure_event_output(k, EVT_BTNDOWN, "ButtonDown");
   gen_configure_event_output(k, EVT_BTNUP,   "ButtonUp");
 
-  gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
+  gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, propgen);
 }
 
 PUBLIC void init_plugin_joyport(void) {

@@ -82,8 +82,7 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   in = event->d.array.numbers;
   len = event->d.array.len;
 
-  // TODO: make this alloca...
-  out = safe_malloc( sizeof( SAMPLE ) * (len/2+1) );
+  out = g_alloca( sizeof( SAMPLE ) * (len/2+1) );
   
   out[0] = in[0] * in [0];
   for( i=1; i<(len+1)/2; i++ )
@@ -91,7 +90,6 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
 
   if( (len & 1) == 0 )
       out[len/2] = in[len/2] * in[len/2];
-  //rfftw_one( data->plan, event->d.array.numbers, out );
   
 
   gen_init_aevent(&send_ev, AE_NUMARRAY, NULL, 0, NULL, 0, event->time);
@@ -101,8 +99,6 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
 
 
   gen_send_events(g, EVT_OUTPUT, -1, &send_ev);
-
-  free(out);
 }
 
 PRIVATE ControlDescriptor controls[] = {

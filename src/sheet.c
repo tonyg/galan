@@ -674,6 +674,12 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
     return FALSE;
 }
 
+
+PRIVATE void sheet_set_dirty( Sheet *s, gboolean d ) {
+    s->dirty = d;
+    update_sheet_name( s );
+}
+
 /**
  * \brief Register a component as a reference to this sheet
  *
@@ -794,6 +800,8 @@ PUBLIC Sheet *create_sheet( void ) {
 
 
   //sheet->control_panel = control_panel_new( sheet->name );
+  sheet_set_dirty( sheet, FALSE );
+  update_sheet_name( sheet );
 
   return sheet;
 }
@@ -815,6 +823,7 @@ PUBLIC Component *sheet_build_new_component(Sheet *sheet, ComponentClass *k, gpo
   if (c != NULL) {
     sheet->components = g_list_prepend(sheet->components, c);
     gtk_widget_queue_draw(sheet->drawingwidget);
+    sheet_set_dirty( sheet, TRUE );
   }
 
   return c;
@@ -824,6 +833,7 @@ PUBLIC void sheet_add_component( Sheet *sheet, Component *c ) {
     if( c != NULL ) {
 	sheet->components = g_list_prepend(sheet->components, c);
 	gtk_widget_queue_draw(sheet->drawingwidget);
+	sheet_set_dirty( sheet, TRUE );
     }
 }
 
@@ -840,6 +850,7 @@ PUBLIC void sheet_delete_component(Sheet *sheet, Component *c) {
       sheet->components = g_list_remove(sheet->components, c);
       if( g_list_find( sheet->selected_comps, c ) )
 	  sheet->selected_comps = g_list_remove( sheet->selected_comps, c );
+      sheet_set_dirty( sheet, TRUE );
   }
 
   gtk_widget_queue_draw(sheet->drawingwidget);
@@ -857,6 +868,7 @@ PUBLIC void sheet_delete_component(Sheet *sheet, Component *c) {
 
 PUBLIC void sheet_queue_redraw_component(Sheet *sheet, Component *c) {
   gtk_widget_queue_draw_area(sheet->drawingwidget, c->x, c->y, c->width, c->height);
+  sheet_set_dirty( sheet, TRUE );
 }
 
 /**
@@ -910,6 +922,39 @@ PUBLIC int sheet_get_textheight(Sheet *sheet, char *text) {
   return retval;
 }
 
+PUBLIC gboolean sheet_dont_like_be_destroyed( Sheet *sheet ) {
+
+    if( sheet->dirty ) {
+	GtkWidget *dirtydialog = gtk_message_dialog_new( 
+		GTK_WINDOW( gtk_widget_get_toplevel( sheet->scrollwin ) ),
+		GTK_DIALOG_DESTROY_WITH_PARENT,
+		GTK_MESSAGE_WARNING,
+		GTK_BUTTONS_NONE,
+		"Sheet is not saved !!!\nGo ahead ?" );
+
+	gtk_dialog_add_button( GTK_DIALOG( dirtydialog ), GTK_STOCK_SAVE, 0 );
+	gtk_dialog_add_button( GTK_DIALOG( dirtydialog ), GTK_STOCK_REMOVE, GTK_RESPONSE_REJECT );
+	gtk_dialog_add_button( GTK_DIALOG( dirtydialog ), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL );
+
+	gint dialog_result = gtk_dialog_run( GTK_DIALOG( dirtydialog ) );
+	gtk_widget_destroy( GTK_WIDGET( dirtydialog ) );
+
+	switch( dialog_result ) {
+	    case 0:
+		if( save_sheet( sheet, NULL ) )
+		    return 0;
+		else
+		    return 1;
+	    case GTK_RESPONSE_REJECT:
+		return 0;
+	    case GTK_RESPONSE_CANCEL:
+		return 1;
+	}
+    }
+
+    return 0;
+}
+
 /**
  * \brief kill all components on sheet
  *
@@ -918,6 +963,10 @@ PUBLIC int sheet_get_textheight(Sheet *sheet, char *text) {
 
 PUBLIC void sheet_clear(Sheet *sheet) {
 
+
+    if( sheet_dont_like_be_destroyed( sheet ) )
+	return;
+	    
   sheet_kill_refs( sheet );
   while (sheet->components != NULL) {
     GList *temp = g_list_next(sheet->components);
@@ -931,6 +980,8 @@ PUBLIC void sheet_clear(Sheet *sheet) {
 
   gtk_widget_queue_draw(sheet->drawingwidget);
   reset_control_panel();
+
+  sheet_set_dirty( sheet, FALSE );
 }
 
 /**
@@ -940,6 +991,10 @@ PUBLIC void sheet_clear(Sheet *sheet) {
  */
 
 PUBLIC void sheet_remove( Sheet *sheet ) {
+
+    if( sheet_dont_like_be_destroyed( sheet ) )
+	return;
+
     sheet_clear( sheet );
     gui_unregister_sheet( sheet );
 
@@ -1084,6 +1139,7 @@ PUBLIC ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db ) {
 		objectstore_create_list_of_items( sheet->components, db,
 		    (objectstore_pickler_t) comp_pickle ));
 
+	sheet_set_dirty( sheet, FALSE );
     }	
     return item;
 }
@@ -1102,13 +1158,14 @@ PUBLIC Sheet *sheet_clone( Sheet *sheet ) {
     clone->visible = FALSE;
     gtk_layout_move( GTK_LAYOUT( cp->fixedwidget ), cp->sizer_ebox, sheet->control_panel->sizer_x+16, sheet->control_panel->sizer_y+16 );
 
-    if( sheet->control_panel->current_bg ) {
-	cp->current_bg = safe_string_dup( sheet->control_panel->current_bg );
+    if( sheet->control_panel->bg_image_name ) {
+	cp->bg_image_name = safe_string_dup( sheet->control_panel->bg_image_name );
 	if( clone->panel_control_active )
 	    control_update_bg( clone->panel_control );
     }
 
     comp_clone_list( sheet->components, clone );
+    clone->dirty = FALSE;
     return clone;
 }
 
@@ -1134,6 +1191,7 @@ PUBLIC Sheet *sheet_loadfrom(Sheet *sheet, FILE *f) {
 
   root = objectstore_get_root(db);
   sheet = sheet_unpickle( root );
+  sheet_set_dirty( sheet, FALSE );
 
   objectstore_kill_objectstore(db);
   reset_control_panel();
@@ -1165,6 +1223,7 @@ PUBLIC void sheet_saveto(Sheet *sheet, FILE *f, gboolean sheet_only ) {
 
   objectstore_write(f, db);
   objectstore_kill_objectstore(db);
+  sheet_set_dirty( sheet, FALSE );
 }
 
 

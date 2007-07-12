@@ -131,8 +131,8 @@ PUBLIC int galan_main(int argc, char *argv[]) {
 
   gtk_rc_parse_string( "style \"trans\" { bg_pixmap[NORMAL] = \"<parent>\" } \nwidget \"control_panel.*.GtkLayout.*\" style \"trans\" " );
 
-  init_lash( argc, argv );
   init_jack();
+  init_lash( argc, argv );
   init_generator();
   init_event();
   init_clock();
@@ -146,17 +146,28 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   init_prefs();
   init_objectstore();
   init_plugins();
+
+  gui_add_comps();
   
   init_generator_thread();
   init_control_thread();
 
   if( argc > 1 )
-      load_sheet_from_name( argv[1] );
+      if( ! g_path_is_absolute( argv[1] ) ) {
+	  char *cwd = g_get_current_dir();
+	  char *absname = g_build_filename( cwd, argv[1], NULL );
+	  load_sheet_from_name( absname );
+	  free( absname );
+	  free( cwd );
+      } else
+	  load_sheet_from_name( argv[1] );
   else {
       Sheet *s = create_sheet();
       s->control_panel = control_panel_new( s->name, TRUE, s );
       gui_register_sheet( s );
   }
+
+
 
   gdk_threads_enter();
   gtk_main();
@@ -172,8 +183,8 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   done_gui();
   done_clock();
   done_generator();
-  done_jack();
   done_lash();
+  done_jack();
 
   return EXIT_SUCCESS;
 }

@@ -28,6 +28,8 @@
 #include "control.h"
 #include "msgbox.h"
 
+#include "galan_jack.h"
+
 /**
  * \brief This is a hash mapping from string -> GeneratorClass
  *
@@ -412,7 +414,7 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
 		gdk_threads_enter();
 		control_kill_control(c->data);
 		gdk_threads_leave();
-		g_list_free_1(c);
+		//g_list_free_1(c);
 		c = tmp;
 	    }
 	}
@@ -848,6 +850,8 @@ PUBLIC void gen_register_control(Generator *g, Control *c) {
 
 PUBLIC void gen_deregister_control(Generator *g, Control *c) {
   g->controls = g_list_remove(g->controls, c);
+  //GList *cl = g_list_find( g->controls, c );
+  //cl->data = NULL;
 }
 
 /**
@@ -867,17 +871,18 @@ PUBLIC void gen_deregister_control(Generator *g, Control *c) {
  */
 
 PUBLIC void gen_update_controls(Generator *g, int index) {
-  GList *cs = g->controls;
-  ControlDescriptor *desc = (index == -1) ? NULL : &g->klass->controls[index];
+    GList *cs = g->controls;
+    ControlDescriptor *desc = (index == -1) ? NULL : &g->klass->controls[index];
 
-  while (cs != NULL) {
-    Control *c = cs->data;
+    while (cs != NULL) {
+	Control *c = cs->data;
 
-    if (desc == NULL || c->desc == desc)
-      control_update_value(c);  
+	if (desc == NULL || c->desc == desc) {
+	    control_update_value(c);  
+	}
+	cs = g_list_next(cs);
 
-    cs = g_list_next(cs);
-  }
+    }
 }
 
 /**
@@ -1365,6 +1370,7 @@ PUBLIC void init_generator_thread(void) {
     GError *err;
     kill_thread = g_thread_create( (GThreadFunc) gen_kill_generator_stage2_thread, NULL, TRUE, &err );
 }
+
 PUBLIC void init_generator(void) {
 
     gen_samplerate = jack_get_sample_rate( galan_jack_get_client() );

@@ -333,7 +333,7 @@ static void gtk_slider_realize(GtkWidget *widget) {
 
   gdk_window_set_user_data(widget->window, widget);
 
-  slider->pixmap = gdk_pixmap_create_from_xpm_d(widget->window, &mask,
+  slider->pixmap = gdk_pixmap_colormap_create_from_xpm_d(widget->window, gdk_colormap_get_system(), &mask,
 					      &widget->style->bg[GTK_STATE_NORMAL],
 					      slider_xpm);
 

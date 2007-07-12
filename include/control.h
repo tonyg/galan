@@ -45,8 +45,15 @@ enum ControlKind {
   CONTROL_MAX_KIND
 };
 
-struct Control;
 typedef void (* ControlMove_cb)(struct Control *);
+
+
+enum ControlPanelBackgroundType {
+    CONTROL_PANEL_BG_DEFAULT,
+    CONTROL_PANEL_BG_IMAGE,
+    CONTROL_PANEL_BG_COLOR,
+    CONTROL_PANEL_BG_GRADIENT
+};
 
 struct ControlPanel {
     GtkWidget *scrollwin, *fixedwidget;
@@ -55,11 +62,23 @@ struct ControlPanel {
     struct sheet *sheet;
     int w,h;
     GtkWidget *sizer_ebox, *sizer_image;
+
     int sizer_x, sizer_y;
     int sizer_saved_x, sizer_saved_y;
     int sizer_moving;
     int sizer_visible;
-    char *current_bg;
+
+
+    // background rendering...
+    //char *current_bg;
+
+    enum ControlPanelBackgroundType  bg_type;
+    GdkColor color1;
+    GdkColor color2;
+    GdkColor frame_color;
+    guint16  frame_alpha;
+    
+    char *bg_image_name;
 };
 
 struct ControlDescriptor {
@@ -88,12 +107,17 @@ struct Control {
   gdouble min, max, step, page;		/* overrides desc's values */
 
   gboolean frame_visible;
+  gboolean name_visible;
   gboolean entry_visible;
   gboolean control_visible;
 
   int moving, saved_x, saved_y;		/* variables to implement drag-moving of controls */
   int x, y;				/* position within control window */
   gboolean events_flow;			/* TRUE => sends AEvents, FALSE => is silent */
+  gboolean kill_me;			/* there is a race in the control deletion with the update thread. 
+					   to delete a control remove it from the generator, and set kill_me,
+					   the call control_update on it. */
+  int update_refcount;
 
   GtkWidget *widget;			/* the control itself */
   GtkWidget *whole;			/* the control embedded in some wrapping */
@@ -127,6 +151,7 @@ extern void control_moveto(Control *c, int x, int y);
 extern void control_update_bg(Control *c);
 
 extern void init_control(void);
+extern void init_control_thread(void);
 extern Control *control_clone( Control *c, Generator *g, ControlPanel *cp );
 
 extern void show_control_panel(void);

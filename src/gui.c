@@ -33,6 +33,8 @@
 #include "prefs.h"
 #include "shcomp.h"
 
+#include "galan-comptree-model.h"
+
 /*=======================================================================*/
 /* Variables for GTK gui */
 
@@ -40,6 +42,11 @@ PRIVATE GtkWidget *mainwin;
 PRIVATE GtkWidget *mainmenu;
 PRIVATE GtkWidget *mainnotebook;
 PRIVATE GtkWidget *statusbar;
+PRIVATE  GtkWidget *upper_box;
+
+PUBLIC GtkActionGroup *component_actiongroup = NULL;
+PUBLIC GtkActionGroup *menu_actiongroup = NULL;
+PUBLIC  GtkUIManager *ui_manager;
 
 PRIVATE char *current_filename = NULL;
 PRIVATE guint timeout_tag;
@@ -50,7 +57,7 @@ PRIVATE GList *sheets = NULL;
 /*=======================================================================*/
 /* Helper Functions */
 
-PRIVATE Sheet *gui_get_active_sheet( void ) {
+PUBLIC Sheet *gui_get_active_sheet( void ) {
 
     int activepagenum = gtk_notebook_get_current_page( GTK_NOTEBOOK(mainnotebook) );
     GtkWidget *scrollwin = gtk_notebook_get_nth_page( GTK_NOTEBOOK(mainnotebook), activepagenum );
@@ -84,18 +91,40 @@ PUBLIC void gui_unregister_sheet( struct sheet *sheet ) {
 }
 
 PUBLIC void update_sheet_name( struct sheet *sheet ) {
-    gtk_notebook_set_tab_label_text( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, sheet->name );
+    if( sheet->dirty ) {
+	char *dirty_name = g_strdup_printf( "%s [+]", sheet->name );
+	gtk_notebook_set_tab_label_text( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, dirty_name );
+    } else {
+	gtk_notebook_set_tab_label_text( GTK_NOTEBOOK( mainnotebook ), sheet->scrollwin, sheet->name );
+    }
 }
 
 PUBLIC void gui_statusbar_push( char *msg ) {
     gtk_label_set_text( GTK_LABEL(statusbar), msg );
 }
 
+PUBLIC gboolean anything_dirty(void) {
+
+    GList *shlist;
+    for( shlist = get_sheet_list(); shlist; shlist=g_list_next(shlist) ) {
+	Sheet *s = shlist->data;
+	if( sheet_dont_like_be_destroyed(s) )
+	    return TRUE;
+    }
+    return FALSE;
+}
+
+
 /*=======================================================================*/
 /* GTK gui Callbacks */
 
 PRIVATE gboolean exit_request(GtkWidget *w, GdkEvent *ev, gpointer data) {
   /* %%% should check that the file is saved here */
+
+    if( anything_dirty() ) {
+	return TRUE;
+    }
+    
   gtk_main_quit();
   return TRUE;
 }
@@ -150,11 +179,12 @@ PRIVATE void file_new_callback(gpointer userdata, guint action, GtkWidget *widge
 
 PUBLIC void load_sheet_from_name(char *name) {
   FILE *f;
+  Sheet *s;
 
   f = fopen(name, "rb");
 
       
-  if (f == NULL || !(sheet_loadfrom( NULL , f))) {
+  if (f == NULL || !(s=sheet_loadfrom( NULL , f))) {
     popup_msgbox("Error Loading File", MSGBOX_OK, 120000, MSGBOX_OK,
 		 "File not found, or file format error: %s",
 		 name);
@@ -163,6 +193,8 @@ PUBLIC void load_sheet_from_name(char *name) {
 
   fclose(f);
 
+  s->filename = safe_string_dup( name );
+
   if (current_filename != NULL)
     free(current_filename);
   current_filename = safe_string_dup(name);
@@ -170,12 +202,13 @@ PUBLIC void load_sheet_from_name(char *name) {
 
 PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
   FILE *f;
+  Sheet *s;
   const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
 
   f = fopen(newname, "rb");
 
       
-  if (f == NULL || !(sheet_loadfrom( NULL , f))) {
+  if (f == NULL || !(s=sheet_loadfrom( NULL , f))) {
     popup_msgbox("Error Loading File", MSGBOX_OK, 120000, MSGBOX_OK,
 		 "File not found, or file format error: %s",
 		 newname);
@@ -183,6 +216,8 @@ PRIVATE void load_new_sheet(GtkWidget *widget, GtkWidget *fs) {
   }
 
   fclose(f);
+
+  s->filename = safe_string_dup( newname );
 
   if (current_filename != NULL)
     free(current_filename);
@@ -209,24 +244,67 @@ PRIVATE void open_file(gpointer userdata, guint action, GtkWidget *widget) {
 
 PRIVATE gboolean sheet_only = FALSE;
 
-PRIVATE void save_file_to(const char *filename) {
+PRIVATE void save_file_to(const char *filename, Sheet *sheet) {
   FILE *f = fopen(filename, "wb");
   if (f == NULL)
     return;
 
-  sheet_saveto( gui_get_active_sheet() , f, sheet_only);
+  if( sheet == NULL )
+      sheet = gui_get_active_sheet();
+
+  sheet_saveto( sheet , f, sheet_only);
   fclose(f);
 }
+
+
 
 PRIVATE void save_sheet_callback(GtkWidget *widget, GtkWidget *fs) {
   const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
 
-  save_file_to(newname);
+  save_file_to(newname, NULL);
 
   if (current_filename != NULL)
     free(current_filename);
   current_filename = safe_string_dup(newname);
   gtk_widget_destroy(fs);
+}
+
+PUBLIC gboolean save_sheet( Sheet *sheet, char *name ) {
+    if( !name ) {
+	if( !( sheet->filename ) ) {
+	    GtkWidget *filechooser = gtk_file_chooser_dialog_new(
+		    "Save Sheet. Has no Name yet !",
+		    GTK_WINDOW( gtk_widget_get_toplevel( sheet->scrollwin ) ),
+		    GTK_FILE_CHOOSER_ACTION_SAVE,
+		    GTK_STOCK_SAVE_AS, GTK_RESPONSE_ACCEPT,
+		    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		    NULL );
+	    gtk_file_chooser_set_do_overwrite_confirmation( GTK_FILE_CHOOSER( filechooser ), TRUE );
+	    gtk_file_chooser_set_current_folder( GTK_FILE_CHOOSER( filechooser ), "~/" );
+	    gtk_file_chooser_set_current_name( GTK_FILE_CHOOSER( filechooser ), "untitled.galan" );
+	    
+	    if( gtk_dialog_run( GTK_DIALOG( filechooser ) ) == GTK_RESPONSE_CANCEL ) {
+		gtk_widget_destroy( GTK_WIDGET( filechooser ) );
+		return FALSE;
+	    }
+
+	    sheet->filename = gtk_file_chooser_get_filename( GTK_FILE_CHOOSER( filechooser ) );
+	    gtk_widget_destroy( GTK_WIDGET( filechooser ) );
+	}
+    } else {
+	if( sheet->filename )
+	    free( sheet->filename );
+
+	sheet->filename = safe_string_dup( name );
+    }
+    
+    
+    
+    sheet_only = FALSE;
+    save_file_to(sheet->filename, sheet);
+
+    return TRUE;
+
 }
 
 PRIVATE void save_file(gpointer userdata, guint action, GtkWidget *widget) {
@@ -258,8 +336,21 @@ PRIVATE void save_file(gpointer userdata, guint action, GtkWidget *widget) {
     gtk_window_set_modal(GTK_WINDOW(fs), TRUE);
     gtk_widget_show(fs);
   } else
-    save_file_to(current_filename);
+    save_file_to(current_filename, NULL);
 }
+
+PRIVATE void action_save_sheet( GtkAction *act, gpointer user_data ) {
+    save_file( NULL, 2, NULL );
+}
+
+PRIVATE void action_save_file( GtkAction *act, gpointer user_data ) {
+    save_file( NULL, 0, NULL );
+}
+
+PRIVATE void action_save_file_as( GtkAction *act, gpointer user_data ) {
+    save_file( NULL, 1, NULL );
+}
+
 
 PRIVATE void new_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
 
@@ -281,19 +372,34 @@ PRIVATE void edit_clone_comp( Component *c, gpointer userdata ) {
 
 //---------------------------------------------------------------------------
 
-PRIVATE GFunc edit_func[] = { (GFunc) edit_delete_comp,
-			       (GFunc) edit_clone_comp   };
+//PRIVATE GFunc edit_func[] = { (GFunc) edit_delete_comp,
+//			       (GFunc) edit_clone_comp   };
 
-PRIVATE void edit_selected( gpointer userdata, guint action, GtkWidget *widget ) {
+PRIVATE void action_del_selected( GtkAction *act ) {
     Sheet *sheet = gui_get_active_sheet();
 
-    g_list_foreach( sheet->selected_comps, (edit_func[action]), NULL );
+    g_list_foreach( sheet->selected_comps, (GFunc) edit_delete_comp, NULL );
+}
+
+PRIVATE void action_clone_selected( GtkAction *act ) {
+    Sheet *sheet = gui_get_active_sheet();
+
+    g_list_foreach( sheet->selected_comps, (GFunc) edit_clone_comp, NULL );
 }
 
 PRIVATE void clone_selected( gpointer userdata, guint action, GtkWidget *widget ) {
     Sheet *sheet = gui_get_active_sheet();
 
     comp_clone_list( sheet->selected_comps, sheet );
+}
+
+PRIVATE void clone_selected_on_new_sheet( GtkAction *act ) {
+    Sheet *current_sheet = gui_get_active_sheet();
+    Sheet *new_sheet = create_sheet();
+    gui_register_sheet( new_sheet );
+    new_sheet->control_panel = control_panel_new( new_sheet->name, TRUE, new_sheet );
+
+    comp_clone_list( current_sheet->selected_comps, new_sheet );
 }
 
 PRIVATE void del_sheet( gpointer userdata, guint action, GtkWidget *widget ) {
@@ -325,6 +431,18 @@ PRIVATE void reg_sheet2( gpointer userdata, guint action, GtkWidget *widget ) {
 }
 
 
+PRIVATE void action_switchcontrolpanel_screen( GtkAction *act ) {
+    //static int controlpanel_screennumber;
+    
+    GdkDisplay *disp = gdk_display_get_default();
+    int nscreens     = gdk_display_get_n_screens( disp );
+    if( nscreens > 1 ) {
+	GdkScreen *cur_scr = gtk_window_get_screen( GTK_WINDOW( control_panel ) );
+	gint curscr_num = gdk_screen_get_number( cur_scr );
+	GdkScreen *new_scr = gdk_display_get_screen( disp, (curscr_num+1)%nscreens );
+	gtk_window_set_screen( GTK_WINDOW( control_panel ), new_scr );
+    }
+}
 
 PRIVATE void select_master_clock(gpointer userdata, guint action, GtkWidget *widget) {
   GtkWidget *contents;
@@ -364,6 +482,7 @@ PRIVATE void select_master_clock(gpointer userdata, guint action, GtkWidget *wid
 /*=======================================================================*/
 /* Build the GTK gui objects */
 
+#if 0
 PRIVATE GtkItemFactoryEntry mainmenu_items[] = {
   /* Path, accelerator, callback, extra-numeric-argument, kind */
   { "/_File",			NULL,		NULL, 0,		"<Branch>" },
@@ -418,6 +537,14 @@ PRIVATE GtkWidget *build_mainmenu(void) {
 
   return gtk_item_factory_get_widget(ifact, "<main>");
 }
+#endif
+
+
+
+
+//PRIVATE GtkWidget *build_mainmenu(void) {
+//}
+
 
 /**
  * \brief Create the Meshwindow
@@ -430,7 +557,7 @@ PRIVATE GtkWidget *build_mainmenu(void) {
 
 PRIVATE void create_mainwin(void) {
   GtkWidget *vb;
-  GtkWidget *hb;
+  //GtkWidget *hb;
   GtkWidget *frame, *statusbox;
 
   //Sheet *s1;
@@ -445,16 +572,32 @@ PRIVATE void create_mainwin(void) {
   gtk_window_set_wmclass(GTK_WINDOW(mainwin), "gAlan_mesh", "gAlan");
 
   vb = gtk_vbox_new(FALSE, 0);
-  gtk_widget_show(vb);
   gtk_container_add(GTK_CONTAINER(mainwin), vb);
+  gtk_widget_show(vb);
 
-  hb = gtk_handle_box_new();
-  gtk_widget_show(hb);
-  gtk_box_pack_start(GTK_BOX(vb), hb, FALSE, TRUE, 0);
+  //hb = gtk_handle_box_new();
+  //gtk_widget_show(hb);
+  //gtk_box_pack_start(GTK_BOX(vb), hb, FALSE, TRUE, 0);
 
-  mainmenu = build_mainmenu();
-  gtk_widget_show(mainmenu);
-  gtk_container_add(GTK_CONTAINER(hb), mainmenu);
+  //mainmenu = build_mainmenu();
+  //gtk_widget_show(mainmenu);
+  //gtk_container_add(GTK_CONTAINER(hb), mainmenu);
+
+  mainmenu = gtk_ui_manager_get_widget( ui_manager, "/MainMenu" ); 
+  if( mainmenu ) {
+      gtk_box_pack_start(GTK_BOX(vb), mainmenu, FALSE, TRUE, 0);
+      gtk_widget_show( mainmenu );
+  }
+
+//  mainmenu = gtk_ui_manager_get_widget( ui_manager, "/MainToolBar" ); 
+//  if( mainmenu ) {
+//      gtk_box_pack_start(GTK_BOX(vb), mainmenu, FALSE, TRUE, 0);
+//      gtk_widget_show( mainmenu );
+//  }
+
+  gtk_window_add_accel_group( GTK_WINDOW(mainwin), gtk_ui_manager_get_accel_group( ui_manager ) );
+
+  upper_box = vb;
 
   //s1 = create_sheet();
   //s1->control_panel = control_panel_new( s1->name, TRUE, s1 );
@@ -477,6 +620,10 @@ PRIVATE void create_mainwin(void) {
   //gtk_notebook_append_page( GTK_NOTEBOOK( mainnotebook ), s1->scrollwin, NULL );
 
   //gui_register_sheet( s1 );
+}
+
+PUBLIC GtkWindow *gui_get_mesh_window( void ) {
+    return GTK_WINDOW(mainwin);
 }
 
 PRIVATE gint timeout_handler(gpointer data) {
@@ -502,16 +649,84 @@ PRIVATE void gui_default_clock_handler(AClock *clock, AClockReason reason) {
   }
 }
 
-/*=======================================================================*/
-/* External entrypoint */
+
+PRIVATE GtkActionEntry mainmenu_actions[] = {
+  { "FileMenu",		NULL,		    "File"	    },
+  { "FileNew",		GTK_STOCK_NEW,	    "New",		    "<control>N",	"Create a new file",	    G_CALLBACK(file_new_callback)	},
+  { "FileOpen",		GTK_STOCK_OPEN,	    "Open",		    "<control>O",	"Open a file",		    G_CALLBACK(open_file)		},
+  { "FileSave",		GTK_STOCK_SAVE,	    "Save",		    "<control>S",	"Save the File",	    G_CALLBACK(action_save_file)    	},  // 0
+  { "FileSaveAs",	GTK_STOCK_SAVE_AS,  "Save As",		    NULL,		"Save File with new name",  G_CALLBACK(action_save_file_as)	},  // 1
+  { "FileQuit",		GTK_STOCK_QUIT,	    "Quit",		    "<control>Q",	"Quit the bunch",	    G_CALLBACK(exit_request)		},
+
+  { "SheetMenu",	NULL,		    "Sheet"	    },
+  { "SheetNew",		GTK_STOCK_NEW,	    "New",		    NULL,		"Create New Sheet",	    G_CALLBACK(new_sheet)		},
+  { "SheetSave",	GTK_STOCK_SAVE_AS,   "Save",		    NULL,		"Save the sheet only",	    G_CALLBACK(action_save_sheet)   	},  // 2
+  { "SheetRename",	NULL,		    "Rename",		    NULL,		"Rename the sheet",	    G_CALLBACK(ren_sheet)		},
+  { "SheetClone",	NULL,		    "Clone",		    NULL,		"Clone the sheet",	    G_CALLBACK(clone_sheet)		},
+  { "SheetClear",	NULL,		    "Clear",		    NULL,		"Clear the sheet",	    G_CALLBACK(clear_sheet)		},
+  { "SheetRemove",	GTK_STOCK_DELETE,    "Remove",		    NULL,		"Remove the Sheet",	    G_CALLBACK(del_sheet)		},
+  { "SheetUnconnect",	NULL,		    "Unconnect",	    NULL,		"Unconnect Sheet",	    G_CALLBACK(unconnect_sheet)		},
+  { "SheetRegister",	NULL,		    "Register",		    NULL,		"Register Sheet",	    G_CALLBACK(reg_sheet2)		},
+
+  { "EditMenu",		NULL,		    "Edit"	    },
+  { "EditPreferences",	GTK_STOCK_PREFERENCES, "Prefs",		    "<control>P",	"Edit Preferencences",	    G_CALLBACK(prefs_edit_prefs)	},
+  { "EditDelete",	GTK_STOCK_DELETE,   "Delete",		    "Delete",		"Delete Current Selection", G_CALLBACK(action_del_selected)	}, // 0
+  { "EditClone",	NULL,		    "Clone",		    NULL,		"Clone current Selection",  G_CALLBACK(action_clone_selected)	}, // 1
+  { "EditCloneWConn",	NULL,		    "Clone W Conn",	    NULL,		"Clone with Connections",   G_CALLBACK(clone_selected)		},
+  { "EditCloneNewSh",	NULL,		    "Clone on New Sheet",   NULL,		"Clone on new Sheet",	    G_CALLBACK(clone_selected_on_new_sheet)	},
+
+  { "WindowsMenu",	NULL,		    "Windows"	    },
+  { "ShowControlPanel", NULL,		    "Show Control Panel",   "<control>W",	"Show Control Panel",	    G_CALLBACK(show_control_panel)	},
+  { "HideControlPanel", NULL,		    "Hide Control Panel",   NULL,		"Hide Control Panel",	    G_CALLBACK(hide_control_panel)	},
+
+  { "ExtrasMenu",	NULL,		    "Extras",	    },
+  { "SelectMasterClock", NULL,		    "Select Master Clock",  NULL,		"Select Master Clock",	    G_CALLBACK(select_master_clock)	},
+  { "About",		GTK_STOCK_ABOUT,    "About",		    NULL,		"About",		    G_CALLBACK(about_callback)		},
+
+  { "AddComp",		GTK_STOCK_ADD,	    "_Add..." },
+  { "SwitchCPScreen",	NULL,		    "Switch Panel Screen",  NULL,		"Switch ControlPanel Screen",G_CALLBACK(action_switchcontrolpanel_screen)	}
+};
+
+PRIVATE guint n_mainmenu_actions = G_N_ELEMENTS (mainmenu_actions);
+
+PRIVATE void setup_ui_manager(void) {
+  component_actiongroup = gtk_action_group_new( "comp" );
+  menu_actiongroup      = gtk_action_group_new( "menu" );
+
+  ui_manager = gtk_ui_manager_new();
+
+  gtk_ui_manager_insert_action_group( ui_manager, menu_actiongroup, 2 ); 
+  gtk_ui_manager_insert_action_group( ui_manager, component_actiongroup, 0 ); 
+
+  gtk_action_group_add_actions( menu_actiongroup, mainmenu_actions, n_mainmenu_actions, NULL );
+
+  GError *err = NULL;
+  int ret = gtk_ui_manager_add_ui_from_file( ui_manager, "/home/torbenh/galan.ui", &err );
+  
+  if( ret == 0 )
+      printf( "Error loading ui file ;( Good Luck Without Menus\n" );
+}
+
 
 PUBLIC void init_gui(void) {
+
+    setup_ui_manager();
+
   create_mainwin();
   gtk_widget_show(mainwin);
 
   gui_default_clock = gen_register_clock(NULL, "Default Clock", gui_default_clock_handler);
   gen_set_default_clock(gui_default_clock);
   gen_select_clock(gui_default_clock);
+}
+
+PUBLIC void gui_add_comps( void ) {
+
+//  GtkWidget *mb = gtk_ui_manager_get_widget (ui_manager, "/comp");
+//  gtk_box_pack_start (GTK_BOX (upper_box),
+//	  mb,
+//	  FALSE, FALSE, 0);
+//  gtk_widget_show( mb );
 }
 
 PUBLIC void done_gui(void) {

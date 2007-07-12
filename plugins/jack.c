@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -39,7 +40,7 @@
 
 #include <jack/jack.h>
 #ifdef HAVE_JACKMIDI_H
-#include <jack/miditypes.h>
+#include <jack/midiport.h>
 #endif
 
 #include <galan_jack.h>
@@ -88,8 +89,9 @@ enum EVT_OUTPUTS {
 
 typedef struct TransportData {
   gdouble freq;
-  gint32 ticks_per_beat;
-  gint period;
+  gdouble ticks_per_beat;
+  gdouble period;
+  gdouble last_bpm;
 } TransportData;
 
 PRIVATE int instance_count = 0;
@@ -453,8 +455,9 @@ PRIVATE gboolean transport_init_instance(Generator *g) {
   TransportData *data = safe_malloc(sizeof(TransportData));
   g->data = data;
 
-  data->period = 0;
-  data->ticks_per_beat = 4;
+  data->period = 0.0;
+  data->ticks_per_beat = 4.0;
+  data->last_bpm = 0;
 
   transport_clocks = g_list_append( transport_clocks, g );
   return TRUE;
@@ -468,9 +471,11 @@ PRIVATE void transport_destroy_instance(Generator *g) {
 PRIVATE void transport_unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
   TransportData *data = safe_malloc(sizeof(TransportData));
   g->data = data;
+  int ticks_per_beat_int = objectstore_item_get_integer(item, "ticks_per_beat", 4);
 
   data->period = objectstore_item_get_integer(item, "transport_period", 0);
-  data->ticks_per_beat = objectstore_item_get_integer(item, "ticks_per_beat", 4);
+  data->ticks_per_beat = objectstore_item_get_double(item, "ticks_per_beat_double", (double) ticks_per_beat_int );
+  data->last_bpm = 0;
 
   if (data->period != 0) {
     data->freq = (gdouble) SAMPLE_RATE / data->period;
@@ -481,7 +486,7 @@ PRIVATE void transport_unpickle_instance(Generator *g, ObjectStoreItem *item, Ob
 PRIVATE void transport_pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
   TransportData *data = g->data;
   objectstore_item_set_integer(item, "transport_period", data->period);
-  objectstore_item_set_integer(item, "ticks_per_beat", data->ticks_per_beat);
+  objectstore_item_set_double(item, "ticks_per_beat_double", data->ticks_per_beat);
 }
 
 PRIVATE void transport_evt_freq_handler(Generator *g, AEvent *event) {
@@ -500,10 +505,20 @@ PRIVATE void transport_evt_freq_handler(Generator *g, AEvent *event) {
 PRIVATE void transport_evt_tpb_handler(Generator *g, AEvent *event) {
   TransportData *data = g->data;
 
-  data->ticks_per_beat = (gint) (event->d.number);
+  data->ticks_per_beat = (event->d.number);
   
   gen_update_controls(g, 1);
   
+}
+
+PRIVATE void transport_evt_emit_bpm_handler(Generator *g, AEvent *event) {
+  TransportData *data = g->data;
+
+  if( data->last_bpm != 0 ) {
+      gen_init_aevent( event, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() );
+      event->d.number = data->last_bpm;
+      gen_send_events(g, 1, -1, event);
+  }
 }
 
 PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes, gdouble bpm ) {
@@ -511,112 +526,68 @@ PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME n
     AEvent e;
     SAMPLETIME t,i;
 
-    if( bpm != 0.0 )
+    if( data->ticks_per_beat == 0 )
+	data->period = 0;
+
+    if( (bpm != 0.0) && (data->ticks_per_beat != 0) ) {
 	data->period = SAMPLE_RATE * 60.0 / (gdouble) data->ticks_per_beat / bpm;
+    }
 
     if( data->period != 0 ) {
 
-	for( t=(frame-1)/data->period+1, i=t*data->period-frame; i<numframes; t++, i+=data->period ) {
+	// ok...
+	t = lrint( floor( ((double)(frame-1)) / data->period) + 1);
+	i = lround( ((double)t)*data->period ) - frame;
+	//for( t=(frame-1)/data->period+1, i=t*data->period-frame; i<numframes; t++, i+=data->period ) {
+	for( ; i<numframes; t++, i+= lround(data->period) ) {
 	    gen_init_aevent(&e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + i);
 	    e.d.number = t;
 	    gen_send_events(g, 0, -1, &e);
 	}
     }
+    if( data->last_bpm != bpm ) {
+	data->last_bpm = bpm;
+	transport_evt_emit_bpm_handler( g, &e );
+    }
 
 }
 
-// Midiout
+// Midi_in
 #ifdef HAVE_JACKMIDI_H
 PRIVATE void midiinport_realtime_handler(Generator *g, AEvent *event) {
     MidiInData *data = g->data;
+    jack_nframes_t nframes = event->d.integer;
+    void * input_buf;
+    jack_midi_event_t input_event;
+    jack_nframes_t input_event_count;
+    jack_nframes_t i;
+    unsigned char * data;
 
-    switch (event->kind) {
-	case AE_REALTIME:
-	    {
+    input_buf = jack_port_get_buffer(data->port, nframes);
+    input_event_count = jack_midi_get_event_count(input_buf, nframes);
 
-		int nframes = event->d.integer;
+  /* iterate over all incoming JACK MIDI events */
+  for (i = 0; i < input_event_count; i++)
+  {
+    /* retrieve JACK MIDI event */
+    jack_midi_event_get(&input_event, input_buf, i, nframes);
 
+    event->time = input_event.time + gen_get_sampletime();
+    event->type = AE_MIDIEVENT;
+    event->midiev.len = input_event.size;
+    memcpy( &(event->midiev.midistring), input_event.buffer,  input_event.size);
 
-		int event_index;
-		jack_default_midi_event_t *in = (jack_default_midi_event_t *) jack_port_get_buffer (data->port, nframes);
-		//jack_nframes_t event_index = 0;
-
-		for(event_index=0; !in[event_index].is_last; event_index++)
-		{
-		    switch(in[event_index].type)
-		    {
-			case JACK_MIDI_EVENT_NOTEON: 
-			    {
-				AEvent e;
-				int note = in[event_index].data.note.note;
-				int vel = in[event_index].data.note.velocity;
-				int channel = in[event_index].data.note.channel;
-
-				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
-
-				e.d.number = channel;
-				gen_send_events(g, EVT_CHANNEL, -1, &e);
-
-				e.d.number = note;
-				gen_send_events(g, EVT_NOTE, -1, &e);
-
-				e.d.number = vel;
-				gen_send_events(g, EVT_VELOCITY, -1, &e);
-				break;
-			    }
-			case JACK_MIDI_EVENT_NOTEOFF:
-			    {
-				AEvent e;
-				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
-
-				e.d.number = in[event_index].data.note.channel;
-				gen_send_events(g, EVT_CHANNEL, -1, &e);
-
-				e.d.number = in[event_index].data.note.note;
-				gen_send_events(g, EVT_NOTEOFF, -1, &e);
-
-				e.d.number = in[event_index].data.note.velocity;
-				gen_send_events(g, EVT_VELOCITY, -1, &e);
-				break;
-			    }
-			case JACK_MIDI_EVENT_PGMCHANGE:
-			    {
-				AEvent e;
-				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
-
-				e.d.number = in[event_index].data.control.channel;
-				gen_send_events(g, EVT_CHANNEL, -1, &e);
-
-				//g_print( "(%x,%x)\n", data->midibuffer[0], data->midibuffer[1] );
-				e.d.number = in[event_index].data.control.value;
-				gen_send_events(g, EVT_PROGAMCHANGE, -1, &e);
-			    }
-			case JACK_MIDI_EVENT_CONTROLLER:
-			    {
-				AEvent e;
-				gen_init_aevent( &e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + in[event_index].time );
-
-				e.d.number = in[event_index].data.control.channel;
-				gen_send_events(g, EVT_CHANNEL, -1, &e);
-
-				e.d.number = in[event_index].data.control.param;
-				gen_send_events(g, EVT_CTRLPARAM, -1, &e);
-
-				e.d.number = in[event_index].data.control.value;
-				gen_send_events(g, EVT_CTRLVALUE, -1, &e);
-			    }
-		    }
-
-		}
-
-
-		break;
-	    }
-
-	default:
-	    g_warning("jack_midiin module doesn't care for events of kind %d.", event->kind);
-	    break;
+    
+    /* normalise note events if needed */
+    if ((input_event.size == 3) && ((event->midiev[0] & 0xF0) == 0x90) &&
+        (event->midiev[2] == 0))
+    {
+      event->midiev[0] = 0x80 | (event->midiev[0] & 0x0F);
     }
+
+    gen_send_events(g, EVT_MIDIEVT, -1, &e);
+  }
+
 }
 
 PRIVATE int midiinport_init_instance(Generator *g) {
@@ -670,7 +641,7 @@ PRIVATE ControlDescriptor transport_controls[] = {
   { CONTROL_KIND_KNOB, "rate", 0,500,1,1, 0,TRUE, TRUE, 0,
     NULL,NULL, control_double_updater, (gpointer) offsetof(TransportData, freq) },
   { CONTROL_KIND_KNOB, "tpb", 0,32,1,1, 0,TRUE, TRUE, 1,
-    NULL,NULL, control_int32_updater, (gpointer) offsetof(TransportData, ticks_per_beat) },
+    NULL,NULL, control_double_updater, (gpointer) offsetof(TransportData, ticks_per_beat) },
   { CONTROL_KIND_NONE, }
 };
 
@@ -706,27 +677,18 @@ PRIVATE void setup_class(void) {
 				  NULL);
 
 #ifdef HAVE_JACKMIDI_H
-  k = gen_new_generatorclass("jack_midiin", FALSE, 0, NUM_EVENT_OUTPUTS,
+  k = gen_new_generatorclass("jack_midiin", FALSE, 0, 1,
 			     NULL, NULL, NULL,
 			     midiinport_init_instance, midiinport_destroy_instance,
 			     (AGenerator_pickle_t) midiinport_init_instance, NULL);
 
-  gen_configure_event_output(k, EVT_CLOCK,   "Clock");
-  gen_configure_event_output(k, EVT_START,   "Start");
-  gen_configure_event_output(k, EVT_CHANNEL,   "Channel");
-  gen_configure_event_output(k, EVT_NOTE,   "NoteOn");
-  gen_configure_event_output(k, EVT_VELOCITY,   "Velocity");
-  gen_configure_event_output(k, EVT_PROGAMCHANGE,   "Program");
-  gen_configure_event_output(k, EVT_CTRLPARAM,   "Control Param");
-  gen_configure_event_output(k, EVT_CTRLVALUE,   "Control Value" );
-  gen_configure_event_output(k, EVT_NOTEOFF,   "NoteOff");
-
+  gen_configure_event_output(k, EVT_MIDIEVT,   "midi");
   gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi In",
 				  NULL,
 				  NULL);
 #endif
 
-  k = gen_new_generatorclass("jack_transport", FALSE, 2, 1,
+  k = gen_new_generatorclass("jack_transport", FALSE, 3, 2,
 			     NULL, NULL, transport_controls,
 			     transport_init_instance, transport_destroy_instance,
 			     (AGenerator_pickle_t) transport_unpickle_instance, transport_pickle_instance);
@@ -734,7 +696,9 @@ PRIVATE void setup_class(void) {
 
   gen_configure_event_input(k, 0, "Freq", transport_evt_freq_handler );
   gen_configure_event_input(k, 1, "TpB", transport_evt_tpb_handler );
+  gen_configure_event_input(k, 2, "Emit Bpm", transport_evt_emit_bpm_handler );
   gen_configure_event_output(k, 0, "Position");
+  gen_configure_event_output(k, 1, "bpm");
 
   gencomp_register_generatorclass(k, FALSE, "Misc/Jack Transport Clock",
 				  NULL,

@@ -19,15 +19,24 @@
 #ifndef Gui_H
 #define Gui_H
 
+#include <gtk/gtk.h>
+
 struct sheet;
+extern struct sheet *gui_get_active_sheet( void );
 extern void gui_register_sheet( struct sheet *sheet );
 extern void gui_unregister_sheet( struct sheet *sheet );
 extern GList *get_sheet_list( void );
 extern void update_sheet_name( struct sheet *sheet );
 extern void gui_statusbar_push( char *msg );
 extern void load_sheet_from_name(char *name);
+extern gboolean save_sheet( struct sheet *sheet, char *name );
 
 extern void init_gui(void);
+extern void gui_add_comps( void );
 extern void done_gui(void);
+extern GtkWindow *gui_get_mesh_window( void );
 
+extern GtkActionGroup *component_actiongroup;
+extern GtkActionGroup *menu_actiongroup;
+extern  GtkUIManager *ui_manager;
 #endif

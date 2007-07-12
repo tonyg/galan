@@ -36,6 +36,7 @@
 
 #define EVT_VALUE 0
 #define EVT_DISP 1
+#define EVT_NORM 2
 #define EVT_OUTPUT 0
 
 typedef struct Data {
@@ -90,6 +91,7 @@ PRIVATE void ctrl_setrange(Control *c) {
 PRIVATE void evt_value_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
 
+
   data->value = event->d.number;
   gen_update_controls(g, -1);
   gen_send_events(g, EVT_OUTPUT, -1, event);
@@ -100,6 +102,17 @@ PRIVATE void evt_disp_handler(Generator *g, AEvent *event) {
 
   data->value = event->d.number;
   gen_update_controls(g, -1);
+}
+
+PRIVATE void evt_normal_value_handler(Generator *g, AEvent *event) {
+  Data *data = g->data;
+
+  if( event->kind == AE_NUMBER ) {
+      data->value = data->min + (event->d.number+1.0)*(data->max - data->min)/2.0;
+      event->d.number=data->value;
+      gen_update_controls(g, -1);
+      gen_send_events(g, EVT_OUTPUT, -1, event);
+  }
 }
 
 PRIVATE ControlDescriptor controls[] = {
@@ -156,14 +169,41 @@ PRIVATE void props(Component *c, Generator *g) {
   }
 }
 
+PRIVATE void init_combo( Control *control ) {
+
+    GtkCombo *cb;
+
+    cb = GTK_COMBO( gtk_combo_new() );
+    g_assert( cb != NULL );
+
+    gtk_combo_disable_activate( cb );
+    if( ((Data *)control->g->data)->list != NULL )
+	gtk_combo_set_popdown_strings( cb, ((Data *)control->g->data)->list );
+
+    gtk_signal_connect( GTK_OBJECT( cb->entry ), "activate", GTK_SIGNAL_FUNC(entry_activated), control );
+
+    control->widget = GTK_WIDGET(cb);
+}
+
+PRIVATE void done_combo(Control *control) {
+}
+
+PRIVATE void refresh_combo(Control *control) {
+    Data *data = control->g->data;
+
+    if( ((Data *)control->g->data)->list != NULL )
+	gtk_combo_set_popdown_strings( GTK_COMBO(control->widget), data->list );
+
+}
 PRIVATE void setup_class(void) {
-  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE, 2, 1,
+  GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE, 3, 1,
 					     NULL, NULL, controls,
 					     init_instance, destroy_instance,
 					     unpickle_instance, pickle_instance);
 
   gen_configure_event_input(k, EVT_VALUE, "Value", evt_value_handler);
   gen_configure_event_input(k, EVT_DISP, "Display", evt_disp_handler);
+  gen_configure_event_input(k, EVT_NORM, "Normal Value", evt_normal_value_handler );
   gen_configure_event_output(k, EVT_OUTPUT, "Output");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, props);

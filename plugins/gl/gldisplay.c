@@ -140,17 +140,14 @@ PRIVATE gint draw(GtkWidget *widget, GdkEventExpose *event)
 {
   /* Draw only last expose. */
 
-  printf( "Hallo ?\n" );
   if (event->count > 0)
     return TRUE;
 
-  printf( "Hallo !\n" );
   /* OpenGL functions can be called only if make_current returns true */
   if (gtk_gl_area_make_current(GTK_GL_AREA(widget))) {
 
       Control *control = g_object_get_data( G_OBJECT(widget), "Control" );
       
-      printf( "super sache : %s\n", control->name );
       glClearColor(0,0,0,1);
       glClearDepth( 1 );
       glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -164,7 +161,7 @@ PRIVATE gint draw(GtkWidget *widget, GdkEventExpose *event)
 
   }
   else
-      printf( "fuckoff \n" );
+      printf( "gldisplay.c: gtk_gl_area_make_current == false \n" );
 
   return TRUE;
 }
@@ -227,10 +224,14 @@ PRIVATE void init_scope( Control *control, int w, int h ) {
 }
 
 PRIVATE void done_scope(Control *control) {
+    GtkWidget *tmp = control->widget;
+    control->widget = NULL;
+    //gtk_widget_destroy( tmp );
 }
 
 PRIVATE void refresh_scope(Control *control) {
-    gtk_widget_queue_draw( control->widget );
+    if( control->widget )
+	gtk_widget_queue_draw( control->widget );
 }
 
 PRIVATE void init_big_scope( Control *control ){

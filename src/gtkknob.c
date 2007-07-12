@@ -107,13 +107,18 @@ static GList *get_anim_list( char *name ) {
    int x, w;
 
    animation = gdk_pixbuf_new_from_file( name, &err );
-   w = gdk_pixbuf_get_width( animation );
-   
-   for(x=0; x<w; x+=KNOB_SIZE ) {
-       GdkPixbuf *pixbuf = gdk_pixbuf_new_subpixbuf( animation, x, 0, KNOB_SIZE, KNOB_SIZE );
-       retval = g_list_append( retval, pixbuf );
+   if( animation ) {
+       w = gdk_pixbuf_get_width( animation );
+
+       for(x=0; x<w; x+=KNOB_SIZE ) {
+	   GdkPixbuf *pixbuf = gdk_pixbuf_new_subpixbuf( animation, x, 0, KNOB_SIZE, KNOB_SIZE );
+	   retval = g_list_append( retval, pixbuf );
+       }
+       return retval;
+   } else {
+       // Create empty GdkPixBuf...
+       return NULL;
    }
-   return retval;
 }
 
 void free_anim_list( GList *anim_list )

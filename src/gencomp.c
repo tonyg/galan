@@ -294,7 +294,7 @@ PRIVATE void gencomp_unpickle(Component *c, ObjectStoreItem *item, ObjectStore *
 
   if( id != NULL ) {
       d->icon =
-	  id->iconpath ? gdk_pixmap_create_from_xpm(sheet_get_window(c->sheet),
+	  id->iconpath ? gdk_pixmap_colormap_create_from_xpm(sheet_get_window(c->sheet), gdk_colormap_get_system(),
 		  &mask,
 		  sheet_get_transparent_color(c->sheet),
 		  id->iconpath)
@@ -721,6 +721,9 @@ PUBLIC void gencomp_register_generatorclass(GeneratorClass *k, gboolean prefer, 
   id->propgen = propgen;
 
   comp_add_newmenu_item(menupath, &GeneratorComponentClass, id);
+
+  comp_create_action( menupath, &GeneratorComponentClass, id, k->name, k->tag );
+
 
   /* Only insert into hash table if this name is not already taken, or if we are preferred. */
   {

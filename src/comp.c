@@ -1,5 +1,6 @@
 /* gAlan - Graphical Audio Language
  * Copyright (C) 1999 Tony Garnock-Jones
+ * Copyright (C) 2001 Torben Hohn
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +29,11 @@
 #include "comp.h"
 #include "gencomp.h"
 #include "sheet.h"
+#include "gui.h"
 #include "msgbox.h"
+
+#include "galan-compaction.h"
+#include "galan-comptree-model.h"
 
 #define NEWMENU_PATH_PREFIX	"/"
 
@@ -42,6 +47,8 @@ PRIVATE GList *menuentries = NULL;
 PRIVATE gboolean menuentries_dirty = TRUE;
 PRIVATE GHashTable *componentclasses = NULL;
 PRIVATE GtkItemFactory *menufact = NULL;
+
+PRIVATE GalanCompTreeModel *tmodel = NULL;
 
 PRIVATE void newmenu_callback(MenuEntry *p, guint callback_action, GtkWidget *widget) {
 
@@ -63,14 +70,105 @@ PUBLIC void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer in
     return;
   }
 
-  m->menupath = malloc(strlen(NEWMENU_PATH_PREFIX) + strlen(menupath) + 1);
-  strcpy(m->menupath, NEWMENU_PATH_PREFIX);
-  strcat(m->menupath, menupath);
+  m->menupath = g_strdup_printf( "%s%s", NEWMENU_PATH_PREFIX, menupath );
   m->k = k;
   m->init_data = init_data;
 
   menuentries = g_list_append(menuentries, m);
   menuentries_dirty = TRUE;
+
+}
+
+
+
+PRIVATE void ensure_path_exists( char *mpath, char *base ) {
+    
+    if( !strcmp( mpath, base ) )
+	return;
+
+    GtkWidget *menuaction = gtk_ui_manager_get_widget( ui_manager, mpath );
+    if( menuaction == NULL ) {
+	char *updir = g_path_get_dirname( mpath );
+	char *aname = g_path_get_basename( mpath );
+	ensure_path_exists( updir, base );
+	GtkAction *tmpact = gtk_action_new( aname, aname, NULL, NULL );
+	gtk_action_group_add_action( component_actiongroup, tmpact );
+
+	gtk_ui_manager_add_ui( ui_manager, 
+		gtk_ui_manager_new_merge_id( ui_manager ),
+		updir,
+		aname,
+		g_strdup(aname),
+		GTK_UI_MANAGER_MENU,
+		TRUE );
+
+	//free( aname );
+	//free( updir );
+    }
+}
+
+PRIVATE void experiment( void ) {
+
+    tmodel = g_object_new( GALAN_TYPE_COMPTREE_MODEL, NULL );
+    
+    GtkTreeView *tview = GTK_TREE_VIEW( gtk_tree_view_new_with_model( GTK_TREE_MODEL(tmodel) ) );
+    GtkCellRenderer *render = GTK_CELL_RENDERER( gtk_cell_renderer_text_new () );
+    gtk_tree_view_insert_column_with_attributes( tview, -1, "test", render, "text", 0, NULL );
+
+static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
+gtk_tree_view_enable_model_drag_dest( tview, &targette, 1, GDK_ACTION_COPY );
+    
+
+    GtkWindow *win = GTK_WINDOW( gtk_window_new( GTK_WINDOW_TOPLEVEL ) );
+    GtkContainer *scrollo = GTK_CONTAINER( gtk_scrolled_window_new( NULL, NULL ) );
+    
+  gtk_container_add (GTK_CONTAINER (win), GTK_WIDGET(scrollo ) );
+  gtk_container_add (GTK_CONTAINER (scrollo), GTK_WIDGET(tview));
+  gtk_widget_show_all( GTK_WIDGET(win) );
+
+    
+}
+
+PUBLIC void comp_create_action( char *menuitem, ComponentClass *k, gpointer init_data, char *name, char *label ) 
+{
+
+    char *long_name = g_path_get_basename( menuitem );
+    char *base = "/ui/MainMenu/AddComp";
+    char *mpath = g_strdup_printf( "%s/%s", base, menuitem );
+
+//    GtkAction *action = g_object_new( COMPACTION_TYPE, 
+//	    "component-class", k, 
+//	    "init-data", init_data, 
+    GtkAction *action = g_object_new( GALAN_TYPE_COMPACTION, 
+	    "klass", k, 
+	    "init_data", init_data, 
+
+	    "name", g_strdup(name),
+	    "label", long_name,
+	    "short-label", g_strdup(name),
+	    "hide-if-empty", FALSE,
+
+	    NULL );
+
+    gtk_action_group_add_action( component_actiongroup, action );
+
+    char *dir_path = g_path_get_dirname( mpath);
+    ensure_path_exists( dir_path, base );
+    
+    //XXX: the half baked tree model
+    GtkTreeIter iter;
+  galan_comptree_model_lookup( tmodel, menuitem, &iter, TRUE );
+  gtk_tree_store_set( GTK_TREE_STORE(tmodel), &iter, 1, TRUE, 2, action, -1 );
+    //XXX:
+
+    //printf( "name  = %s\n", gtk_action_get_name( action ) );
+    gtk_ui_manager_add_ui( ui_manager, 
+	    gtk_ui_manager_new_merge_id( ui_manager ),
+	    dir_path,
+	    name,
+	    name,
+	    GTK_UI_MANAGER_MENUITEM,
+	    TRUE );
 }
 
 //PRIVATE void kill_newmenu(GtkWidget *menu, GtkItemFactory *ifact) {
@@ -623,6 +721,7 @@ PUBLIC void comp_clone_list( GList *lst, Sheet *sheet ) {
 
 PUBLIC void init_comp(void) {
   componentclasses = g_hash_table_new(g_str_hash, g_str_equal);
+  experiment();
 }
 
 PUBLIC void done_comp(void) {

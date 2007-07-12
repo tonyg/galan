@@ -400,6 +400,7 @@ extern GHashTable *get_generator_classes( void );
 /* Module setup/shutdown */
 
 extern void init_generator(void);
+extern void init_generator_thread(void);
 extern void done_generator(void);
 extern void init_clock(void);
 extern void done_clock(void);

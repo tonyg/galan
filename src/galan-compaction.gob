@@ -1,0 +1,112 @@
+
+%headertop{
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include <gdk/gdk.h>
+#include <gtk/gtk.h>
+
+#include "global.h"
+#include "generator.h"
+#include "comp.h"
+#include "sheet.h"
+#include "msgbox.h"
+#include "control.h"
+#include "gencomp.h"
+#include "gui.h"
+
+%}
+
+%{
+static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
+%}
+
+class Galan:CompAction from Gtk:Action {
+
+	public ComponentClass *klass;
+	public gpointer init_data;
+	public GtkWidget *dragwidget;
+
+	property POINTER klass
+		(nick  = "klass",
+		 blurb = "ComponentClass *",
+		 flags = CONSTRUCT_ONLY,
+		 link );
+
+	property POINTER init_data
+		(nick  = "id",
+		 blurb = "InitData gpointer",
+		 flags = CONSTRUCT_ONLY,
+		 link );
+
+	private void drag_data_get( self, Gdk:Drag:Context *context, Gtk:Selection:Data *data, guint info, guint time, Gtk:Widget *w ) {
+		Self *s = self;
+		//gpointer format = g_list_nth_data( context->targets, 0 );
+		//GdkAtom format = gtk_drag_dest_find_target( w, context, NULL );
+
+		gtk_selection_data_set( data, data->target, 8, (gpointer) &s, sizeof( Self * ) );
+	}
+
+	private void drag_data_received( self, Gdk:Drag:Context *context, gint x, gint y, Gtk:Selection:Data *data, guint info, guint time, Gtk:Widget *w ) {
+		
+		//Self *other = SELF( data->data );
+	
+	}
+
+	private void drag_begin( self, Gdk:Drag:Context *context, Gtk:Widget *w ) {
+		self->dragwidget = g_object_new( GTK_TYPE_WINDOW,
+			"accept-focus", FALSE,
+			"focus-on-map", FALSE,
+			"decorated", FALSE,
+			"type", GTK_WINDOW_TOPLEVEL,
+			"default-width", 30,
+			"default-height", 30,
+			NULL );
+		
+		gtk_container_add( GTK_CONTAINER( self->dragwidget ), gtk_label_new( "Drag" ) );
+		gtk_drag_set_icon_widget( context, self->dragwidget, -10, -10 );
+		gtk_widget_show_all( self->dragwidget );
+	}
+	private void drag_end( self, Gdk:Drag:Context *context, Gtk:Widget *w ) {
+		gtk_object_destroy( GTK_OBJECT(self->dragwidget) );
+	}
+
+	override (Gtk:Action) void activate( Gtk:Action *self ) {
+
+		Self  *ich = SELF( self );
+    		Sheet *s = gui_get_active_sheet();
+    		sheet_build_new_component( s, ich->klass, ich->init_data );
+	}
+
+	override (Gtk:Action) GtkWidget *create_menu_item( Gtk:Action *self ) {
+
+		Self *ich = SELF( self );
+		GtkWidget *ret = PARENT_HANDLER( self );
+
+		gtk_drag_source_set( ret, GDK_BUTTON1_MASK, &targette, 1, GDK_ACTION_COPY );
+		g_signal_connect_swapped( ret, "drag_data_get", self_drag_data_get, ich );
+		g_signal_connect_swapped( ret, "drag_begin", self_drag_begin, ich );
+		g_signal_connect_swapped( ret, "drag_end", self_drag_end, ich );
+
+		gtk_drag_dest_set( ret, GTK_DEST_DEFAULT_DROP, &targette, 1, GDK_ACTION_COPY );
+		g_signal_connect_swapped( ret, "drag_data_received", self_drag_data_received, ich );
+
+		return ret;
+	}
+
+	override (Gtk:Action) Gtk:Widget *create_tool_item( Gtk:Action *self ) {
+
+		Self *ich = self;
+		GtkWidget *ret = PARENT_HANDLER( self );
+
+		gtk_drag_source_set( ret, GDK_BUTTON1_MASK, &targette, 1, GDK_ACTION_COPY );
+		g_signal_connect_swapped( ret, "drag_data_get", self_drag_data_get, ich );
+
+		gtk_drag_dest_set( ret, GTK_DEST_DEFAULT_DROP, &targette, 1, GDK_ACTION_COPY );
+		g_signal_connect_swapped( ret, "drag_data_received", self_drag_data_received, ich );
+
+		return ret;
+	}
+}
+

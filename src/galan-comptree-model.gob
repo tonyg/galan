@@ -1,0 +1,121 @@
+
+%headertop{
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include <gdk/gdk.h>
+#include <gtk/gtk.h>
+
+#include "global.h"
+#include "generator.h"
+#include "comp.h"
+#include "sheet.h"
+#include "msgbox.h"
+#include "control.h"
+#include "gencomp.h"
+#include "gui.h"
+
+#include "galan-compaction.h"
+%}
+
+%{
+static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
+%}
+
+class Galan:CompTree:Model from Gtk:Tree:Store
+	(interface Gtk:Tree:Drag:Dest)
+{
+
+	init( self ) {
+
+		GType mytypes[] = { G_TYPE_STRING, G_TYPE_BOOLEAN, GALAN_TYPE_COMPACTION };
+		gtk_tree_store_set_column_types( GTK_TREE_STORE( self ), 3, mytypes );
+	}
+
+	public gboolean lookup( self, char *path, GtkTreeIter *iter, gboolean create ) {
+
+		GtkTreeModel *model = GTK_TREE_MODEL( self );
+
+		gchar **splitpath = g_strsplit( path, "/", -1 );
+		int i=0;
+		if( ! gtk_tree_model_get_iter_first( model, iter ) ) {
+
+			if( create ) {
+				gtk_tree_store_append( self, iter, NULL );
+				gtk_tree_store_set( self, iter, 0, splitpath[i], 1, FALSE, -1 );
+			} else {
+				g_strfreev( splitpath );
+				return FALSE;
+			}
+		}
+		while( splitpath[i] ) {
+			int found = 0;
+			GtkTreeIter olditer;
+			do {
+				char *name;
+				gtk_tree_model_get( model, iter, 0, &name, -1 );
+				if( !strcmp( name, splitpath[i] ) ) {
+					found = 1;
+				}
+				free(name);
+				olditer = *iter;
+			} while( (!found) && gtk_tree_model_iter_next( model, iter ) );
+			if( !found ) {
+				if( create ) {
+					gtk_tree_store_insert_after( self, iter, NULL, &olditer );
+					gtk_tree_store_set( self, iter, 0, splitpath[i], 1, FALSE, -1 );
+				} else {
+					g_strfreev( splitpath );
+					return FALSE;
+				}
+			}
+			i++;
+			if( splitpath[i] == NULL ) {
+				g_strfreev( splitpath );
+				return TRUE;
+			}
+
+			olditer = *iter;
+			if( !gtk_tree_model_iter_children( model, iter, &olditer ) ) {
+				if( create ) {
+					gtk_tree_store_append( self, iter, &olditer );
+					gtk_tree_store_set( self, iter, 0, splitpath[i], 1, FALSE, -1 );
+				} else {
+					g_strfreev( splitpath );
+					return FALSE;
+				}
+			}
+
+		}
+
+		g_strfreev( splitpath );
+
+	}
+
+	interface Gtk:Tree:Drag:Dest
+	private gboolean drag_data_received( Gtk:Tree:Drag:Dest *self, Gtk:Tree:Path *path, Gtk:Selection:Data *data ) {
+		printf( "Data received...\n" );		
+		GalanCompAction *cact = * ((GalanCompAction **) data->data);
+		if( GALAN_IS_COMPACTION( cact ) ) {
+			GtkTreeStore *store = GTK_TREE_STORE( self );
+			GtkTreeIter dest, added;
+			gtk_tree_model_get_iter( store, &dest, path );
+			gtk_tree_store_insert_before( store, &added, NULL, &dest );
+			char *cact_label;
+			g_object_get( cact, "label", &cact_label, NULL );
+			gtk_tree_store_set( self, &added, 0, cact_label, 1, TRUE, 2, cact, -1 );
+			g_free( cact_label );
+			
+			
+		}
+
+		return TRUE;
+	}
+	interface Gtk:Tree:Drag:Dest
+	private gboolean row_drop_possible( Gtk:Tree:Drag:Dest *self, Gtk:Tree:Path *path, Gtk:Selection:Data *data ) {
+		printf( "possible ?\n" );		
+		return TRUE;
+	}
+}
+

@@ -147,14 +147,34 @@ PRIVATE void evt_step_handler(Generator *g, AEvent *event) {
   gen_send_events(g, EVT_OUTPUT, -1, event);
 }
 
+PRIVATE void update_label(GtkWidget *label, float val) {
+  char text[20];
+
+  sprintf(text, "%3.2f", val);
+  gtk_label_set_text(GTK_LABEL(label), text);
+}
+
 PRIVATE void value_changed_handler(GtkAdjustment *adj, gpointer userdata) {
   int step = (int) userdata;
   Control *c = gtk_object_get_data(GTK_OBJECT(adj), "Control");
+  GtkWidget **widgets = c->data;
   Data *data = c->g->data;
 
   if (c->events_flow) {
-    data->pattern[data->edit][step] = data->max - adj->value;
+    data->pattern[data->edit][step] = data->max - (adj->value - data->min);
+    update_label(widgets[SEQUENCE_LENGTH], data->max - (adj->value - data->min));
     gen_update_controls(c->g, SEQNUM_CONTROL_PATTERN);
+  }
+}
+
+PRIVATE void focus_in_handler(GtkRange *b, GdkEventFocus *event, gpointer userdata) {
+  Control *c = userdata;
+  GtkWidget **widgets = c->data;
+  Data *data = c->g->data;
+  GtkAdjustment *adj = gtk_range_get_adjustment(b);
+
+  if (c->events_flow) {
+    update_label(widgets[SEQUENCE_LENGTH], data->max - (adj->value - data->min));
   }
 }
 
@@ -286,9 +306,10 @@ PRIVATE void popup_handler(GtkWidget *widget, Control *c) {
 PRIVATE void init_pattern(Control *control) {
   GtkWidget *hb;
   int i;
-  GtkWidget **widgets = safe_malloc(sizeof(GtkWidget *) * SEQUENCE_LENGTH);
+  GtkWidget **widgets = safe_malloc(sizeof(GtkWidget *) * (SEQUENCE_LENGTH + 1));
   Data *data = control->g->data;
-  GtkWidget *menu;
+  GtkWidget *label, *menu;
+  GtkWidget *rightvb;
 
   hb = gtk_hbox_new(FALSE, 5);
 
@@ -303,23 +324,33 @@ PRIVATE void init_pattern(Control *control) {
     adj->page_increment = data->page;
     adj->lower = data->min;
     adj->upper = data->max;
-    adj->value = data->max - data->pattern[data->edit][i];
+    adj->value = data->max - (data->pattern[data->edit][i] + data->min);
 
     gtk_object_set_data(GTK_OBJECT(adj), "Control", control);
     gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
 		       GTK_SIGNAL_FUNC(value_changed_handler), (gpointer) i);
+    gtk_signal_connect(GTK_OBJECT(b), "focus_in_event",
+		       GTK_SIGNAL_FUNC(focus_in_handler), control);
     gtk_box_pack_start(GTK_BOX(hb), b, FALSE, FALSE, 0);
     gtk_widget_set_usize(b, 12, 100);
     gtk_widget_show(b);
     widgets[i] = b;
   }
+  rightvb = gtk_vbox_new( FALSE, 5 );
+
+  label = gtk_label_new("--");
+  gtk_box_pack_start(GTK_BOX(rightvb), label, FALSE, FALSE, 0);
   menu = gtk_button_new_with_label( "M" );
+  gtk_box_pack_start(GTK_BOX(rightvb), menu, TRUE, FALSE, 0);
 
   gtk_signal_connect( GTK_OBJECT(menu), "clicked",
 	GTK_SIGNAL_FUNC( popup_handler ), control );
 
-  gtk_box_pack_start(GTK_BOX(hb), menu, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hb), rightvb, FALSE, FALSE, 0);
+  gtk_widget_show(label);
   gtk_widget_show(menu);
+  gtk_widget_show(rightvb);
+  widgets[SEQUENCE_LENGTH] = label;
 
   control->widget = hb;
   control->data = widgets;
@@ -336,7 +367,7 @@ PRIVATE void refresh_pattern(Control *control) {
 
   for (i = 0; i < SEQUENCE_LENGTH; i++) {
     gtk_adjustment_set_value(gtk_range_get_adjustment(GTK_RANGE(widgets[i])),
-			     data->max - data->pattern[data->edit][i]);
+			     data->max - (data->pattern[data->edit][i] - data->min));
   }
 }
 
@@ -356,7 +387,7 @@ PRIVATE void seqnum_setrange(Control *c) {
       adj->upper = data->max;
       adj->step_increment = data->step;
       adj->page_increment = data->page;
-      adj->value = data->pattern[data->edit][i];
+      adj->value = data->max - (data->pattern[data->edit][i] - data->min);
 
       gtk_adjustment_changed( adj );
   }

@@ -42,6 +42,7 @@ typedef struct sheet {
 
     GeneratorClass *sheetklass;	    //*< This can be removed
     gchar *name;		    //*< the name of this sheet.
+    gchar *filename;		    //*< the filename (hopefully or at least NULL)
     gboolean	visible;	    //*< controls if sheet is visible
     gboolean	dirty;		    //*< dirty tag for save question
 } Sheet;
@@ -67,6 +68,7 @@ extern void sheet_saveto(Sheet *sheet, FILE *f, gboolean sheet_only);
 extern Sheet *sheet_unpickle( ObjectStoreItem *item );
 extern ObjectStoreItem *sheet_pickle( Sheet *sheet, ObjectStore *db );
 
+extern gboolean sheet_dont_like_be_destroyed( Sheet *sheet );
 
 extern int sheet_get_textwidth(Sheet *sheet, char *text);
 extern int sheet_get_textheight(Sheet *sheet, char *text);

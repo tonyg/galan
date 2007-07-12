@@ -118,6 +118,7 @@ struct Component {
 /*=======================================================================*/
 /* 'New' menu management and ComponentClass registry */
 extern void comp_add_newmenu_item(char *menupath, ComponentClass *k, gpointer init_data);
+extern void comp_create_action( char *menuitem, ComponentClass *k, gpointer init_data, char *name, char *label );
 extern GtkWidget *comp_get_newmenu(struct sheet *sheet);
 
 extern void comp_register_componentclass(ComponentClass *k);

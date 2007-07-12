@@ -170,6 +170,7 @@ PRIVATE void delete_ctrl_handler(GtkWidget *widget, Control *c) {
   control_kill_control(c);
 }
 
+#if 0
 PUBLIC void control_update_bg(Control *c) {
     GError *err = NULL;
 
@@ -179,14 +180,16 @@ PUBLIC void control_update_bg(Control *c) {
 
     if( c->testbg_active || c->this_panel->current_bg ) {
 
-	GdkPixbuf *pb;
+	GdkPixbuf *pb = NULL;
 	GdkPixmap *pixmap;
 	GdkBitmap *mask;
 
-	if( c->testbg_active )
+	if( c->testbg_active ) {
 	    pb = gdk_pixbuf_new_from_file( PIXMAPDIRIFY( "galan-bg-ref.png" ), &err );
-	else
-	    pb = gdk_pixbuf_new_from_file( c->this_panel->current_bg, &err );
+	} else {
+	    if( c->this_panel->current_bg )
+		pb = gdk_pixbuf_new_from_file( c->this_panel->current_bg, &err );
+	}
 
 	if( ! GTK_WIDGET_MAPPED( c->widget ) )
 	    return;
@@ -205,7 +208,95 @@ PUBLIC void control_update_bg(Control *c) {
 	gtk_style_set_background(c->widget->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
     }
 }
+#endif
+PUBLIC void control_update_bg(Control *c) {
+    GError *err = NULL;
 
+    if( c->desc->kind != CONTROL_KIND_PANEL )
+	return;
+
+
+    if( c->testbg_active || (c->this_panel->bg_type != CONTROL_PANEL_BG_DEFAULT) ) {
+
+	GdkPixbuf *pb = NULL;
+	GdkPixmap *pixmap;
+	GdkBitmap *mask;
+
+	if( c->testbg_active ) {
+	    pb = gdk_pixbuf_new_from_file( PIXMAPDIRIFY( "galan-bg-ref.png" ), &err );
+	    gdk_pixbuf_render_pixmap_and_mask( pb, &pixmap, &mask, 100 );
+	} else {
+	    if( ! GTK_WIDGET_MAPPED( c->widget ) )
+		return;
+	    switch( c->this_panel->bg_type ) {
+		case CONTROL_PANEL_BG_IMAGE:
+		    if( c->this_panel->bg_image_name )
+			pb = gdk_pixbuf_new_from_file( c->this_panel->bg_image_name, &err );
+		    if( !pb ) {
+			popup_msgbox("Error Loading Pixmap", MSGBOX_OK, 120000, MSGBOX_OK,
+				"File not found, or file format error: %s",
+				c->this_panel->bg_image_name);
+			return;
+		    }
+
+		    gdk_pixbuf_render_pixmap_and_mask( pb, &pixmap, &mask, 100 );
+		    break;
+		case CONTROL_PANEL_BG_GRADIENT: 
+		    {
+			GdkWindow *win = GTK_LAYOUT(c->widget)->bin_window;
+			gint w,h;
+			gdk_drawable_get_size( GDK_DRAWABLE( win ), &w, &h );
+			//pb = gdk_pixbuf_new( GDK_COLORSPACE_RGB, FALSE, 8, w, h );
+			pixmap = gdk_pixmap_new( GDK_DRAWABLE( win ), w, h, -1 );
+			if( gdk_drawable_get_colormap( GDK_DRAWABLE( win ) ) == NULL )
+			    gdk_drawable_set_colormap( GDK_DRAWABLE( win ), gdk_colormap_get_system() );
+
+			cairo_t *cr = gdk_cairo_create( GDK_DRAWABLE(pixmap) );
+			if( !cr ) {
+			    return;
+			}
+			//cairo_scale( cr, w, h );
+			cairo_pattern_t *pat = cairo_pattern_create_linear( 0,0,0,h );
+			cairo_pattern_add_color_stop_rgb( pat, 0,
+				c->this_panel->color1.red/65536.0,
+				c->this_panel->color1.green/65536.0,
+				c->this_panel->color1.blue/65536.0 );
+			cairo_pattern_add_color_stop_rgb( pat, 1,
+				c->this_panel->color2.red/65536.0,
+				c->this_panel->color2.green/65536.0,
+				c->this_panel->color2.blue/65536.0 );
+			cairo_set_source( cr, pat );
+			cairo_rectangle( cr, 0,0,w,h );
+			cairo_fill( cr );
+			cairo_set_source_rgba( cr,
+				c->this_panel->frame_color.red/65536.0,
+				c->this_panel->frame_color.green/65536.0,
+				c->this_panel->frame_color.blue/65536.0,
+				c->this_panel->frame_alpha/65536.0);
+			cairo_rectangle( cr, 0,0,w,h );
+			cairo_set_line_width (cr, 8.0);
+			cairo_stroke( cr );
+			cairo_pattern_destroy( pat );
+			cairo_destroy( cr );
+
+			break;
+		    }
+		case CONTROL_PANEL_BG_DEFAULT:
+		case CONTROL_PANEL_BG_COLOR:
+		    break;
+	    }
+	}
+
+
+	gdk_window_set_back_pixmap( GTK_LAYOUT(c->widget)->bin_window, pixmap, FALSE );
+	gtk_widget_queue_draw( c->widget );
+
+    } else {
+	gtk_style_set_background(c->widget->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
+    }
+}
+
+#if 0
 PRIVATE void change_bg_callback(GtkWidget *widget, GtkWidget *fs) {
 
   const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
@@ -214,10 +305,10 @@ PRIVATE void change_bg_callback(GtkWidget *widget, GtkWidget *fs) {
   if( c->desc->kind != CONTROL_KIND_PANEL )
       return;
 
-  if( c->this_panel->current_bg )
-      free( c->this_panel->current_bg );
+  if( c->this_panel->bg_image_name )
+      free( c->this_panel->bg_image_name );
 
-  c->this_panel->current_bg = safe_string_dup( newname );
+  c->this_panel->bg_image_name = safe_string_dup( newname );
 
   control_update_bg( c ); 
   
@@ -227,8 +318,8 @@ PRIVATE void change_bg_callback(GtkWidget *widget, GtkWidget *fs) {
 PRIVATE void change_bg_handler(GtkWidget *widget, Control *c) {
   GtkWidget *fs = gtk_file_selection_new("Load Background");
 
-  if (c->this_panel->current_bg != NULL)
-    gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), c->this_panel->current_bg);
+  if (c->this_panel->bg_image_name != NULL)
+    gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), c->this_panel->bg_image_name);
 
   gtk_object_set_user_data( GTK_OBJECT(fs), c );
 
@@ -239,6 +330,67 @@ PRIVATE void change_bg_handler(GtkWidget *widget, Control *c) {
 
   gtk_widget_show(fs);
 }
+#endif
+
+PRIVATE void change_bg_handler(GtkWidget *widget, Control *c) {
+    GtkWidget *dialog, *vbox2, *color1, *color2, *filename, *framecolor; //*type;
+
+    dialog = gtk_dialog_new_with_buttons( "Panel Background Settings", GTK_WINDOW(control_panel), GTK_DIALOG_DESTROY_WITH_PARENT,
+	    "Image", CONTROL_PANEL_BG_IMAGE, "Gradient", CONTROL_PANEL_BG_GRADIENT, "Default", CONTROL_PANEL_BG_DEFAULT, NULL );
+
+    vbox2 = gtk_vbox_new( FALSE, 10 );
+    color1 = g_object_new( GTK_TYPE_COLOR_BUTTON, "color", &(c->this_panel->color1), "title", "color1", "use-alpha", FALSE, NULL );
+    color2 = g_object_new( GTK_TYPE_COLOR_BUTTON, "color", &(c->this_panel->color2), "title", "color2", "use-alpha", FALSE, NULL );
+    framecolor = g_object_new( GTK_TYPE_COLOR_BUTTON, 
+	    "color", &(c->this_panel->frame_color), "title", "frame color", "use-alpha", TRUE, "alpha", c->this_panel->frame_alpha, NULL );
+
+    filename = gtk_file_chooser_button_new( "Background Image", GTK_FILE_CHOOSER_ACTION_OPEN );
+    
+
+    if( c->this_panel->bg_image_name ) {
+	if( ! g_path_is_absolute( c->this_panel->bg_image_name ) ) {
+	    gchar *current_dir = g_get_current_dir();
+	    gchar *abspath     = g_build_filename( current_dir, c->this_panel->bg_image_name, NULL );
+	    g_free(  c->this_panel->bg_image_name );
+	    c->this_panel->bg_image_name = abspath;
+	    g_free( current_dir );
+	}
+	
+	gtk_file_chooser_set_filename( GTK_FILE_CHOOSER(filename), c->this_panel->bg_image_name );
+    } else {
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER(filename), pixmap_path);
+    }
+
+    gtk_container_add( GTK_CONTAINER( vbox2 ), color1 );
+    gtk_container_add( GTK_CONTAINER( vbox2 ), color2 );
+    gtk_container_add( GTK_CONTAINER( vbox2 ), framecolor );
+    gtk_container_add( GTK_CONTAINER( vbox2 ), filename );
+    
+    gtk_container_add( GTK_CONTAINER( GTK_DIALOG( dialog )->vbox ), vbox2 );
+    gtk_widget_show_all( dialog );
+
+    gint response = gtk_dialog_run( GTK_DIALOG(dialog) );
+    if( response != GTK_RESPONSE_DELETE_EVENT ) {
+	gtk_color_button_get_color( GTK_COLOR_BUTTON(color1), &(c->this_panel->color1) );
+	gtk_color_button_get_color( GTK_COLOR_BUTTON(color2), &(c->this_panel->color2) );
+	gtk_color_button_get_color( GTK_COLOR_BUTTON(framecolor), &(c->this_panel->frame_color) );
+	c->this_panel->frame_alpha = gtk_color_button_get_alpha( GTK_COLOR_BUTTON(framecolor) );
+
+	if( c->this_panel->bg_image_name ) free( c->this_panel->bg_image_name );
+	c->this_panel->bg_image_name = gtk_file_chooser_get_filename( GTK_FILE_CHOOSER(filename) );
+	c->this_panel->bg_type = response;
+    }
+
+    
+    gtk_widget_destroy( dialog );
+
+    control_update_bg( c );
+    
+    
+
+    
+}
+
 
 PRIVATE GtkWidget *ctrl_rename_text_widget = NULL;
 
@@ -313,8 +465,17 @@ PRIVATE void frame_visible_ctrl_handler(GtkWidget *widget, Control *c) {
     if( ! c->frame_visible ){
         gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_NONE);
         gtk_frame_set_label (GTK_FRAME (c->title_frame) , NULL);
-        //gtk_adjustment_set_draw_value(c->widget,FALSE);
-	
+    }else{
+        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_ETCHED_IN);
+        gtk_label_set_text(GTK_LABEL(c->title_label),c->desc->name);
+    }
+    gtk_widget_queue_resize( c->whole );
+}
+
+PRIVATE void name_visible_ctrl_handler(GtkWidget *widget, Control *c) {
+    c->name_visible = !(c->name_visible);
+
+    if( ! c->name_visible ){
 
         /* In order for this to work, you need the pixmap to bring up the menu...
          * gtk_widget_hide( c->title_label );
@@ -323,10 +484,6 @@ PRIVATE void frame_visible_ctrl_handler(GtkWidget *widget, Control *c) {
         gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
 
     }else{
-        gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_ETCHED_IN);
-        gtk_label_set_text(GTK_LABEL(c->title_label),c->desc->name);
-        //gtk_adjustment_set_draw_value(c->widget,TRUE);
-	
         /* In order for this to work, you need the pixmap to bring up the menu...
          * gtk_widget_show( c->title_label );
          * the following is a temp hack
@@ -335,7 +492,6 @@ PRIVATE void frame_visible_ctrl_handler(GtkWidget *widget, Control *c) {
     }
     gtk_widget_queue_resize( c->whole );
 }
-
 PRIVATE void control_panel_sizer_visible_ctrl_handler(GtkWidget *widget, Control *c) {
 
     c->this_panel->sizer_visible = !(c->this_panel->sizer_visible);
@@ -395,6 +551,12 @@ PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
   gtk_widget_show(item);
   gtk_menu_append(GTK_MENU(menu), item);
   gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(frame_visible_ctrl_handler), c);
+
+  item = gtk_check_menu_item_new_with_label( "Name" );
+  gtk_check_menu_item_set_state( GTK_CHECK_MENU_ITEM( item ), c->name_visible );
+  gtk_widget_show(item);
+  gtk_menu_append(GTK_MENU(menu), item);
+  gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(name_visible_ctrl_handler), c);
 
   if( c->entry ) {
       item = gtk_check_menu_item_new_with_label( "Entry" );
@@ -509,6 +671,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   c->page = desc->page;
 
   c->frame_visible = TRUE;
+  c->name_visible = TRUE;
   c->entry_visible = TRUE;
   c->control_visible = TRUE;
   c->testbg_active = FALSE;
@@ -522,6 +685,8 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   c->x = 0;
   c->y = 0;
   c->events_flow = TRUE;
+  c->kill_me = FALSE;
+  c->update_refcount = 0;
 
   c->whole = NULL;
   c->g = g;
@@ -672,6 +837,9 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
 PUBLIC void control_kill_control(Control *c) {
   g_return_if_fail(c != NULL);
 
+  if (c->g != NULL)
+    gen_deregister_control(c->g, c);
+
   //gdk_threads_enter();
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );
@@ -683,12 +851,15 @@ PUBLIC void control_kill_control(Control *c) {
   if (c->name != NULL)
     safe_free(c->name);
 
-  if (c->g != NULL)
-    gen_deregister_control(c->g, c);
   //gdk_threads_leave();
   //
 
+
+
   safe_free(c);
+  // FIXING a race condition with the updater_thread. let the updater delete the control.
+  //c->kill_me = TRUE;
+  //control_update_value( c );
 }
 
 PRIVATE int find_control_index(Control *c) {
@@ -770,6 +941,10 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   if( ! (c->frame_visible = objectstore_item_get_integer( item, "frame_visible", ! discreet ) ) ) {
         gtk_frame_set_shadow_type (GTK_FRAME (c->title_frame) , GTK_SHADOW_NONE);
         gtk_frame_set_label (GTK_FRAME (c->title_frame) , NULL);
+        //gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
+  }
+
+  if( ! (c->name_visible = objectstore_item_get_integer( item, "name_visible", c->frame_visible ) ) ) {
         gtk_label_set_text(GTK_LABEL(c->title_label),"    ");
   }
 
@@ -784,8 +959,8 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
 
 
 
-
-  if( c->this_panel && c->this_panel->current_bg ) {
+  // XXX: always or default ?
+  if( c->this_panel && c->this_panel->bg_image_name ) {
       
       
       control_update_bg( c  );
@@ -795,6 +970,8 @@ PUBLIC Control *control_unpickle(ObjectStoreItem *item) {
   y = objectstore_item_get_integer(item, "y_coord", 0);
   control_moveto(c, x, y);
   c->events_flow = TRUE;
+  c->kill_me = FALSE;
+  c->update_refcount = 0;
 
   return c;
 }
@@ -825,6 +1002,7 @@ PUBLIC ObjectStoreItem *control_pickle(Control *c, ObjectStore *db) {
 //  objectstore_item_set_integer(item, "discreet", c->discreet);
   objectstore_item_set_integer(item, "control_visible", c->control_visible);
   objectstore_item_set_integer(item, "frame_visible", c->frame_visible);
+  objectstore_item_set_integer(item, "name_visible", c->name_visible);
   objectstore_item_set_integer(item, "entry_visible", c->entry_visible);
 
 
@@ -892,7 +1070,9 @@ PUBLIC void control_update_names(Control *c) {
           gtk_frame_set_label(GTK_FRAME(c->title_frame), c->g->name);
       else
           gtk_frame_set_label(GTK_FRAME(c->title_frame), c->this_panel->name );
+  }
 
+  if( c->name_visible ) {
       gtk_label_set_text(GTK_LABEL(c->title_label), c->name ? c->name : c->desc->name);
   }
 }
@@ -918,16 +1098,27 @@ PUBLIC void control_update_range(Control *c) {
 }
 
 PUBLIC void control_update_value(Control *c) {
+    //c->update_refcount++;
     g_async_queue_push( update_queue, c );
 }
 
 PRIVATE  void control_update_value_real(Control *c) {
-    c->events_flow = FALSE;	/* as already stated... not very elegant. */
-    
-    if (c->desc->refresh != NULL)
-	c->desc->refresh(c);
+//    if( c->kill_me ) {
+//	if( c->update_refcount > 0 ) {
+//	    printf( "update_refcount = %d\n", c->update_refcount );
+//	} else {
+//	    safe_free( c );
+//	}
+//  } else {
 
-    c->events_flow = TRUE;
+	c->events_flow = FALSE;	/* as already stated... not very elegant. */
+
+	if (c->desc->refresh != NULL)
+	    c->desc->refresh(c);
+
+	c->events_flow = TRUE;
+
+//    }
 }
 
 PRIVATE gboolean control_panel_delete_handler(GtkWidget *cp, GdkEvent *event) {
@@ -1012,7 +1203,9 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
     panel->sizer_y = 0;
     panel->sizer_moving = 0;
     panel->sizer_visible = 0;
-    panel->current_bg = NULL;
+    panel->bg_image_name = NULL;
+	gdk_color_white( gdk_colormap_get_system(), &(panel->color1) );
+	gdk_color_black( gdk_colormap_get_system(), &(panel->color2) );
 
     g_signal_connect( G_OBJECT( panel->fixedwidget ), "size_request", G_CALLBACK(mylayout_sizerequest), NULL );
 
@@ -1032,8 +1225,8 @@ PUBLIC ControlPanel *control_panel_new( char *name, gboolean visible, Sheet *she
 
     gtk_widget_show(panel->fixedwidget);
 
-    if (!GTK_WIDGET_REALIZED(panel->fixedwidget))
-	gtk_widget_realize(panel->fixedwidget);
+//    if (!GTK_WIDGET_REALIZED(panel->fixedwidget))
+//	gtk_widget_realize(panel->fixedwidget);
 
     gtk_container_check_resize( GTK_CONTAINER(panel->fixedwidget) );
     update_panel_name( panel );
@@ -1071,24 +1264,38 @@ PUBLIC ControlPanel *control_panel_unpickle(ObjectStoreItem *item) {
 	cp->sizer_x = objectstore_item_get_integer( item, "sizer_x", 0 );
 	cp->sizer_y = objectstore_item_get_integer( item, "sizer_y", 0 );
 	cp->sheet = ( sitem == NULL ? NULL : sheet_unpickle( sitem ) );
-	cp->current_bg = objectstore_item_get_string( item, "current_bg", NULL );
-	if( cp->current_bg ) {
-	    if( g_file_test( cp->current_bg, G_FILE_TEST_EXISTS ) ) {
-		cp->current_bg = safe_string_dup( cp->current_bg );
+	cp->bg_type = CONTROL_PANEL_BG_DEFAULT;
+	cp->bg_image_name = objectstore_item_get_string( item, "current_bg", NULL );
+	if( cp->bg_image_name ) {
+	    if( g_file_test( cp->bg_image_name, G_FILE_TEST_EXISTS ) ) {
+		cp->bg_image_name = safe_string_dup( cp->bg_image_name );
+		cp->bg_type = CONTROL_PANEL_BG_IMAGE;
 	    } else {
-		char *bg_basename = g_path_get_basename( cp->current_bg );
+		char *bg_basename = g_path_get_basename( cp->bg_image_name );
 		char *bg_in_pixmap_dir = g_build_filename( pixmap_path, bg_basename, NULL );
 
 		if( g_file_test( bg_in_pixmap_dir, G_FILE_TEST_EXISTS ) ) {
-		    cp->current_bg = bg_in_pixmap_dir;
+		    cp->bg_image_name = bg_in_pixmap_dir;
+		    cp->bg_type = CONTROL_PANEL_BG_IMAGE;
 		} else {
-		    cp->current_bg = NULL;
+		    cp->bg_image_name = NULL;
 		    g_free( bg_in_pixmap_dir );
 		}
 
 		g_free( bg_basename );
 	    }
 	}
+	cp->color1.red   = objectstore_item_get_integer( item, "color1_red", 65535 );
+	cp->color1.green = objectstore_item_get_integer( item, "color1_green", 65535 );
+	cp->color1.blue  = objectstore_item_get_integer( item, "color1_blue", 65535 );
+	cp->color2.red   = objectstore_item_get_integer( item, "color2_red", 0 );
+	cp->color2.green = objectstore_item_get_integer( item, "color2_green", 0 );
+	cp->color2.blue  = objectstore_item_get_integer( item, "color2_blue", 0 );
+	cp->frame_color.red   = objectstore_item_get_integer( item, "frame_color_red", 0 );
+	cp->frame_color.green = objectstore_item_get_integer( item, "frame_color_green", 0 );
+	cp->frame_color.blue  = objectstore_item_get_integer( item, "frame_color_blue", 0 );
+	cp->frame_alpha       = objectstore_item_get_integer( item, "frame_alpha", 0 );
+	cp->bg_type      = objectstore_item_get_integer( item, "bg_type", cp->bg_type );
 
 	gtk_layout_move( GTK_LAYOUT(cp->fixedwidget), cp->sizer_ebox,
 		cp->sizer_x + 16, cp->sizer_y + 16 );
@@ -1107,11 +1314,23 @@ PUBLIC ObjectStoreItem *control_panel_pickle(ControlPanel *cp, ObjectStore *db) 
     if( cp->sheet )
 	objectstore_item_set_object( item, "sheet", sheet_pickle( cp->sheet, db ) );
 
-  if ( cp->current_bg )
-      objectstore_item_set_string( item, "current_bg", cp->current_bg );
+  if ( cp->bg_image_name )
+      objectstore_item_set_string( item, "current_bg", cp->bg_image_name );
     objectstore_item_set_integer( item, "visible", cp->visible );
     objectstore_item_set_integer( item, "sizer_x", cp->sizer_x );
     objectstore_item_set_integer( item, "sizer_y", cp->sizer_y );
+
+     objectstore_item_set_integer( item, "color1_red", cp->color1.red );
+     objectstore_item_set_integer( item, "color1_green", cp->color1.green );
+     objectstore_item_set_integer( item, "color1_blue", cp->color1.blue );
+     objectstore_item_set_integer( item, "color2_red", cp->color2.red );
+     objectstore_item_set_integer( item, "color2_green", cp->color2.green );
+     objectstore_item_set_integer( item, "color2_blue", cp->color2.blue );
+     objectstore_item_set_integer( item, "frame_color_red", cp->frame_color.red );
+     objectstore_item_set_integer( item, "frame_color_green", cp->frame_color.green );
+     objectstore_item_set_integer( item, "frame_color_blue", cp->frame_color.blue );
+     objectstore_item_set_integer( item, "frame_alpha", cp->frame_alpha );
+     objectstore_item_set_integer( item, "bg_type", cp->bg_type );
   }
 
   return item;
@@ -1121,6 +1340,7 @@ PRIVATE gpointer update_processor( gpointer data ) {
     while( 1 ) {
 	Control *c = g_async_queue_pop( update_queue );
 	gdk_threads_enter();
+	//c->update_refcount--;
 	control_update_value_real( c );
 	gdk_threads_leave();
     }
@@ -1137,6 +1357,14 @@ PUBLIC void init_control(void) {
   pixmap_path = getenv("GALAN_PIXMAP_PATH");
   if( ! pixmap_path )
       pixmap_path = SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "pixmaps";
+
+  if( ! g_path_is_absolute( pixmap_path ) ) {
+      gchar *current_dir = g_get_current_dir();
+      gchar *abspath     = g_build_filename( current_dir, pixmap_path, NULL );
+      //g_free(  pixmap_path );
+      pixmap_path = abspath;
+      g_free( current_dir );
+  }
 
   update_queue = g_async_queue_new();
   
@@ -1187,8 +1415,9 @@ PUBLIC void control_set_value(Control *c, gfloat value) {
   }
 
   if (adj != NULL) {
-    adj->value = value;
-    gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+    //adj->value = value;
+    //gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+    gtk_adjustment_set_value( GTK_ADJUSTMENT( adj ), value );
   }
 }
 

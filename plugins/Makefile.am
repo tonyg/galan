@@ -2,6 +2,7 @@
 
 SUBDIRS = gl
 
+
 EXTRA_DIST = Makefile.w32 TEMPLATE.c dllinit.c win_output.c *.c emu10k1-lib emu10k1-include
 
 plugindir = $(pkglibdir)/plugins
@@ -26,7 +27,7 @@ plugin_LTLIBRARIES = \
 	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
 	integrate.la diff.la notetofreq.la fbdelay.la powerspectrum.la\
 	arrwindow.la arrmul.la arradd.la ra2evt.la sigpow.la sigsignum.la sigabs.la voice_allocator.la\
-	midievt_noteon.la midievt_noteoff.la midievt_cc.la numtostring.la\
+	midievt_noteon.la midievt_noteoff.la midievt_cc.la midievt_cc_demultiplex.la numtostring.la\
 	@OPTIONAL_PLUGINS@
 
 

@@ -65,11 +65,23 @@
 
 typedef struct LPluginData {
     GList *insig, *outsig, *inevent, *outevent;
+
+    char *filename;
+    unsigned long   index;
+
+    GModule *module;
+    const LADSPA_Descriptor *ladspa_descriptor;
+    unsigned int refcount;
+	
 } LPluginData;
 
+typedef struct LModuleData {
+    GModule *module;
+    unsigned int refcount;
+} LModuleData;
 
 typedef struct Data {
-  LADSPA_Descriptor *ladspa_descriptor;
+  const LADSPA_Descriptor *ladspa_descriptor;
   LADSPA_Handle instance_handle;
   LPluginData *lpdat;
   LADSPA_Data  *inevents;
@@ -83,12 +95,99 @@ typedef struct Data {
 
 // Globals... 
 
-PRIVATE GHashTable *DescriptorIndex = NULL;
+//PRIVATE GHashTable *DescriptorIndex = NULL;
 PRIVATE GHashTable *LPluginIndex = NULL;
+PRIVATE GHashTable *LModuleIndex = NULL;
 
 #ifdef HAVE_LRDF
 PRIVATE GRelation *PathIndex = NULL;
 #endif
+
+
+PRIVATE GModule *lplugindata_get_module( LPluginData *lpdat ) {
+
+    LModuleData *moddata = g_hash_table_lookup( LModuleIndex, lpdat->filename );
+    if( !moddata ) {
+	moddata = safe_malloc( sizeof( LModuleData ) );
+	g_hash_table_insert( LModuleIndex, lpdat->filename, moddata );
+	moddata->refcount = 0;
+	moddata->module =  NULL;
+    }
+
+    if( moddata->module ) {
+	moddata->refcount++;
+	return moddata->module;
+    } else {
+	moddata->module = g_module_open (lpdat->filename, G_MODULE_BIND_LAZY );
+	moddata->refcount++;
+	return moddata->module;
+    }
+}
+
+PRIVATE void lplugindata_release_module( LPluginData *lpdat ) {
+
+    LModuleData *moddata = g_hash_table_lookup( LModuleIndex, lpdat->filename );
+
+    if( !moddata ) return;
+
+    moddata->refcount--;
+    if( moddata->refcount > 0 ) return;
+    g_module_close( moddata->module );
+    moddata->module = NULL;
+}
+
+PRIVATE const LADSPA_Descriptor *lplugindata_get_descriptor( LPluginData *lpdat ) {
+
+    if( lpdat->ladspa_descriptor ) {
+	lpdat->refcount++;
+	return lpdat->ladspa_descriptor;
+    }
+    else
+    {
+	GModule * psPluginHandle;
+	LADSPA_Descriptor_Function fDescriptorFunction;
+
+
+	psPluginHandle = lplugindata_get_module( lpdat ); // g_module_open (lpdat->filename, G_MODULE_BIND_LAZY );
+	if( !psPluginHandle ) {
+	    return NULL;
+	}
+
+	if( !g_module_symbol(psPluginHandle, "ladspa_descriptor", &fDescriptorFunction ) ) {
+	    lplugindata_release_module( lpdat );
+	    return NULL;
+	}
+
+	if( !fDescriptorFunction ) {
+	    lplugindata_release_module( lpdat );
+	    return NULL;
+	}
+
+	lpdat->refcount = 0;
+	lpdat->ladspa_descriptor = fDescriptorFunction( lpdat->index );
+	lpdat->refcount++;
+	return lpdat->ladspa_descriptor;
+    }
+}
+
+PRIVATE void lplugindata_release_descriptor( LPluginData *lpdat ) {
+
+    lpdat->refcount--;
+
+    if( lpdat->refcount > 0 ) return;
+
+    // try to unload...
+
+    lpdat->ladspa_descriptor = NULL;
+    lplugindata_release_module( lpdat );
+}
+
+
+
+//-------------------------------------------------------------------------
+//
+//   generator methods and some helpers.....
+//
 
 PRIVATE void run_plugin( Generator *g, int buflen ) {
   Data *data = g->data;
@@ -204,11 +303,14 @@ PRIVATE gboolean init_instance(Generator *g) {
   GList *portX;
   g->data = data;
 
-  data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->tag );
-  //printf( "retrieved: %s %x\n", g->klass->name, data->ladspa_descriptor );
+  //XXX: may be empty.
+  //data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->tag );
+
   data->lpdat = g_hash_table_lookup( LPluginIndex, g->klass->tag );
+
+  data->ladspa_descriptor = lplugindata_get_descriptor( data->lpdat );
+
   data->instance_handle = data->ladspa_descriptor->instantiate( data->ladspa_descriptor, SAMPLE_RATE ); 
-  //printf( "got instancehandle: %x\n", data->instance_handle );
 
   // Connect the ports ... pre: alloc memory for the controls...
   // connect wird erst vor dem laufen mit outpu_generator gemacht...
@@ -276,9 +378,31 @@ PRIVATE gboolean init_instance(Generator *g) {
 }
 
 PRIVATE void destroy_instance(Generator *g) {
-  gen_deregister_realtime_fn(g, realtime_handler);
-  // TODO: what a mess free it all ....
-  free(g->data);
+
+    Data *data = g->data;
+    int inscount = g_list_length( data->lpdat->insig );
+    int outscount = g_list_length( data->lpdat->outsig );
+    int i;
+
+    gen_deregister_realtime_fn(g, realtime_handler);
+    if( data->ladspa_descriptor->deactivate )
+	data->ladspa_descriptor->deactivate( data->instance_handle ); 
+
+    for( i=0; i<outscount; i++ ) free( data->outsignals[i]);
+    for( i=0; i<inscount; i++ ) free( data->insignals[i]);
+    free( data->inevents );
+    free( data->outevents );
+    free( data->oldoutevents);
+    free( data->insignals);
+    free( data->outsignals);
+
+    if( data->ladspa_descriptor->cleanup )
+	data->ladspa_descriptor->cleanup( data->instance_handle ); 
+
+    // TODO: destroy LADSPA instance;
+    lplugindata_release_descriptor( data->lpdat );
+
+    free(g->data);
 }
 
 PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
@@ -287,8 +411,12 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   ObjectStoreDatum *inarray, *outarray;
   g->data = data;
 
-  data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->tag );
+  //TODO: Maybe empty... load module...
+  //data->ladspa_descriptor = g_hash_table_lookup( DescriptorIndex, g->klass->tag );
+
   data->lpdat = g_hash_table_lookup( LPluginIndex, g->klass->tag );
+  data->ladspa_descriptor = lplugindata_get_descriptor( data->lpdat );
+
   data->instance_handle = data->ladspa_descriptor->instantiate( data->ladspa_descriptor, SAMPLE_RATE ); 
 
   
@@ -505,7 +633,27 @@ PRIVATE void control_LADSPA_Data_updater(Control *c) {
     control_set_value(c, (data->inevents[(int) c->desc->refresh_data]));
 }
 				     
-PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
+void string_search_and_replace( char **string, char search, char *replace ) {
+
+    char *src = *string;
+    GString *retval = g_string_new( "" );
+
+    while( *src ) {
+
+	if( *src == search )
+	    g_string_append( retval, replace );
+	else
+	    g_string_append_len( retval, src, 1 );
+
+	src++ ;
+    }
+
+    free( *string );
+    *string = safe_string_dup( retval->str );
+    g_string_free( retval, TRUE );
+}
+
+PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor, const char *filename, unsigned long plugindex ) {
 
     unsigned long i;
     LPluginData *plugindata = safe_malloc( sizeof( LPluginData ) );
@@ -553,7 +701,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	unsigned long portindex = (unsigned long) portX->data;
 
 	//printf( "Name: %s\n", psDescriptor->PortNames[portindex] );
-	inputdescr[i].name  = psDescriptor->PortNames[portindex];
+	inputdescr[i].name  = safe_string_dup( psDescriptor->PortNames[portindex] );
 	inputdescr[i].flags = SIG_FLAG_REALTIME;
     }
     inputdescr[i].name = NULL;
@@ -564,7 +712,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	unsigned long portindex = (unsigned long) portX->data;
 
 	//printf( "Name: %s\n", psDescriptor->PortNames[portindex] );
-	outputdescr[i].name  = psDescriptor->PortNames[portindex];
+	outputdescr[i].name  = safe_string_dup( psDescriptor->PortNames[portindex] );
 	outputdescr[i].flags = SIG_FLAG_REALTIME;
 	outputdescr[i].d.realtime = output_generators[i];
     }
@@ -579,7 +727,9 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
 	else
 	    controls[i].kind = CONTROL_KIND_KNOB;
 
-	controls[i].name = psDescriptor->PortNames[portindex];
+	controls[i].name = safe_string_dup( psDescriptor->PortNames[portindex] );
+	string_search_and_replace( &( controls[i].name ), '/', "\\/" );
+	
 
 	if( LADSPA_IS_HINT_BOUNDED_BELOW( psDescriptor->PortRangeHints[portindex].HintDescriptor ) )
 	    controls[i].min = psDescriptor->PortRangeHints[portindex].LowerBound;
@@ -650,55 +800,59 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor ) {
     
     //printf( "inserting: %s %x\n", psDescriptor->Label, psDescriptor );
     //XXX: Is it necessary to add both tags ? Should be handled by the generator resolution.
+    //
+    // TODO: 
+    //
+    //FIXME:
+
+    plugindata->filename = safe_string_dup( filename );
+    plugindata->index = plugindex;
+    plugindata->ladspa_descriptor = NULL;
+    plugindata->refcount = 0;
     
-    g_hash_table_insert(DescriptorIndex, k->tag, (LADSPA_Descriptor *) psDescriptor);
-    g_hash_table_insert(DescriptorIndex, v->tag, (LADSPA_Descriptor *) psDescriptor);
+    //g_hash_table_insert(DescriptorIndex, k->tag, (LADSPA_Descriptor *) psDescriptor);
+    //g_hash_table_insert(DescriptorIndex, v->tag, (LADSPA_Descriptor *) psDescriptor);
     g_hash_table_insert(LPluginIndex, k->tag, plugindata);
     g_hash_table_insert(LPluginIndex, v->tag, plugindata);
 
 	
+    char *psdesc_copy = safe_string_dup( psDescriptor->Name );
+    string_search_and_replace( &psdesc_copy, '/', "\\/" );
+			
 #ifdef HAVE_LRDF
     {
 	guint uid = psDescriptor->UniqueID;
 	//printf( "uid=%d\n", uid );
-    	GTuples *paths = g_relation_select( PathIndex, &uid, 0 );
+	GTuples *paths = g_relation_select( PathIndex, &uid, 0 );
 	if( paths == NULL || paths->len == 0 ) {
-		generatorpath = safe_malloc( strlen("LADSPA00/")+strlen( psDescriptor->Name )+1 ); 
-		sprintf( generatorpath, "LADSPA%2d/%s", (plugin_count++) / 20, psDescriptor->Name );
-		//strcpy( generatorpath, "LADSPA/" );
-		//strcat( generatorpath, psDescriptor->Name );
+	    generatorpath = g_strdup_printf( "LADSPA%2d/%s", (plugin_count++) / 20, psdesc_copy );
 
-		gencomp_register_generatorclass(k, FALSE, generatorpath,
-				PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
-				NULL);
 
-		free( generatorpath );
+	    gencomp_register_generatorclass(k, FALSE, generatorpath,
+		    NULL, NULL);
+
+	    g_free( generatorpath );
 	} else {
-		int i;
-		for( i=0; i<paths->len; i++ ) {
-			char *genname = g_strdup_printf( "%s/%s", (char *) g_tuples_index( paths, i, 1 ), psDescriptor->Name );
-			gencomp_register_generatorclass(k, FALSE, genname,
-					PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
-					NULL);
-			g_free( genname );
-		}
+	    int i;
+	    for( i=0; i<paths->len; i++ ) {
+		char *genname = g_strdup_printf( "%s/%s", (char *) g_tuples_index( paths, i, 1 ), psdesc_copy );
+		gencomp_register_generatorclass(k, FALSE, genname,
+			NULL, NULL);
+		g_free( genname );
+	    }
 	}	
 
     }
 #else
-    generatorpath = safe_malloc( strlen("LADSPA00/")+strlen( psDescriptor->Name )+1 ); 
-    sprintf( generatorpath, "LADSPA%2d/%s", (plugin_count++) / 20, psDescriptor->Name );
-    //strcpy( generatorpath, "LADSPA/" );
-    //strcat( generatorpath, psDescriptor->Name );
-
-
+    generatorpath = g_strdup_printf( "LADSPA%2d/%s", (plugin_count++) / 20, psdesc_copy );
 
     gencomp_register_generatorclass(k, FALSE, generatorpath,
-	    PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
+	    NULL,
 	    NULL);
-	
-    free( generatorpath );
+
+    g_free( generatorpath );
 #endif
+    free( psdesc_copy );
     
     //printf("Plugin Name: \"%s\"\n", psDescriptor->Name);
     //printf("Plugin Label: \"%s\"\n", psDescriptor->Label);
@@ -736,11 +890,13 @@ PRIVATE void init_one_plugin( const char *filename, void *handle, LADSPA_Descrip
     if (!psDescriptor)
       break;
 
-    setup_one_class( psDescriptor );
+    setup_one_class( psDescriptor, filename, lPluginIndex );
   }
+  g_module_close( (GModule *) handle );
 }
 
 #ifdef HAVE_LRDF
+
 
 void decend(char *uri, char *base)
 {
@@ -772,6 +928,12 @@ void decend(char *uri, char *base)
 	if (uris != NULL) {
 		for (i = 0; i < uris->count; i++) {
 			label = lrdf_get_label(uris->items[i]);
+
+			// TODO: escape label
+			string_search_and_replace( &label, '/', "|" );
+
+
+
 			newbase = malloc(strlen(base) + strlen(label) + 2);
 			sprintf(newbase, "%s/%s", base, label);
 			//printf("%s\n", newbase);
@@ -876,8 +1038,9 @@ PRIVATE void setup_all( void ) {
 
 PRIVATE void setup_globals( void ) {
 
-  DescriptorIndex = g_hash_table_new(g_str_hash, g_str_equal);
+  //DescriptorIndex = g_hash_table_new(g_str_hash, g_str_equal);
   LPluginIndex = g_hash_table_new(g_str_hash, g_str_equal);
+  LModuleIndex = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
 

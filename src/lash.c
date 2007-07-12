@@ -52,7 +52,7 @@ PUBLIC void init_lash( int argc, char **argv ) {
     if (!lash_client) {
 	fprintf(stderr, "%s: could not initialise lash\n", __FUNCTION__);
 	fprintf(stderr, "%s: running galan without lash session-support\n", __FUNCTION__);
-	fprintf(stderr, "%s: to enable lash session-support launch the lash server prior fst\n", __FUNCTION__);
+	fprintf(stderr, "%s: to enable lash session-support launch the lash server prior galan\n", __FUNCTION__);
     }
 
     if (lash_enabled(lash_client)) {
@@ -65,5 +65,9 @@ PUBLIC void init_lash( int argc, char **argv ) {
 PUBLIC void done_lash(void) {
     
     // XXX: abmelden...
+    if (lash_enabled(lash_client)) {
+	lash_event_t *event = lash_event_new_with_type(LASH_Quit);
+	lash_send_event(lash_client, event);
+    }
 }
 

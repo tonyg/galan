@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(galan, 0.3.0_beta8, torbenh@users.sourceforge.net)
+AC_INIT(galan, 0.3.0_beta9, torbenh@users.sourceforge.net)
 AC_CONFIG_SRCDIR(src/main.c)
 AM_INIT_AUTOMAKE
 
@@ -38,17 +38,6 @@ AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} joyport.
 
 dnl PKG_CHECK_MODULES(FST, libfst >= 1.3, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fst.la", AC_MSG_RESULT(fst not found))
 
-dnl AC_CHECK_HEADERS(drfftw.h, [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
-dnl 			       FFTW_WITH_PREFIX="yes"
-dnl 			       FFTW_LIBS="-ldrfftw -ldfftw"
-dnl                                AC_SUBST(FFTW_LIBS)
-dnl                                AC_DEFINE( FFTW_PREFIX, 1, "include drfftw.h" ) ])
-dnl 
-dnl AC_CHECK_HEADERS(rfftw.h,  [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
-dnl 			       FFTW_WITH_PREFIX="no" 
-dnl 			       FFTW_LIBS="-lfftw -lrfftw"
-dnl 			       AC_SUBST(FFTW_LIBS)
-dnl 			       AC_DEFINE( FFTW_PREFIX, 0, "include rfftw.h" ) ] )
 
 AC_CHECK_HEADERS(srfftw.h,  [ OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fft.la ifft.la"
 			       FFTW_WITH_PREFIX="no" 
@@ -68,6 +57,7 @@ AC_ARG_ENABLE(emu10k1,
 [  --enable-emu10k1        Compile emu10k1 support],
 	OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} emu10k1.la" )
 
+GOB2_CHECK([2.0.0])
 	    
 PKG_CHECK_MODULES( GTK, gtk+-2.0 >= 2.0 )
 PKG_CHECK_MODULES( GTHREAD, gthread-2.0 >= 2.0 )
@@ -81,7 +71,6 @@ CFLAGS="$alsa_save_CFLAGS"
 LDFLAGS="$alsa_save_LDFLAGS"
 LIBS="$alsa_save_LIBS"
 
-dnl AM_PATH_GTKGL(, AC_MSG_RESULT(GtkGL not found))
 PKG_CHECK_MODULES( GTKGL, gtkgl-2.0 >= 1.99.0, have_gtkgl=yes, AC_MSG_RESULT(gtkgl not found) )
 
 AM_CONDITIONAL(compileGL, test x$have_gtkgl = xyes )

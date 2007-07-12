@@ -198,9 +198,16 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
   binarylength = objectstore_item_get_binary(item, "sample_data", (void **) &samplebuf);
   if( binarylength > 0 )
-      for( i=0; i<data->xsize * SAMPLE_RATE; i++ ) {
-	  data->samplebuf[i] = samplebuf[i];
-	  data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
+      if( (binarylength/sizeof(SAMPLE)) < (data->xsize * SAMPLE_RATE) ) {
+	  for( i=0; i<(binarylength/sizeof(SAMPLE)); i++ ) {
+	      data->samplebuf[i] = samplebuf[i];
+	      data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
+	  }
+      }else{
+	  for( i=0; i<data->xsize * SAMPLE_RATE; i++ ) {
+	      data->samplebuf[i] = samplebuf[i];
+	      data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
+	  }
       }
 
   gen_register_realtime_fn(g, realtime_handler);
@@ -515,8 +522,7 @@ PRIVATE void setup_class(void) {
   gen_configure_event_output(k, EVT_BUFFER_OUT, "Buffer Out");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
-				  PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
-				  NULL);
+				  NULL, NULL);
 }
 
 PUBLIC void init_plugin_sampler(void) {

@@ -48,9 +48,11 @@
 #include "control.h"
 #include "gencomp.h"
 
-#include "libgnomecanvas/gnome-canvas.h"
-#include "libgnomecanvas/gnome-canvas-rect-ellipse.h"
+//#include "libgnomecanvas/gnome-canvas.h"
+//#include "libgnomecanvas/gnome-canvas-rect-ellipse.h"
+//#include "libgnomecanvas/gnome-canvas-text.h"
 
+#include "libgnomecanvas/libgnomecanvas.h"
 #define GENERATOR_CLASS_NAME	"canvascontrol"
 #define GENERATOR_CLASS_PATH	"Control/CanvasControl"
 #define GENERATOR_CLASS_PIXMAP	"template.xpm"
@@ -84,7 +86,7 @@ typedef struct Data {
 
   gint32 transpose, notelen;
 
-  gint32 playing, editing;
+  gint32 playing, editing, step;
 } Data;
 
 typedef struct GroupData {
@@ -103,6 +105,7 @@ typedef struct ItemData {
 
 } ItemData;
 
+static gint32 *clipboard;
 
 PRIVATE gboolean init_instance(Generator *g) {
 
@@ -119,6 +122,7 @@ PRIVATE gboolean init_instance(Generator *g) {
 
   data->playing = 0;
   data->editing = 0;
+  data->step    = 0;
 
   data->notelen = SAMPLE_RATE / 10;
   data->transpose = 32;
@@ -143,7 +147,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 	
     int i;
   gint32 binarylength;
-  gint32 *file_buffer;
+  void *file_buffer_void;
   Data *data = safe_malloc(sizeof(Data));
 
   g->data = data;
@@ -151,21 +155,25 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->w = objectstore_item_get_integer(item, "canvas_width", X_SIZE);
   data->h = objectstore_item_get_integer(item, "canvas_height", Y_SIZE);
   data->num = objectstore_item_get_integer(item, "canvas_num", NUM);
+  data->playing = objectstore_item_get_integer(item, "playing", 0);
+  data->editing = objectstore_item_get_integer(item, "editing", 0);
 
   data->notelen = objectstore_item_get_integer( item, "canvas_notelen", SAMPLE_RATE / 10 );
   data->transpose = objectstore_item_get_integer( item, "canvas_transpose", 32 );
 
   data->matrix = safe_malloc( sizeof( gint32 ) * data->w * data->h * data->num );
 
-  binarylength = objectstore_item_get_binary(item, "matrix", (void **) (&file_buffer));
-  if( binarylength == sizeof( gint32 ) * data->w * data->h * data->num )
+  binarylength = objectstore_item_get_binary(item, "matrix", (void **) &file_buffer_void);
+  if( binarylength == sizeof( gint32 ) * data->w * data->h * data->num ) {
+      gint32 *file_buffer = (gint32 *) file_buffer_void;
       for( i=0; i<data->w * data->h * data->num; i++ ) {
 	  data->matrix[i] = file_buffer[i];
       }
-  else
+  } else {
       for( i=0; i<data->w * data->h * data->num; i++ ) {
 	  data->matrix[i] = 0;
       }
+  }
 
   data->seq = &(data->matrix[data->editing * data->w * data->h]);
 }
@@ -180,6 +188,8 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
   objectstore_item_set_integer(item, "canvas_transpose", data->transpose);
   objectstore_item_set(item, "matrix",
 	  objectstore_datum_new_binary(data->w * data->h * data->num * sizeof(gint32), (void *) data->matrix));
+  objectstore_item_set_integer(item, "playing", data->playing);
+  objectstore_item_set_integer(item, "editing", data->editing);
 }
 
 PRIVATE gint rect_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_data ) {
@@ -193,16 +203,16 @@ PRIVATE gint rect_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_d
 
     switch( event->type ) {
 	case GDK_ENTER_NOTIFY:
-	    gnome_canvas_item_set( item, "outline_color", "red", NULL );
+	    gnome_canvas_item_set( item, "outline_color", "#c02020", NULL );
 	    break;
 
 	case GDK_LEAVE_NOTIFY:
-	    gnome_canvas_item_set( item, "outline_color", "black", NULL );
+	    gnome_canvas_item_set( item, "outline_color", "#404040", NULL );
 	    break;
 
 	case GDK_BUTTON_PRESS:
 	    {
-		GdkEventButton *bev = event;
+		GdkEventButton *bev = (GdkEventButton *)event;
 
 		switch( bev->button ) {
 		    case 1:
@@ -249,10 +259,10 @@ PRIVATE gint rect_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_d
 
 		    gnome_canvas_item_move( item, x - idata->x, y - idata->y );
 		    if( (idata->x>=0) && (idata->x<(data->w) * 10) && (idata->y>=0) && (idata->y<data->h * 10) ) 
-			data->seq[ lrint(idata->x/10) * data->h + lrint(idata->y/10) ] = 0;
+			data->seq[ (int)rint(idata->x/10) * data->h + (int)rint(idata->y/10) ] = 0;
 
 		    if( (x>=0) && (x<(data->w) * 10) && (y>=0) && (y<(data->h) * 10) ) 
-			data->seq[ lrint(x/10) * data->h + lrint(y/10) ] = idata->len;
+			data->seq[ (int)rint(x/10) * data->h + (int)rint(y/10) ] = idata->len;
 
 		    idata->x = x;
 		    idata->y =  y;
@@ -271,7 +281,7 @@ PRIVATE gint rect_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_d
 		    idata->len = x;
 		    gnome_canvas_item_set( item, "x2", idata->len, NULL );
 		    if( (x>=0) && (x<data->w*10) && (y>=0) && (y<data->h*10) ) 
-			data->seq[ (int)(idata->x/10) * data->h + (int)(idata->y/10) ] = idata->len;
+			data->seq[ (int)rint(idata->x/10) * data->h + (int)rint(idata->y/10) ] = idata->len;
 
 		    gen_update_controls( c->g, -1 );
 		}
@@ -289,9 +299,9 @@ PRIVATE void createItem( GnomeCanvasItem *parent, int x, int y, int w ) {
     Control *c = g_object_get_data( G_OBJECT(parent), "control" );
     GroupData *gdata = g_object_get_data( G_OBJECT(parent), "gdata" );
 
-    GnomeCanvasItem *it = gnome_canvas_item_new( parent, gnome_canvas_rect_get_type(), 
-	    "outline_color", "black", 
-	    "fill_color", "white", 
+    GnomeCanvasItem *it = gnome_canvas_item_new( GNOME_CANVAS_GROUP(parent), gnome_canvas_rect_get_type(), 
+	    "outline_color", "#404040", 
+	    "fill_color", "#409020", 
 	    "x1", (gdouble)0.0, 
 	    "x2", (gdouble)w, 
 	    "y1", (gdouble)0.0, 
@@ -315,7 +325,7 @@ PRIVATE void createItem( GnomeCanvasItem *parent, int x, int y, int w ) {
     gnome_canvas_item_move( it, x, y );
 }
 
-PRIVATE gint canvas_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_data ) {
+PRIVATE gboolean canvas_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_data ) {
 
     Control *c = g_object_get_data( G_OBJECT(item), "control" );
     Data *data = c->g->data;
@@ -323,7 +333,7 @@ PRIVATE gint canvas_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user
     switch( event->type ) {
 	case GDK_BUTTON_PRESS:
 	    {
-		GdkEventButton *bev = event;
+		GdkEventButton *bev = (GdkEventButton *)event;
 
 		switch( bev->button ) {
 		    case 1:
@@ -335,10 +345,11 @@ PRIVATE gint canvas_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user
 			    x = rint(x/10-0.5)*10;
 			    y = rint(y/10-0.5)*10;
 
-			    createItem( item, x, y, 10 );
-
-			    if( (x>=0) && (x<data->w * 10) && (y>=0) && (y<data->h * 10) ) 
+			    if( (x>=0) && (x<data->w * 10) && (y>=0) && (y<data->h * 10) ) {
 				data->seq[ (int)(x/10) * data->h + (int)(y/10) ] = 10;
+				createItem( item, x, y, 10 );
+			    }
+
 
 
 			gen_update_controls( c->g, -1 );
@@ -357,12 +368,82 @@ PRIVATE gint canvas_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user
 	default:
 	    break;
     }
+    return FALSE;
+}
+
+PRIVATE gboolean paste_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_data ) {
+
+    Control *c = g_object_get_data( G_OBJECT(item), "control" );
+    Data *data = c->g->data;
+
+    switch( event->type ) {
+	case GDK_BUTTON_PRESS:
+	    {
+		GdkEventButton *bev = (GdkEventButton *)event;
+
+		switch( bev->button ) {
+		    case 1:
+			{
+			    int i;
+			    for( i=0; i < (data->w * data->h); i++ )
+				data->matrix[data->editing * data->w * data->h + i] = clipboard[i];
+
+			    gen_update_controls( c->g, -1 );
+			break;
+			}
+		    case 3:
+
+			break;
+		    default:
+			break;
+
+		}
+                break;
+	    }
+	default:
+	    break;
+    }
+    return TRUE;
+}
+
+PRIVATE gboolean copy_event( GnomeCanvasItem *item, GdkEvent *event, gpointer user_data ) {
+
+    Control *c = g_object_get_data( G_OBJECT(item), "control" );
+    Data *data = c->g->data;
+
+    switch( event->type ) {
+	case GDK_BUTTON_PRESS:
+	    {
+		GdkEventButton *bev = (GdkEventButton *)event;
+
+		switch( bev->button ) {
+		    case 1:
+			{
+			    int i;
+			    for( i=0; i < (data->w * data->h); i++ )
+				clipboard[i] = data->matrix[data->editing * data->w * data->h + i];
+			    break;
+			}
+		    case 3:
+
+			break;
+		    default:
+			break;
+
+		}
+                break;
+	    }
+	default:
+	    break;
+    }
+    return TRUE;
 }
 
 
 
 PRIVATE void init_canvas( Control *control ) {
 
+    int i;
 	GtkWidget *canvas = gnome_canvas_new();
 	
 	Data *data = control->g->data;
@@ -378,22 +459,134 @@ PRIVATE void init_canvas( Control *control ) {
 
 	
 	// the back ground
-	gnome_canvas_item_new( root_group, gnome_canvas_rect_get_type(), 
-		"fill_color", "grey", 
+	
+	GnomeCanvasItem *bg_group =
+	    gnome_canvas_item_new( root_group, gnome_canvas_group_get_type(), "x", (gdouble)0, "y", (gdouble)0, NULL );
+
+	gnome_canvas_item_new( GNOME_CANVAS_GROUP( bg_group ), gnome_canvas_rect_get_type(), 
+		"fill-color", "#000000", 
 		"x1", (gdouble)0.0, 
 		"x2", (gdouble)data->w * 10, 
 		"y1", (gdouble)0.0, 
 		"y2", (gdouble)data->h * 10, 
 		NULL );
 
+	for( i=1; i<data->w; i+=1 ) {
+	    gnome_canvas_item_new( GNOME_CANVAS_GROUP( bg_group ), gnome_canvas_rect_get_type(), 
+		    "outline-color", i%4==0 ? "#10c010" : "#107010", 
+		    "x1", (gdouble)i*10, 
+		    "x2", (gdouble)i*10, 
+		    "y1", (gdouble)0.0, 
+		    "y2", (gdouble)data->h * 10, 
+		    NULL );
+	}
+	for( i=1; i<data->h; i+=1 ) {
+	    gnome_canvas_item_new( GNOME_CANVAS_GROUP( bg_group ), gnome_canvas_rect_get_type(), 
+		    "outline-color", i%4==0 ? "#10c010" : "#107010", 
+		    "x1", (gdouble)0.0, 
+		    "x2", (gdouble)data->w * 10, 
+		    "y1", (gdouble)i*10, 
+		    "y2", (gdouble)i*10, 
+		    NULL );
+	}
+
+	GnomeCanvasItem *cursor =
+	    gnome_canvas_item_new( GNOME_CANVAS_GROUP( bg_group ), gnome_canvas_rect_get_type(), 
+		    "outline-color", "#c04010", 
+		    "x1", (gdouble)5.0, 
+		    "x2", (gdouble)5.0, 
+		    "y1", (gdouble)0, 
+		    "y2", (gdouble)data->h * 10, 
+		    NULL );
+
+	g_object_set_data( G_OBJECT( root_group ), "cursor", cursor );
 	
 	// set event callback
 	g_signal_connect( G_OBJECT( root_group ), "event", G_CALLBACK( canvas_event ), NULL );
 
-	//XXX: add scrolled window...
-	gnome_canvas_set_scroll_region( GNOME_CANVAS( canvas ), 0, 0, data->w * 10, data->h*10 );
+
+	GnomeCanvasItem *buttons_group =
+	    gnome_canvas_item_new( root_group, gnome_canvas_group_get_type(), "x", (gdouble)0, "y", (gdouble)data->h*10, NULL );
+
+	gnome_canvas_item_new( GNOME_CANVAS_GROUP( buttons_group ), gnome_canvas_rect_get_type(), 
+		"fill-color", "#000000", 
+		"x1", (gdouble)0.0, 
+		"x2", (gdouble)data->w*10, 
+		"y1", (gdouble)0.0, 
+		"y2", (gdouble)25, 
+		NULL );
+
+	GnomeCanvasPoints *points = gnome_canvas_points_new( 2 );
+	points->coords[0] = 2.0;
+	points->coords[1] = 2.0;
+	points->coords[2] = data->w*10 - 2.0;
+	points->coords[3] = 2.0;
+	gnome_canvas_item_new( GNOME_CANVAS_GROUP( buttons_group ), gnome_canvas_line_get_type(), 
+		"fill-color", "#408040", 
+		"points", points, 
+		"width-pixels", (gint)1, 
+		NULL );
+
+	GnomeCanvasItem *citem;
+
+	citem = gnome_canvas_item_new( GNOME_CANVAS_GROUP( buttons_group ), gnome_canvas_rect_get_type(), 
+		"outline-color", "#303030", 
+		"fill-color", "#101010", 
+		"x1", (gdouble)3.0, 
+		"x2", (gdouble)37.0 , 
+		"y1", (gdouble)6, 
+		"y2", (gdouble)20, 
+		NULL );
+
+	g_object_set_data( G_OBJECT( citem ), "control", control);
+	g_signal_connect( G_OBJECT( citem ), "event", G_CALLBACK( copy_event ), NULL );
+
+
+	citem = gnome_canvas_item_new( GNOME_CANVAS_GROUP( buttons_group ), gnome_canvas_text_get_type(), 
+		"anchor", GTK_ANCHOR_CENTER, 
+		"fill-color", "#505050", 
+		"family", "monospace", 
+		"size-points", (gdouble)8, 
+		"text", "Copy", 
+		"x", (gdouble)20, 
+		"y", (gdouble)12.5, 
+		NULL );
+
+	g_object_set_data( G_OBJECT( citem ), "control", control);
+	g_signal_connect( G_OBJECT( citem ), "event", G_CALLBACK( copy_event ), NULL );
+
+	citem = gnome_canvas_item_new( GNOME_CANVAS_GROUP( buttons_group ), gnome_canvas_rect_get_type(), 
+		"outline-color", "#303030", 
+		"fill-color", "#101010", 
+		"x1", (gdouble)43.0, 
+		"x2", (gdouble)77.0 , 
+		"y1", (gdouble)6, 
+		"y2", (gdouble)20, 
+		NULL );
+
+	g_object_set_data( G_OBJECT( citem ), "control", control);
+	g_signal_connect( G_OBJECT( citem ), "event", G_CALLBACK( paste_event ), NULL );
+
+	citem = gnome_canvas_item_new( GNOME_CANVAS_GROUP( buttons_group ), gnome_canvas_text_get_type(), 
+		"anchor", GTK_ANCHOR_CENTER, 
+		"family", "monospace", 
+		"fill-color", "#505050", 
+		"size-points", (gdouble)8, 
+		"text", "Paste", 
+		"x", (gdouble)60, 
+		"y", (gdouble)12.5, 
+		NULL );
+
+	g_object_set_data( G_OBJECT( citem ), "control", control);
+	g_signal_connect( G_OBJECT( citem ), "event", G_CALLBACK( paste_event ), NULL );
+
+
+
 	
-	gtk_widget_set_usize( canvas, data->w * 10 , data->h * 10 );
+	//XXX: add scrolled window...
+	gnome_canvas_set_scroll_region( GNOME_CANVAS( canvas ), 0, 0, data->w * 10, data->h*10 + 27 );
+
+	gtk_widget_set_usize( canvas, data->w * 10 , data->h * 10 + 27 );
 
 	control->widget = canvas;
 	//control->data = it;
@@ -409,9 +602,9 @@ PRIVATE void done_canvas(Control *control) {
     free( gdata );
 }
 
-PRIVATE gboolean isItemInSeq( GnomeCanvasItem *it, gint32 *seq ) {
-
-}
+//PRIVATE gboolean isItemInSeq( GnomeCanvasItem *it, gint32 *seq ) {
+//
+//}
 
 PRIVATE GnomeCanvasItem *findItemAt( int tx, int ty, GroupData *gdata ) {
     GList *childX;
@@ -437,7 +630,7 @@ PRIVATE void refresh_canvas(Control *control) {
     Data *data = control->g->data;
     
     GtkWidget *canvas = control->widget;
-    GroupData *gdata = g_object_get_data( G_OBJECT( gnome_canvas_root( control->widget ) ), "gdata" );
+    GroupData *gdata = g_object_get_data( G_OBJECT( gnome_canvas_root( GNOME_CANVAS(control->widget) ) ), "gdata" );
 
     GList *childX, *toDelete = NULL;
 
@@ -468,7 +661,7 @@ PRIVATE void refresh_canvas(Control *control) {
     for( childX = toDelete; childX != NULL; childX = g_list_next( childX ) ) {
 	GnomeCanvasItem *it = childX->data;
 	gdata->children = g_list_remove( gdata->children, it );
-	gtk_object_destroy( it );
+	gtk_object_destroy( GTK_OBJECT( it ) );
    }
 
     g_list_free( toDelete );
@@ -479,10 +672,15 @@ PRIVATE void refresh_canvas(Control *control) {
 	    if( data->seq[ rx*data->h + ry ] != 0 ) {
 		if( findItemAt( rx, ry, gdata ) == NULL ) {
 
-		    createItem( gnome_canvas_root( canvas ), rx*10, ry*10, data->seq[ rx*data->h + ry ] );
+		    createItem( GNOME_CANVAS_ITEM(gnome_canvas_root( GNOME_CANVAS(canvas) ) ), rx*10, ry*10, data->seq[ rx*data->h + ry ] );
 		}
 	    }
 	}
+
+    GnomeCanvasItem *cursor = g_object_get_data( G_OBJECT( gnome_canvas_root( GNOME_CANVAS( control->widget ) ) ), "cursor" );
+    gnome_canvas_item_set( cursor, "x1", (gdouble) data->step*10 + 5, "x2", (gdouble) data->step*10 + 5, NULL );
+
+
 }
 
 
@@ -508,9 +706,12 @@ PRIVATE void evt_step_handler(Generator *g, AEvent *event) {
     Data *data = g->data;
 
     SAMPLETIME time = event->time;
-    //data->y = event->d.number;
 
-    int pos = lrint(event->d.number);
+    data->step = event->d.number;
+
+    
+
+    int pos = rint(event->d.number);
     gint32 *ply = &(data->matrix[ data->playing * data->w * data->h ]);
 
     for( i=0; i<data->h; i++ ) {
@@ -526,7 +727,7 @@ PRIVATE void evt_step_handler(Generator *g, AEvent *event) {
 	    
 	}
     }
-    //gen_update_controls( g, -1 );
+    gen_update_controls( g, -1 );
 }
 
 PRIVATE void evt_transpose_handler(Generator *g, AEvent *event) {
@@ -574,10 +775,17 @@ PRIVATE void setup_class(void) {
   gen_configure_event_output(k, EVT_NOTE_OFF, "NoteOff");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
-				  PIXMAPDIRIFY(GENERATOR_CLASS_PIXMAP),
-				  NULL);
+				  NULL, NULL);
 }
 
 PUBLIC void init_plugin_canvascontrol(void) {
-  setup_class();
+    int i;
+    clipboard = safe_malloc( sizeof( gint32 ) * X_SIZE * Y_SIZE );
+    for( i=0; i < X_SIZE*Y_SIZE; i++ )
+	clipboard[i] = 0;
+    setup_class();
 }
+
+
+
+

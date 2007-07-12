@@ -759,7 +759,7 @@ PRIVATE void add_gsheet(char *plugin, char *leafname) {
 
 PRIVATE void load_all_gsheets(char *dir, char *menupos );	/* forward decl */
 
-PRIVATE int check_gsheet_validity(char *name, char *menupos, char *dirname ) {
+PRIVATE int check_gsheet_validity(char *name, char *menupos, const char *dirname ) {
     struct stat sb;
 
     if (stat(name, &sb) == -1)
@@ -782,7 +782,7 @@ PRIVATE int check_gsheet_validity(char *name, char *menupos, char *dirname ) {
 
 PRIVATE void load_all_gsheets(char *dir, char *menupos) {
     GDir *d = g_dir_open(dir, 0, NULL);
-    char *filename;
+    const char *filename;
 
     if (d == NULL)
 	/* the plugin directory cannot be read */

@@ -1,1 +1,9 @@
-autoheader && automake -a && autoconf
+#!/bin/bash
+
+libtoolize -c -f --automake
+aclocal
+autoheader
+autoconf -f
+automake -a -c
+
+

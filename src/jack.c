@@ -30,7 +30,7 @@
 
 #include <jack/jack.h>
 #ifdef HAVE_JACKMIDI_H
-#include <jack/miditypes.h>
+#include <jack/midiport.h>
 #endif
 
 

@@ -39,13 +39,14 @@
 #include <unistd.h>
 
 #define HOMEDIR_SUFFIX	"/.galan/plugins"
-#define INITFUNC_PREFIX "init_plugin_"
+#define INITFUNC_NAME "init_plugin"
+
+typedef void (*initializer_t) (void);
 
 PRIVATE void load_plugin(char *plugin, char *leafname) {
-  GModule *handle = g_module_open(plugin, 0);
-  void (*initializer)(void);
-  char *initstr;
-  char *dotpos;
+  GModule *handle = g_module_open(plugin, G_MODULE_BIND_LOCAL );
+  initializer_t initializer;
+  gpointer init_gpointer;
 
   if (handle == NULL) {
     g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
@@ -53,28 +54,18 @@ PRIVATE void load_plugin(char *plugin, char *leafname) {
     return;
   }
 
-  initstr = malloc(strlen(INITFUNC_PREFIX) + strlen(leafname) + 1);
-  strcpy(initstr, INITFUNC_PREFIX);
-  strcat(initstr, leafname);
-
-  /* Strip file suffix */
-  dotpos = strrchr(initstr, '.');
-  if (dotpos != NULL)
-    *dotpos = '\0';
-
-  if (!g_module_symbol(handle, initstr, (gpointer *) &initializer) ) {
+  if (!g_module_symbol(handle, INITFUNC_NAME,  &init_gpointer) ) {
     popup_msgbox("Plugin Error", MSGBOX_OK, 0, MSGBOX_OK,
 		 "Plugin %s has no accessible initializer.\n"
 		 "This is most likely a bug in the plugin.\n"
 		 "Please report this to the author of the *PLUGIN*.",
 		 leafname);
     g_message("Error finding initializer for plugin %s", leafname);
-    free(initstr);
     g_module_close(handle);
     return;
   }
 
-  free(initstr);
+  initializer = (initializer_t) init_gpointer;
   initializer();
 
   /* Don't g_module_close(handle) because it will unload the .so */

@@ -42,6 +42,8 @@
 
 #define CLIP_SAMPLE(x)	((x) > SAMPLE_MAX ? SAMPLE_MAX : ((x) < SAMPLE_MIN ? SAMPLE_MIN : (x)))
 
+#define MAXIMUM_REALTIME_STEP 1024
+
 typedef gint32 SAMPLETIME;	/* must be signed. */
 
 typedef struct AEvent AEvent;
@@ -148,7 +150,7 @@ typedef struct darr {
 
 typedef struct midiev {
     char midistring[4];
-    int len;
+    unsigned int len;
 } MidiEv;
 
 struct AEvent {			/**< audio event */

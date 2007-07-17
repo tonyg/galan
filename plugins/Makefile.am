@@ -13,70 +13,71 @@ plugindir = $(pkglibdir)/plugins
 # see the infopages for automake.)
 
 
-EXTRA_LTLIBRARIES = esd_output.la pcm_out.la ogg_ra.la emu10k1.la alsa_midi.la sndfile_in.la sndfile_out.la \
-		 jack.la voice.la midi_seq_clock.la  midiclock.la oss_output.la oss_input.la joyport.la \
-		 fft.la ifft.la fst.la canvascontrol.la
+EXTRA_LTLIBRARIES = libesd_output.la libpcm_out.la libogg_ra.la libemu10k1.la libalsa_midi.la libsndfile_in.la libsndfile_out.la \
+		 libjackplugin.la libvoice.la libmidi_seq_clock.la  libmidiclock.la liboss_output.la liboss_input.la libjoyport.la \
+		 libfft.la libifft.la libfst.la libcanvascontrol.la
 
 plugin_LTLIBRARIES = \
-	osc.la random.la rart.la ctrl.la gain.la \
-	clock.la vca.la delay.la patsel.la trigseq.la vcf.la sig2evt.la dcbias.la \
-	resample.la xfade.la atan.la evtadd.la evtmul.la seqnum.la adsr.la seqnote.la \
-	reverse.la patloop.la vco.la sigctrl.la polyrart.la smooth.la scope.la \
-	evtcomp.la evtgate.la evttimer.la evtsum.la evtpower.la evtnotetofreq.la evtabs.la evtinteger.la\
-	evtsgn.la strcombo.la filerequester.la sqrt.la \
-	evtdelay.la evtsettings.la vcd.la ladspa.la sampler.la balance.la lights.la iir_generic.la lowpass.la\
-	integrate.la diff.la notetofreq.la fbdelay.la powerspectrum.la\
-	arrwindow.la arrmul.la arradd.la ra2evt.la sigpow.la sigsignum.la sigabs.la voice_allocator.la\
-	midievt_noteon.la midievt_noteoff.la midievt_cc.la midievt_cc_demultiplex.la numtostring.la\
+	libosc.la librandom.la librart.la libctrl.la libgain.la \
+	libclock.la libvca.la libdelay.la libpatsel.la libtrigseq.la libvcf.la libsig2evt.la libdcbias.la \
+	libresample.la libxfade.la libatan.la libevtadd.la libevtmul.la libseqnum.la libadsr.la libseqnote.la \
+	libreverse.la libpatloop.la libvco.la libsigctrl.la libpolyrart.la libsmooth.la libscope.la \
+	libevtcomp.la libevtgate.la libevttimer.la libevtsum.la libevtpower.la libevtnotetofreq.la libevtabs.la libevtinteger.la\
+	libevtsgn.la libstrcombo.la libfilerequester.la libsqrt.la \
+	libevtdelay.la libevtsettings.la libvcd.la libladspa.la libsampler.la libbalance.la liblights.la libiir_generic.la liblowpass.la\
+	libintegrate.la libdiff.la libnotetofreq.la libfbdelay.la libpowerspectrum.la\
+	libarrwindow.la libarrmul.la libarradd.la libra2evt.la libsigpow.la libsigsignum.la libsigabs.la libvoice_allocator.la\
+	libmidievt_noteon.la libmidievt_noteoff.la libmidievt_cc.la libmidievt_cc_demultiplex.la libnumtostring.la\
 	@OPTIONAL_PLUGINS@
 
 
 
-AM_LDFLAGS = -module -no-undefined
+AM_LDFLAGS = -module -no-undefined -avoid-version
 LIBS = @GTK_LIBS@ @GTHREAD_LIBS@ @LASH_LIBS@ $(srcdir)/../src/libgalan.la
 INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\"  @LASH_CFLAGS@
 
 CLEANFILES=*.la.c
 
-esd_output_la_INCLUDES=`esd-config --cflags`
-esd_output_la_LDFLAGS=`esd-config --libs` -rpath $(plugindir)
+libesd_output_la_INCLUDES=`esd-config --cflags`
+libesd_output_la_LDFLAGS=`esd-config --libs` -rpath $(plugindir)
 
-alsa_midi_la_INCLUDES= @ALSA_CFLAGS@
-alsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(plugindir)
-jack_la_INCLUDES= @JACK_CFLAGS@
-jack_la_LDFLAGS= @JACK_LIBS@ -rpath $(plugindir)
+libalsa_midi_la_INCLUDES= @ALSA_CFLAGS@
+libalsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(plugindir)
+libjackplugin_la_INCLUDES= @JACK_CFLAGS@
+libjackplugin_la_LDFLAGS= @JACK_LIBS@ -rpath $(plugindir)
 
-canvascontrol_la_CFLAGS = @CANVAS_CFLAGS@
-canvascontrol_la_LDFLAGS = @CANVAS_LIBS@ -rpath $(plugindir)
+libcanvascontrol_la_CFLAGS = @CANVAS_CFLAGS@
+libcanvascontrol_la_LDFLAGS = @CANVAS_LIBS@ -rpath $(plugindir)
 
-midi_seq_clock_la_LDFLAGS= -rpath $(plugindir)
-midi_clock_la_LDFLAGS= -rpath $(plugindir)
-joyport_la_LDFLAGS= -rpath $(plugindir)
+libmidi_seq_clock_la_LDFLAGS= -rpath $(plugindir)
+libmidiclock_la_LDFLAGS= -rpath $(plugindir)
+libjoyport_la_LDFLAGS= -rpath $(plugindir)
 
 
-sndfile_in_la_INCLUDES= @SNDFILE_CFLAGS@
-sndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
-sndfile_out_la_INCLUDES= @SNDFILE_CFLAGS@
-sndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
+libsndfile_in_la_INCLUDES= @SNDFILE_CFLAGS@
+libsndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
+libsndfile_out_la_INCLUDES= @SNDFILE_CFLAGS@
+libsndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
 
-voice_la_LDFLAGS=-laudiofile -rpath $(plugindir)
-pcm_out_la_LDFLAGS=-laudiofile -rpath $(plugindir)
+libvoice_la_LDFLAGS=-laudiofile -rpath $(plugindir)
+libpcm_out_la_LDFLAGS=-laudiofile -rpath $(plugindir)
 
-ogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ -rpath $(plugindir)
-ogg_ra_la_INCLUDES= @GTHREAD_CFLAGS@
+libogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ -rpath $(plugindir)
+libogg_ra_la_INCLUDES= @GTHREAD_CFLAGS@
 
-emu10k1_la_SOURCES = emu10k1.c emu10k1-iocomp.c emu10k1-patchcomp.c
-ladspa_la_SOURCES = ladspa.c ladspa-load.c
-ladspa_la_LDFLAGS = @LRDF_LIBS@ @GMODULE_LIBS@
-ladspa_la_INCLUDES = @LRDF_CFLAGS@ @GMODULE_CFLAGS@
+libemu10k1_la_SOURCES = libemu10k1.c libemu10k1-iocomp.c libemu10k1-patchcomp.c
+libladspa_la_SOURCES = libladspa.c libladspa-load.c
+libladspa_la_LDFLAGS = @LRDF_LIBS@ @GMODULE_LIBS@
+libladspa_la_INCLUDES = @LRDF_CFLAGS@ @GMODULE_CFLAGS@
 
-fst_la_LDFLAGS = @FST_LIBS@ -rpath $(plugindir)
-fst_la_INCLUDES = @FST_CFLAGS@
+libfst_la_LDFLAGS = @FST_LIBS@ -rpath $(plugindir)
+libfst_la_INCLUDES = @FST_CFLAGS@
 
-fft_la_LDFLAGS= @FFTW_LIBS@
-ifft_la_LDFLAGS= @FFTW_LIBS@
+libfft_la_LDFLAGS= @FFTW_LIBS@
+libifft_la_LDFLAGS= @FFTW_LIBS@
 
 SUFFIXES= .la.c
-%.la.c: %.c
+
+.la.c.c:
 	ln -s $< $@
 

@@ -20,7 +20,7 @@
 %}
 
 %{
-static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
+//static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
 %}
 
 class Galan:CompTree:Model from Gtk:Tree:Store
@@ -42,8 +42,8 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 		if( ! gtk_tree_model_get_iter_first( model, iter ) ) {
 
 			if( create ) {
-				gtk_tree_store_append( self, iter, NULL );
-				gtk_tree_store_set( self, iter, 0, splitpath[i], 1, FALSE, -1 );
+				gtk_tree_store_append( GTK_TREE_STORE(self), iter, NULL );
+				gtk_tree_store_set( GTK_TREE_STORE(self), iter, 0, splitpath[i], 1, FALSE, -1 );
 			} else {
 				g_strfreev( splitpath );
 				return FALSE;
@@ -63,8 +63,8 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 			} while( (!found) && gtk_tree_model_iter_next( model, iter ) );
 			if( !found ) {
 				if( create ) {
-					gtk_tree_store_insert_after( self, iter, NULL, &olditer );
-					gtk_tree_store_set( self, iter, 0, splitpath[i], 1, FALSE, -1 );
+					gtk_tree_store_insert_after( GTK_TREE_STORE(self), iter, NULL, &olditer );
+					gtk_tree_store_set( GTK_TREE_STORE(self), iter, 0, splitpath[i], 1, FALSE, -1 );
 				} else {
 					g_strfreev( splitpath );
 					return FALSE;
@@ -79,8 +79,8 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 			olditer = *iter;
 			if( !gtk_tree_model_iter_children( model, iter, &olditer ) ) {
 				if( create ) {
-					gtk_tree_store_append( self, iter, &olditer );
-					gtk_tree_store_set( self, iter, 0, splitpath[i], 1, FALSE, -1 );
+					gtk_tree_store_append( GTK_TREE_STORE(self), iter, &olditer );
+					gtk_tree_store_set( GTK_TREE_STORE(self), iter, 0, splitpath[i], 1, FALSE, -1 );
 				} else {
 					g_strfreev( splitpath );
 					return FALSE;
@@ -90,6 +90,7 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 		}
 
 		g_strfreev( splitpath );
+		return FALSE;
 
 	}
 
@@ -100,11 +101,11 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 		if( GALAN_IS_COMPACTION( cact ) ) {
 			GtkTreeStore *store = GTK_TREE_STORE( self );
 			GtkTreeIter dest, added;
-			gtk_tree_model_get_iter( store, &dest, path );
+			gtk_tree_model_get_iter( GTK_TREE_MODEL(store), &dest, path );
 			gtk_tree_store_insert_before( store, &added, NULL, &dest );
 			char *cact_label;
 			g_object_get( cact, "label", &cact_label, NULL );
-			gtk_tree_store_set( self, &added, 0, cact_label, 1, TRUE, 2, cact, -1 );
+			gtk_tree_store_set( store, &added, 0, cact_label, 1, TRUE, 2, cact, -1 );
 			g_free( cact_label );
 			
 			

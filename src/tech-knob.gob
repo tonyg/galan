@@ -1,0 +1,389 @@
+
+%headertop{
+#include <gdk/gdk.h>
+#include <gtk/gtk.h>
+
+#include <gdk-pixbuf/gdk-pixbuf.h>
+
+#include "config.h"
+#include "glib.h"
+
+#include "math.h"
+    
+#define PIXMAPDIRIFY(filename) \
+		(SITE_PKGDATA_DIR G_DIR_SEPARATOR_S "pixmaps" G_DIR_SEPARATOR_S filename)
+
+#define KNOB_SIZE 32
+#define SCROLL_DELAY_LENGTH	300
+%}
+
+enum TK_STATE {
+    IDLE,
+    PRESSED,
+    DRAGGING
+} Tech:Knob:State;
+
+class Tech:Knob from Gtk:Range {
+
+    classwide GHashTable *pixbuf_cache = { g_hash_table_new_full( g_str_hash, g_str_equal, g_free, g_object_unref ) };
+
+    // XXX: During the port i use the old GList.
+    //      Then i will create tech-anim which derives from GdkPixbuf.
+    //private GdkPixbuf *curr_anim = { NULL }
+    //unrefwith g_object_unref;
+
+    private void unref_anim_list( GList *list ) {
+	g_list_foreach( list, (GFunc) g_object_unref, NULL );
+	g_list_free( list );
+    }
+
+    private GList *anim_list = { NULL }
+    unrefwith self_unref_anim_list;
+    
+    private char *anim_name = { NULL }
+    destroywith g_free;
+
+    private gint saved_x;
+    private gint saved_y;
+    private TechKnobState state;
+    private gdouble old_value;
+    private guint timer;
+
+
+    private GList *get_anim_list( char *name ) {
+
+	GError *err = NULL;
+	GdkPixbuf *animation; 
+	GList *retval = NULL;
+	int x, w;
+
+	animation = gdk_pixbuf_new_from_file( name, &err );
+	if( animation ) {
+	    w = gdk_pixbuf_get_width( animation );
+
+	    for(x=0; x<w; x+=KNOB_SIZE ) {
+		GdkPixbuf *pixbuf = gdk_pixbuf_new_subpixbuf( animation, x, 0, KNOB_SIZE, KNOB_SIZE );
+		retval = g_list_append( retval, pixbuf );
+	    }
+	    return retval;
+	} else {
+	    // Create empty GdkPixBuf...
+	    return NULL;
+	}
+    }
+
+    private void check_curr_anim( self ) {
+	//GdkPixbuf *anim = g_hash_table_lookup( SELF_CLASS( G_OBJECT(self)->klass )->pixbuf_cache, self->_priv->anim_name );
+	
+	GList *anim = g_hash_table_lookup( SELF_CLASS( G_OBJECT_GET_CLASS(self) )->pixbuf_cache, self->_priv->anim_name );
+
+	if( anim == NULL )
+	    //anim = self_load_anim( self );
+	    anim = self_get_anim_list( self->_priv->anim_name );
+
+	if( anim != self->_priv->anim_list ) {
+	    //g_object_unref( self->_priv->curr_anim );
+	    self_unref_anim_list( self->_priv->anim_list );
+	    self->_priv->anim_list = anim;
+	}
+
+	// TODO: self_expose( self );
+    }
+
+
+    // XXX: check for memory leak...
+    property STRING anim_name
+	(nick  = "anim_name",
+	 blurb = "Name of the animation to use",
+	 default_value = "new-knob02.png" )
+	set {
+	    self->_priv->anim_name = g_strdup( g_value_get_string(VAL) );
+	    self_check_curr_anim( self );
+	}
+	get {
+	    g_value_set_string(VAL, self->_priv->anim_name );
+	};
+
+
+
+    override (Gtk:Widget) void realize( GtkWidget *widget ) {
+
+	GdkWindowAttr attributes;
+	gint attributes_mask;
+
+	GTK_WIDGET_SET_FLAGS(widget, GTK_REALIZED);
+
+	attributes.x = widget->allocation.x;
+	attributes.y = widget->allocation.y;
+	attributes.width = widget->allocation.width;
+	attributes.height = widget->allocation.height;
+	attributes.wclass = GDK_INPUT_OUTPUT;
+	attributes.window_type = GDK_WINDOW_CHILD;
+	attributes.event_mask =
+	    gtk_widget_get_events (widget) | 
+	    GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | 
+	    GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK |
+	    GDK_POINTER_MOTION_HINT_MASK;
+	attributes.visual = gtk_widget_get_visual(widget);
+	attributes.colormap = gtk_widget_get_colormap(widget);
+
+	attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
+	widget->window = gdk_window_new(widget->parent->window, &attributes, attributes_mask);
+
+	widget->style = gtk_style_attach(widget->parent->style, widget->window);
+
+	gdk_window_set_user_data(widget->window, widget);
+
+
+	gtk_style_set_background(widget->style, widget->window, GTK_STATE_NORMAL);
+    }
+
+    override (Gtk:Widget) void size_request( GtkWidget *widget, GtkRequisition *requisition ) {
+	requisition->width = KNOB_SIZE;
+	requisition->height = KNOB_SIZE;
+    }
+
+    override (Gtk:Widget) void size_allocate( GtkWidget *widget, GtkAllocation *allocation ) {
+
+	widget->allocation = *allocation;
+
+	if (GTK_WIDGET_REALIZED(widget)) {
+	    gdk_window_move_resize(widget->window,
+		    allocation->x, allocation->y,
+		    allocation->width, allocation->height);
+	}
+    }
+
+    override (Gtk:Widget) gint expose_event( GtkWidget *widget, GdkEventExpose *event) {
+
+	Self *self = SELF( widget );
+	GtkRange *range = GTK_RANGE( self );
+	gfloat dx, dy;
+
+	if (event->count > 0)
+	    return FALSE;
+
+	GtkAdjustment *adj = gtk_range_get_adjustment( range );
+	gdk_window_clear_area(widget->window, 0, 0, widget->allocation.width, widget->allocation.height);
+
+	dx = adj->value - adj->lower;
+	dy = adj->upper - adj->lower;
+	GList *framelist = self->_priv->anim_list;
+
+	if (dy != 0) {
+	    GdkPixbuf *pixbuf;
+
+	    dx = MIN(MAX(dx / dy, 0), 1);
+	    //dx = (1-dx) * (g_list_length( framelist )-0.5) * 0.75 + 0.125 * g_list_length( framelist );
+	    dx = (dx) * (g_list_length( framelist ) - 1 );
+
+	    pixbuf = GDK_PIXBUF( g_list_nth_data( framelist, (int) dx) );
+
+	    gdk_pixbuf_render_to_drawable_alpha( pixbuf, widget->window,
+		    0, 0, 0, 0, gdk_pixbuf_get_width( pixbuf ), gdk_pixbuf_get_height( pixbuf ), GDK_PIXBUF_ALPHA_FULL, 0, 0,0,0 );
+	}
+
+	return FALSE;
+    }
+
+
+    override (Gtk:Widget) gint button_press_event( GtkWidget *widget, GdkEventButton *event) {
+
+	//g_return_val_if_fail(widget != NULL, FALSE);
+	//g_return_val_if_fail(GTK_IS_KNOB(self), FALSE);
+	g_return_val_if_fail(event != NULL, FALSE);
+	Self *self = SELF( widget );
+
+
+	switch (self->_priv->state) {
+	    case TK_STATE_IDLE:
+		switch (event->button) {
+		    case 1:
+		    case 3:
+			gtk_grab_add( GTK_WIDGET( self ));
+			self->_priv->state = TK_STATE_PRESSED;
+			self->_priv->saved_x = event->x;
+			self->_priv->saved_y = event->y;
+			break;
+
+		    default:
+			break;
+		}
+		break;
+
+	    default:
+		break;
+	}
+
+	return FALSE;
+    }
+
+    override (Gtk:Widget) gint button_release_event( GtkWidget *widget, GdkEventButton *event) {
+
+	//g_return_val_if_fail(widget != NULL, FALSE);
+	//g_return_val_if_fail(GTK_IS_KNOB(widget), FALSE);
+	g_return_val_if_fail(event != NULL, FALSE);
+	Self *self = SELF( widget );
+
+	
+
+	GtkAdjustment *adj = gtk_range_get_adjustment( GTK_RANGE( self ) );
+
+	switch (self->_priv->state) {
+	    case TK_STATE_PRESSED:
+		gtk_grab_remove( GTK_WIDGET( self ) );
+		self->_priv->state = TK_STATE_IDLE;
+
+		switch (event->button) {
+		    case 1:
+			adj->value -= adj->page_increment;
+			gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+			break;
+
+		    case 3:
+			adj->value += adj->page_increment;
+			gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+			break;
+
+		    default:
+			break;
+		}
+		break;
+
+	    case TK_STATE_DRAGGING:
+		gtk_grab_remove(GTK_WIDGET( self ));
+		self->_priv->state = TK_STATE_IDLE;
+
+		if (gtk_range_get_update_policy( GTK_RANGE( self ) ) != GTK_UPDATE_CONTINUOUS && self->_priv->old_value != adj->value)
+		    gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+
+		break;
+
+	    default:
+		break;
+	}
+
+	return FALSE;
+    }
+
+    override (Gtk:Widget) gint motion_notify_event( GtkWidget *widget, GdkEventMotion *event) {
+	GdkModifierType mods;
+	gint x, y;
+	Self *self = SELF( widget );
+
+	g_return_val_if_fail(widget != NULL, FALSE);
+	//g_return_val_if_fail(GTK_IS_KNOB(widget), FALSE);
+	g_return_val_if_fail(event != NULL, FALSE);
+
+	//knob = GTK_KNOB(widget);
+
+	x = event->x;
+	y = event->y;
+
+	if (event->is_hint || (event->window != widget->window))
+	    gdk_window_get_pointer(widget->window, &x, &y, &mods);
+
+	switch (self->_priv->state) {
+	    case TK_STATE_PRESSED:
+		self->_priv->state = TK_STATE_DRAGGING;
+		/* fall through */
+
+	    case TK_STATE_DRAGGING:
+		if (mods & GDK_BUTTON1_MASK) {
+		    self_update_mouse(self, x, y);
+		    return TRUE;
+		} else if (mods & GDK_BUTTON3_MASK) {
+		    self_update_mouse_abs(self, x, y);
+		    return TRUE;
+		}
+		break;
+
+	    default:
+		break;
+	}
+
+	return FALSE;
+    }
+
+    private gint knob_timer(self) {
+	//g_return_val_if_fail(knob != NULL, FALSE);
+	//g_return_val_if_fail(GTK_IS_KNOB(knob), FALSE);
+
+	GtkUpdateType policy = gtk_range_get_update_policy( GTK_RANGE( self ) );
+	if (policy == GTK_UPDATE_DELAYED) {
+	    GtkAdjustment *adj = gtk_range_get_adjustment( GTK_RANGE( self ) );
+	    gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+	}
+
+	return FALSE;	/* don't keep running this timer */
+    }
+
+    private void update_mouse_update(self) {
+	GtkAdjustment *adj = gtk_range_get_adjustment( GTK_RANGE( self ) );
+	if (gtk_range_get_update_policy( GTK_RANGE( self )) == GTK_UPDATE_CONTINUOUS)
+	    gtk_signal_emit_by_name(GTK_OBJECT(adj), "value_changed");
+	else {
+	    gtk_widget_draw(GTK_WIDGET(self), NULL);
+
+	    if (gtk_range_get_update_policy( GTK_RANGE( self )) == GTK_UPDATE_DELAYED) {
+		if (self->_priv->timer)
+		    gtk_timeout_remove(self->_priv->timer);
+
+		self->_priv->timer = gtk_timeout_add (SCROLL_DELAY_LENGTH, (GtkFunction) self_knob_timer,
+			(gpointer) self);
+	    }
+	}
+    }
+
+    private void update_mouse( self, gint x, gint y) {
+	gfloat old_value;
+	gfloat dv;
+
+	//g_return_if_fail(knob != NULL);
+	//g_return_if_fail(GTK_IS_KNOB(knob));
+	
+	GtkAdjustment *adj = gtk_range_get_adjustment( GTK_RANGE( self ) );
+
+	old_value = adj->value;
+
+	dv = (self->_priv->saved_y - y) * adj->step_increment;
+	self->_priv->saved_x = x;
+	self->_priv->saved_y = y;
+
+	adj->value += dv;
+
+	if (adj->value != old_value)
+	    self_update_mouse_update(self);
+    }
+
+    private void update_mouse_abs(self, gint x, gint y) {
+	gfloat old_value;
+	gdouble angle;
+
+	//g_return_if_fail(knob != NULL);
+	//g_return_if_fail(GTK_IS_KNOB(knob));
+
+	GtkAdjustment *adj = gtk_range_get_adjustment( GTK_RANGE( self ) );
+
+	old_value = adj->value;
+
+	x -= KNOB_SIZE>>1;
+	y -= KNOB_SIZE>>1;
+	y = -y;	/* inverted cartesian graphics coordinate system */
+
+	angle = atan2(y, x) / M_PI;
+	if (angle < -0.5)
+	    angle += 2;
+
+	angle = -(2.0/3.0) * (angle - 1.25);	/* map [1.25pi, -0.25pi] onto [0, 1] */
+	angle *= adj->upper - adj->lower;
+	angle += adj->lower;
+
+	adj->value = angle;
+
+	if (adj->value != old_value)
+	    self_update_mouse_update(self);
+    }
+    
+}
+

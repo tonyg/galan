@@ -169,32 +169,18 @@ PRIVATE void props(Component *c, Generator *g) {
   }
 }
 
+#if 0
 PRIVATE void init_combo( Control *control ) {
 
-    GtkCombo *cb;
-
-    cb = GTK_COMBO( gtk_combo_new() );
-    g_assert( cb != NULL );
-
-    gtk_combo_disable_activate( cb );
-    if( ((Data *)control->g->data)->list != NULL )
-	gtk_combo_set_popdown_strings( cb, ((Data *)control->g->data)->list );
-
-    gtk_signal_connect( GTK_OBJECT( cb->entry ), "activate", GTK_SIGNAL_FUNC(entry_activated), control );
-
-    control->widget = GTK_WIDGET(cb);
 }
 
 PRIVATE void done_combo(Control *control) {
 }
 
 PRIVATE void refresh_combo(Control *control) {
-    Data *data = control->g->data;
-
-    if( ((Data *)control->g->data)->list != NULL )
-	gtk_combo_set_popdown_strings( GTK_COMBO(control->widget), data->list );
-
 }
+#endif
+
 PRIVATE void setup_class(void) {
   GeneratorClass *k = gen_new_generatorclass(GENERATOR_CLASS_NAME, FALSE, 3, 1,
 					     NULL, NULL, controls,
@@ -209,6 +195,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, props);
 }
 
-PUBLIC void init_plugin_ctrl(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

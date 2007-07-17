@@ -317,7 +317,7 @@ PRIVATE void setup_class(void) {
 				  props);
 }
 
-PUBLIC void init_plugin_scope(void) {
+PUBLIC void init_plugin(void) {
   setup_tables();
   setup_class();
 }

@@ -572,7 +572,7 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_ogg_ra(void) {
+PUBLIC void init_plugin(void) {
 
     if (!g_thread_supported ()) g_thread_init (NULL);
     

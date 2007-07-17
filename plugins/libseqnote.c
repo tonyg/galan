@@ -511,6 +511,6 @@ PRIVATE void setup_class(void) {
   }
 }
 
-PUBLIC void init_plugin_seqnote(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

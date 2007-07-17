@@ -162,6 +162,6 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_lowpass(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

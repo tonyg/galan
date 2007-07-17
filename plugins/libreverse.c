@@ -99,6 +99,6 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_reverse(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

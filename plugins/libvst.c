@@ -685,7 +685,7 @@ PRIVATE void setup_globals( void ) {
 }
 
 
-PUBLIC void init_plugin_vst(void) {
+PUBLIC void init_plugin(void) {
   setup_globals();
   setup_all();
 }

@@ -185,7 +185,7 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
 }
 
-PUBLIC void init_plugin_lights(void) {
+PUBLIC void init_plugin(void) {
 
   GList *diode = lget_anim_list( PIXMAPDIRIFY( "diode.gif" ) );
   GdkPixbuf *on_pixbuf = g_list_nth_data( diode, 1 );

@@ -128,6 +128,6 @@ PRIVATE void evt_note_handler(Generator *g, AEvent *event) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_midievt_noteon(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

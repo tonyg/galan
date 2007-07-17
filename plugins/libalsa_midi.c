@@ -73,7 +73,7 @@ typedef struct Data {
 
   int seq_port;
   void (*exec_ev)( Generator *g, snd_seq_event_t *ev );
-  snd_seq_event_t *rdev;
+  snd_midi_event_t *rdev;
 
 } Data;
 
@@ -614,7 +614,7 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, "Misc/Alsa Seq Out", NULL, NULL);
 }
 
-PUBLIC void init_plugin_alsa_midi(void) {
+PUBLIC void init_plugin(void) {
     if( !open_alsa_seq() )
 	return;
     if( !setup_input_handler() )

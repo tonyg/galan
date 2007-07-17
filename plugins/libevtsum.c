@@ -108,7 +108,7 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_evtsum(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }
 

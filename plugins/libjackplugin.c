@@ -71,6 +71,8 @@ typedef struct OData {
 
 typedef struct MidiInData {
     jack_port_t *port;
+    SAMPLETIME lastprocess_stamp;
+    jack_nframes_t nframes;
     
 } MidiInData;
 
@@ -99,6 +101,40 @@ PRIVATE int jack_instance_count = 0;
 
 
 GList *transport_clocks = NULL;
+GList *jack_process_callbacks = NULL;
+typedef void (*jack_process_handler_t)(Generator *g, jack_nframes_t nframes);
+
+
+typedef struct jack_process_callback_t {
+  Generator *g;
+  jack_process_handler_t handler;
+} jack_process_callback_t;
+
+PRIVATE void galan_jack_register_process_handler( Generator *g, jack_process_handler_t handler ) {
+    jack_process_callback_t *new_cb = safe_malloc( sizeof( jack_process_callback_t ) );
+    new_cb->g = g;
+    new_cb->handler = handler;
+    jack_process_callbacks = g_list_append( jack_process_callbacks, new_cb );
+}
+
+PRIVATE gint jack_process_callback_cmp(jack_process_callback_t *a, jack_process_callback_t *b) {
+  return !((a->g == b->g) && (a->handler == b->handler));
+}
+
+PRIVATE void galan_jack_deregister_process_handler(Generator *g, jack_process_handler_t func) {
+  jack_process_callback_t jpc;
+  GList *link;
+
+  jpc.g = g;
+  jpc.handler = func;
+  link = g_list_find_custom(jack_process_callbacks, &jpc, (GCompareFunc) jack_process_callback_cmp );
+
+  if (link != NULL) {
+    free(link->data);
+    link->data = NULL;
+    jack_process_callbacks = g_list_remove_link(jack_process_callbacks, link);
+  }
+}
 
 PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME numframes, double bpm );
 
@@ -144,11 +180,29 @@ PRIVATE int process_callback( jack_nframes_t nframes, Data *data ) {
 
     if( transport_clocks ) {
 	jack_transport_info_t trans_info;
+	jack_position_t jack_trans_pos;
+	jack_transport_state_t jack_trans_state;
 	GList *l;
 
-	jack_get_transport_info( jack_client, &trans_info );
+	jack_trans_state = jack_transport_query( jack_client, &jack_trans_pos );
 
+	if( jack_trans_state == JackTransportRolling ) {
+	    double bpm;
+	    if( jack_trans_pos.valid & JackPositionBBT ) {
+		bpm = jack_trans_pos.beats_per_minute;
+	    } else {
+		bpm = 120.0;
+	    }
+
+	    for( l = transport_clocks; l; l = g_list_next( l ) ) {
+		Generator *g = l->data;
+		transport_frame_event( g, jack_trans_pos.frame, nframes, bpm );
+	    }
+	}
+#if 0
+	jack_get_transport_info( jack_client, &trans_info );
 	if( trans_info.valid & JackTransportState && trans_info.valid & JackTransportPosition && trans_info.transport_state == JackTransportRolling ) {
+
 
 	    double bpm;
 	    if( trans_info.valid & JackTransportBBT )
@@ -159,20 +213,27 @@ PRIVATE int process_callback( jack_nframes_t nframes, Data *data ) {
 		Generator *g = l->data;
 		transport_frame_event( g, trans_info.frame, nframes, bpm );
 	    }
-	}
-	else
+	} else {
 	    if( trans_info.valid & JackTransportState && trans_info.transport_state == JackTransportRolling )
 		printf( "Invalid Frame :(\n" );
+	}
 
+#endif
+    }
+
+    if( jack_process_callbacks ) {
+	GList *l;
+	for( l = jack_process_callbacks; l; l = g_list_next( l ) ) {
+		jack_process_callback_t *cb = l->data;
+		cb->handler( cb->g, nframes );
+	}
     }
     gen_clock_mainloop_have_remaining( nframes );
 
     return 0;
 }
 
-void
-jack_shutdown (void *arg)
-{
+PRIVATE void jack_shutdown (void *arg) {
 	g_print( "jack exited :(\n" );
 }
 
@@ -530,19 +591,21 @@ PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME n
 	data->period = 0;
 
     if( (bpm != 0.0) && (data->ticks_per_beat != 0) ) {
-	data->period = SAMPLE_RATE * 60.0 / (gdouble) data->ticks_per_beat / bpm;
+	data->period = ((gdouble)(SAMPLE_RATE)) * 60.0 / (gdouble) data->ticks_per_beat / bpm;
     }
 
     if( data->period != 0 ) {
 
 	// ok...
-	t = lrint( floor( ((double)(frame-1)) / data->period) + 1);
-	i = lround( ((double)t)*data->period ) - frame;
+	t = (int) floor( ((double)(frame)) / data->period);
+	i = (SAMPLETIME) ( ((double)t)*data->period ) - frame;
 	//for( t=(frame-1)/data->period+1, i=t*data->period-frame; i<numframes; t++, i+=data->period ) {
-	for( ; i<numframes; t++, i+= lround(data->period) ) {
-	    gen_init_aevent(&e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + i);
-	    e.d.number = t;
-	    gen_send_events(g, 0, -1, &e);
+	for( ; i<numframes; t++, i+= data->period) {
+	    if( i>=0 ) {
+		gen_init_aevent(&e, AE_NUMBER, NULL, 0, NULL, 0, gen_get_sampletime() + i);
+		e.d.number = t;
+		gen_send_events(g, 0, -1, &e);
+	    }
 	}
     }
     if( data->last_bpm != bpm ) {
@@ -554,38 +617,38 @@ PRIVATE void transport_frame_event( Generator *g, SAMPLETIME frame, SAMPLETIME n
 
 // Midi_in
 #ifdef HAVE_JACKMIDI_H
-PRIVATE void midiinport_realtime_handler(Generator *g, AEvent *event) {
+PRIVATE void midiinport_jackprocess_handler(Generator *g, jack_nframes_t nframes) {
     MidiInData *data = g->data;
-    jack_nframes_t nframes = event->d.integer;
     void * input_buf;
     jack_midi_event_t input_event;
     jack_nframes_t input_event_count;
     jack_nframes_t i;
-    unsigned char * data;
+    AEvent ev;
 
+    data->nframes = nframes;
     input_buf = jack_port_get_buffer(data->port, nframes);
-    input_event_count = jack_midi_get_event_count(input_buf, nframes);
+    input_event_count = jack_midi_get_event_count(input_buf);
 
   /* iterate over all incoming JACK MIDI events */
   for (i = 0; i < input_event_count; i++)
   {
     /* retrieve JACK MIDI event */
-    jack_midi_event_get(&input_event, input_buf, i, nframes);
+    jack_midi_event_get(&input_event, input_buf, i);
 
-    event->time = input_event.time + gen_get_sampletime();
-    event->type = AE_MIDIEVENT;
-    event->midiev.len = input_event.size;
-    memcpy( &(event->midiev.midistring), input_event.buffer,  input_event.size);
+    ev.time = input_event.time + gen_get_sampletime();
+    ev.kind = AE_MIDIEVENT;
+    ev.d.midiev.len = input_event.size;
+    memcpy( &(ev.d.midiev.midistring), input_event.buffer,  input_event.size);
 
     
     /* normalise note events if needed */
-    if ((input_event.size == 3) && ((event->midiev[0] & 0xF0) == 0x90) &&
-        (event->midiev[2] == 0))
+    if ((ev.d.midiev.len == 3) && ((ev.d.midiev.midistring[0] & 0xF0) == 0x90) &&
+        (ev.d.midiev.midistring[2] == 0))
     {
-      event->midiev[0] = 0x80 | (event->midiev[0] & 0x0F);
+      ev.d.midiev.midistring[0] = 0x80 | (ev.d.midiev.midistring[0] & 0x0F);
     }
 
-    gen_send_events(g, EVT_MIDIEVT, -1, &e);
+    gen_send_events(g, 0, -1, &ev);
   }
 
 }
@@ -617,14 +680,85 @@ PRIVATE int midiinport_init_instance(Generator *g) {
 
     g->data = data;
 
-    gen_register_realtime_fn(g, midiinport_realtime_handler);
+    //gen_register_realtime_fn(g, midiinport_realtime_handler);
+    galan_jack_register_process_handler( g, midiinport_jackprocess_handler );
     return 1;
 }
 
 PRIVATE void midiinport_destroy_instance(Generator *g) {
   MidiInData *data = g->data;
 
-    gen_deregister_realtime_fn(g, midiinport_realtime_handler);
+    galan_jack_deregister_process_handler(g, midiinport_jackprocess_handler);
+  if (data != NULL) {
+
+    jack_port_unregister( jack_client, data->port );
+    free(data);
+  }
+
+  jack_instance_count--;
+}
+
+PRIVATE void midioutport_jackprocess_handler( Generator *g, jack_nframes_t nframes ) {
+    MidiInData *data = g->data;
+
+    void * output_buf;
+    output_buf = jack_port_get_buffer(data->port, nframes);
+
+    jack_midi_clear_buffer( output_buf );
+    data->lastprocess_stamp = gen_get_sampletime();
+    data->nframes = nframes;
+}
+
+PRIVATE void midioutport_midievent_handler(Generator *g, AEvent *event) {
+    MidiInData *data = g->data;
+
+    void * output_buf;
+    output_buf = jack_port_get_buffer(data->port, data->nframes);
+
+    jack_midi_event_write( output_buf,
+	    event->time - data->lastprocess_stamp, 
+	    event->d.midiev.midistring, 
+	    event->d.midiev.len			    );
+}
+
+PRIVATE int midioutport_init_instance(Generator *g) {
+    MidiInData *data;
+
+    jack_instance_count++;
+
+    data = safe_malloc(sizeof(MidiInData));
+
+    if( jack_client == NULL )
+	jack_client = galan_jack_get_client();
+
+
+    if (jack_client == NULL) {
+	free(data);
+	popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
+		"Could not open Jack Client");
+	return 0;
+    }
+
+    data->port = jack_port_register (jack_client, g->name, JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+
+    if( jack_clock == NULL ) {
+	jack_clock = gen_register_clock(g, "Jack Clock", clock_handler);
+	gen_select_clock(jack_clock);	/* a not unreasonable assumption? */
+    }
+
+    g->data = data;
+
+    //gen_register_realtime_fn(g, midiinport_realtime_handler);
+    galan_jack_register_process_handler( g, midioutport_jackprocess_handler );
+
+    return 1;
+}
+
+PRIVATE void midioutport_destroy_instance(Generator *g) {
+  MidiInData *data = g->data;
+
+    //gen_deregister_realtime_fn(g, midioutport_realtime_handler);
+    galan_jack_deregister_process_handler( g, midioutport_jackprocess_handler );
   if (data != NULL) {
 
     jack_port_unregister( jack_client, data->port );
@@ -682,8 +816,18 @@ PRIVATE void setup_class(void) {
 			     midiinport_init_instance, midiinport_destroy_instance,
 			     (AGenerator_pickle_t) midiinport_init_instance, NULL);
 
-  gen_configure_event_output(k, EVT_MIDIEVT,   "midi");
+  gen_configure_event_output(k, 0,   "midi");
   gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi In",
+				  NULL,
+				  NULL);
+
+  k = gen_new_generatorclass("jack_midiout", FALSE, 1, 0,
+			     NULL, NULL, NULL,
+			     midioutport_init_instance, midioutport_destroy_instance,
+			     (AGenerator_pickle_t) midioutport_init_instance, NULL);
+
+  gen_configure_event_input(k, 0,   "midi", midioutport_midievent_handler);
+  gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi Out",
 				  NULL,
 				  NULL);
 #endif
@@ -705,7 +849,7 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_jack(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }
 

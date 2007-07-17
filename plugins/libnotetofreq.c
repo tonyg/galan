@@ -60,6 +60,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, "Levels/Note2Freq", NULL, NULL);
 }
 
-PUBLIC void init_plugin_notetofreq(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

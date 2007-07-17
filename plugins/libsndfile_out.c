@@ -139,6 +139,7 @@ PRIVATE void destroy_instance(Generator *g) {
   free(g->data);
 }
 
+#if 0
 PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
   Generator *g = gtk_object_get_data(GTK_OBJECT(fs), "Generator");
   Data *data = g->data;
@@ -175,6 +176,7 @@ PRIVATE void access_output_file(GtkWidget *widget, GtkWidget *fs) {
 
   gtk_widget_destroy(fs);	/* %%% should this be gtk_widget_hide? uber-paranoia */
 }
+#endif
 
 PRIVATE void evt_name_handler( Generator *g, AEvent *event ) {
 
@@ -258,7 +260,7 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, TRUE, GENERATOR_CLASS_PATH, NULL, NULL);
 }
 
-PUBLIC void init_plugin_sndfile_out(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }
 

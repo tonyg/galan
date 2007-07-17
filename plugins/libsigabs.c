@@ -60,6 +60,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, "Levels/Abs", NULL, NULL);
 }
 
-PUBLIC void init_plugin_sigabs(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

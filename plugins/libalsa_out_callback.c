@@ -429,7 +429,7 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_alsa_out_callback(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }
 

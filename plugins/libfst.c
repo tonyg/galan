@@ -743,7 +743,7 @@ PRIVATE gboolean setup_globals( void ) {
 }
 
 
-PUBLIC void init_plugin_fst(void) {
+PUBLIC void init_plugin(void) {
   if(  setup_globals() ) 
       return;
 

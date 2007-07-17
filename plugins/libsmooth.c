@@ -240,6 +240,6 @@ PRIVATE void setup_class(void) {
 				  NULL, props);
 }
 
-PUBLIC void init_plugin_smooth(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

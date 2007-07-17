@@ -274,7 +274,7 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_vco(void) {
+PUBLIC void init_plugin(void) {
   setup_tables();
   setup_class();
 }

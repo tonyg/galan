@@ -390,6 +390,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, propgen);
 }
 
-PUBLIC void init_plugin_voice(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

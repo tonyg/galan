@@ -728,7 +728,7 @@ PRIVATE void setup_one_class( const LADSPA_Descriptor *psDescriptor, const char 
 	    controls[i].kind = CONTROL_KIND_KNOB;
 
 	controls[i].name = safe_string_dup( psDescriptor->PortNames[portindex] );
-	string_search_and_replace( &( controls[i].name ), '/', "\\/" );
+	string_search_and_replace( (char **) (&( controls[i].name )), '/', "\\/" );
 	
 
 	if( LADSPA_IS_HINT_BOUNDED_BELOW( psDescriptor->PortRangeHints[portindex].HintDescriptor ) )
@@ -1044,7 +1044,7 @@ PRIVATE void setup_globals( void ) {
 }
 
 
-PUBLIC void init_plugin_ladspa(void) {
+PUBLIC void init_plugin(void) {
   setup_globals();
   setup_all();
 }

@@ -778,7 +778,7 @@ PRIVATE void setup_class(void) {
 				  NULL, NULL);
 }
 
-PUBLIC void init_plugin_canvascontrol(void) {
+PUBLIC void init_plugin(void) {
     int i;
     clipboard = safe_malloc( sizeof( gint32 ) * X_SIZE * Y_SIZE );
     for( i=0; i < X_SIZE*Y_SIZE; i++ )

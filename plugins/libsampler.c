@@ -197,7 +197,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->samplebuf = safe_malloc( sizeof(SAMPLE)*(SAMPLE_RATE*data->xsize+1));
 
   binarylength = objectstore_item_get_binary(item, "sample_data", (void **) &samplebuf);
-  if( binarylength > 0 )
+  if( binarylength > 0 ) {
       if( (binarylength/sizeof(SAMPLE)) < (data->xsize * SAMPLE_RATE) ) {
 	  for( i=0; i<(binarylength/sizeof(SAMPLE)); i++ ) {
 	      data->samplebuf[i] = samplebuf[i];
@@ -209,6 +209,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 	      data->intbuf[i] = CLIP_SAMPLE(samplebuf[i] * data->ysize) * 127;
 	  }
       }
+  }
 
   gen_register_realtime_fn(g, realtime_handler);
 }
@@ -525,7 +526,7 @@ PRIVATE void setup_class(void) {
 				  NULL, NULL);
 }
 
-PUBLIC void init_plugin_sampler(void) {
+PUBLIC void init_plugin(void) {
   setup_tables();
   setup_class();
 }

@@ -276,7 +276,7 @@ PRIVATE void setup_class(void) {
 extern void init_emuiocomp( void );
 extern void init_emupatchcomp( void );
 extern void done_emuiocomp( void );
-PUBLIC void init_plugin_emu10k1(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
   init_emuiocomp();
   init_emupatchcomp();

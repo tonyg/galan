@@ -130,6 +130,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, "Misc/Randomaccess to Realtime Converter", NULL, NULL);
 }
 
-PUBLIC void init_plugin_rart(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

@@ -60,6 +60,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, "Levels/Signum", NULL, NULL);
 }
 
-PUBLIC void init_plugin_sigsignum(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

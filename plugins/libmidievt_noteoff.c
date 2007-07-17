@@ -120,7 +120,7 @@ PRIVATE void setup_class(void) {
 
   gen_configure_event_input(k, EVT_NOTE, "Note", evt_note_handler);
   gen_configure_event_input(k, EVT_CHANNEL, "Channel", evt_channel_handler);
-  gen_configure_event_input(k, EVT_VELOCITY, "Velocity", evt_channel_handler);
+  gen_configure_event_input(k, EVT_VELOCITY, "Velocity", evt_vel_handler);
   gen_configure_event_output(k, EVT_OUTPUT, "Output");
 
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH,
@@ -128,6 +128,6 @@ PRIVATE void setup_class(void) {
 				  NULL);
 }
 
-PUBLIC void init_plugin_midievt_noteoff(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

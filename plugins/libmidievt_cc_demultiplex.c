@@ -207,6 +207,6 @@ PRIVATE void setup_class(void) {
 	    NULL);
 }
 
-PUBLIC void init_plugin_midievt_cc_demultiplex(void) {
+PUBLIC void init_plugin(void) {
     setup_class();
 }

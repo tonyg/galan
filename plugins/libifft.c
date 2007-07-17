@@ -111,13 +111,13 @@ PRIVATE void evt_input_handler(Generator *g, AEvent *event) {
   // TODO: make this alloca...
   out = g_alloca( sizeof( fftw_real ) * data->lastN );
   
-  rfftw_one( data->plan, event->d.array.numbers, out );
+  rfftw_one( data->plan, (fftw_real *) event->d.array.numbers, out );
   
 
   gen_init_aevent(&send_ev, AE_NUMARRAY, NULL, 0, NULL, 0, event->time);
   
   send_ev.d.array.len = data->lastN;
-  send_ev.d.array.numbers = out;
+  send_ev.d.array.numbers = (SAMPLE *) out;
 
 
   gen_send_events(g, EVT_OUTPUT, -1, &send_ev);
@@ -142,6 +142,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
 }
 
-PUBLIC void init_plugin_ifft(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

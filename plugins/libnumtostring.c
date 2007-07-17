@@ -74,7 +74,7 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 
 PRIVATE void evt_value_handler(Generator *g, AEvent *event) {
 
-    Data *data = g->data;
+    //Data *data = g->data;
 
     if( event->kind == AE_NUMBER ) {
 
@@ -99,6 +99,6 @@ PRIVATE void setup_class(void) {
   gencomp_register_generatorclass(k, FALSE, GENERATOR_CLASS_PATH, NULL, NULL);
 }
 
-PUBLIC void init_plugin_numtostring(void) {
+PUBLIC void init_plugin(void) {
   setup_class();
 }

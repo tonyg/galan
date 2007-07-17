@@ -1,0 +1,4 @@
+#!/bin/bash
+
+GALAN_VST_DIR=/home/torbenh/xxx/vst GALAN_PLUGIN_DIR=plugins/.libs GALAN_SHEET_DIR=sheets GALAN_PIXMAP_PATH=pixmaps src/galan $1
+#GALAN_PLUGIN_DIR=plugins/gl/.libs GALAN_SHEET_DIR=sheets src/galan $1

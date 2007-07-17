@@ -1,0 +1,2278 @@
+Mjik
+ObjectStore 0 [
+  version = i1
+  rootkey = i1
+]
+
+Sheet 1 [
+  visible = i1
+  control_panel = o2
+  components = a17:o3:o7:o252:o225:o201:o210:o241:o229:o59:o11:o31:o261:o15:o27:o23:o19:o68:
+  name = s6:sheet1:
+  panel_control_active = i0
+]
+
+ControlPanel 2 [
+  sizer_x = i0
+  visible = i1
+  sizer_y = i0
+  sheet = o1
+  name = s6:sheet1:
+]
+
+Component 3 [
+  connectors = a1:o4:
+  height = i56
+  poly = i0
+  ref = o276
+  width = i96
+  class_tag = s6:iscomp:
+  sheet = o1
+  y_coord = i36
+  reftype = i3
+  name = s9:transpose:
+  refvalid = i1
+  x_coord = i419
+]
+
+Connector 4 [
+  targets = a1:o6:
+  source_ref = o5
+  y_coord = i50
+  x_coord = i47
+]
+
+ConnectorReference 5 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o3
+]
+
+ConnectorReference 6 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o7
+]
+
+Component 7 [
+  connectors = a3:o8:o268:o270:
+  height = i56
+  width = i96
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i111
+  x_coord = i433
+  gencomp_generator = o273
+]
+
+Connector 8 [
+  targets = a1:o10:
+  source_ref = o9
+  y_coord = i50
+  x_coord = i47
+]
+
+ConnectorReference 9 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o7
+]
+
+ConnectorReference 10 [
+  is_output = i0
+  kind = i1
+  queue_number = i3
+  component = o11
+]
+
+Component 11 [
+  connectors = a7:o12:o189:o193:o195:o198:o222:o249:
+  height = i56
+  width = i123
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i263
+  x_coord = i236
+  gencomp_generator = o217
+]
+
+Connector 12 [
+  targets = a1:o14:
+  source_ref = o13
+  y_coord = i50
+  x_coord = i75
+]
+
+ConnectorReference 13 [
+  is_output = i1
+  kind = i1
+  queue_number = i1
+  component = o11
+]
+
+ConnectorReference 14 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o15
+]
+
+Component 15 [
+  connectors = a3:o16:o88:o91:
+  height = i56
+  isl_inputsignals = a0:
+  isl_anzoutputsignals = i1
+  width = i65
+  isl_anzinputevents = i2
+  isl_outputsignals = a1:o101:
+  class_tag = s6:shcomp:
+  sheet = o1
+  y_coord = i446
+  othersheet = o94
+  isl_anzoutputevents = i0
+  isl_anzinputsignals = i0
+  isl_outputevents = a0:
+  isl_inputevents = a2:o172:o143:
+  x_coord = i272
+]
+
+Connector 16 [
+  targets = a1:o18:
+  source_ref = o17
+  y_coord = i27
+  x_coord = i59
+]
+
+ConnectorReference 17 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o15
+]
+
+ConnectorReference 18 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o19
+]
+
+Component 19 [
+  connectors = a3:o20:o56:o85:
+  height = i61
+  width = i66
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i478
+  x_coord = i374
+  gencomp_generator = o79
+]
+
+Connector 20 [
+  targets = a2:o22:o55:
+  source_ref = o21
+  y_coord = i30
+  x_coord = i60
+]
+
+ConnectorReference 21 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o19
+]
+
+ConnectorReference 22 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o23
+]
+
+Component 23 [
+  connectors = a4:o24:o44:o47:o49:
+  height = i56
+  width = i84
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i539
+  x_coord = i435
+  gencomp_generator = o51
+]
+
+Connector 24 [
+  targets = a1:o26:
+  source_ref = o25
+  y_coord = i27
+  x_coord = i78
+]
+
+ConnectorReference 25 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o23
+]
+
+ConnectorReference 26 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o27
+]
+
+Component 27 [
+  connectors = a3:o28:o36:o40:
+  height = i56
+  width = i72
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i495
+  x_coord = i579
+  gencomp_generator = o42
+]
+
+Connector 28 [
+  targets = a1:o30:
+  source_ref = o29
+  y_coord = i27
+  x_coord = i66
+]
+
+ConnectorReference 29 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o27
+]
+
+ConnectorReference 30 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o31
+]
+
+Component 31 [
+  connectors = a1:o32:
+  height = i56
+  poly = i0
+  ref = o35
+  width = i67
+  class_tag = s6:iscomp:
+  sheet = o1
+  y_coord = i496
+  reftype = i0
+  name = s4:con4:
+  refvalid = i1
+  x_coord = i726
+]
+
+Connector 32 [
+  targets = a1:o34:
+  source_ref = o33
+  y_coord = i27
+  x_coord = i5
+]
+
+ConnectorReference 33 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o31
+]
+
+ConnectorReference 34 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o27
+]
+
+ConnectorReference 35 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o27
+]
+
+Connector 36 [
+  targets = a2:o38:o39:
+  source_ref = o37
+  y_coord = i27
+  x_coord = i5
+]
+
+ConnectorReference 37 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o27
+]
+
+ConnectorReference 38 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o23
+]
+
+ConnectorReference 39 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o19
+]
+
+Connector 40 [
+  targets = a0:
+  source_ref = o41
+  y_coord = i5
+  x_coord = i35
+]
+
+ConnectorReference 41 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o27
+]
+
+Generator 42 [
+  out_signals = a1:a0::
+  out_events = a0:
+  gain_gain = d0.56
+  class_name = s4:gain:
+  name = s5:gain8:
+  controls = a1:o43:
+]
+
+Control 43 [
+  frame_visible = i1
+  generator = o42
+  page = d0.01
+  step = d0.01
+  entry_visible = i1
+  min = d0
+  y_coord = i277
+  desc_index = i0
+  x_coord = i776
+  control_visible = i1
+  panel = o2
+  max = d1
+]
+
+Connector 44 [
+  targets = a1:o46:
+  source_ref = o45
+  y_coord = i27
+  x_coord = i5
+]
+
+ConnectorReference 45 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o23
+]
+
+ConnectorReference 46 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o19
+]
+
+Connector 47 [
+  targets = a0:
+  source_ref = o48
+  y_coord = i5
+  x_coord = i49
+]
+
+ConnectorReference 48 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o23
+]
+
+Connector 49 [
+  targets = a0:
+  source_ref = o50
+  y_coord = i5
+  x_coord = i32
+]
+
+ConnectorReference 50 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o23
+]
+
+Generator 51 [
+  out_signals = a1:a1:o52::
+  out_events = a0:
+  vcf_cutoff = d195.843
+  class_name = s6:303vcf:
+  name = s7:303vcf9:
+  vcf_q = d2.05
+  controls = a2:o53:o54:
+]
+
+EventLink 52 [
+  dst = o42
+  dst_q = i0
+  src = o51
+  src_q = i0
+  is_signal = i1
+]
+
+Control 53 [
+  frame_visible = i1
+  generator = o51
+  page = d1
+  step = d4
+  entry_visible = i1
+  min = d1
+  y_coord = i378
+  desc_index = i1
+  x_coord = i454
+  control_visible = i1
+  panel = o2
+  max = d22050
+]
+
+Control 54 [
+  frame_visible = i1
+  generator = o51
+  page = d0.5
+  step = d0.5
+  entry_visible = i1
+  min = d0
+  y_coord = i379
+  desc_index = i0
+  x_coord = i397
+  control_visible = i1
+  panel = o2
+  max = d100
+]
+
+ConnectorReference 55 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o27
+]
+
+Connector 56 [
+  targets = a1:o58:
+  source_ref = o57
+  y_coord = i35
+  x_coord = i5
+]
+
+ConnectorReference 57 [
+  is_output = i0
+  kind = i2
+  queue_number = i1
+  component = o19
+]
+
+ConnectorReference 58 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o59
+]
+
+Component 59 [
+  connectors = a4:o60:o63:o65:o83:
+  height = i104
+  width = i91
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i475
+  x_coord = i187
+  gencomp_generator = o77
+]
+
+Connector 60 [
+  targets = a1:o62:
+  source_ref = o61
+  y_coord = i51
+  x_coord = i85
+]
+
+ConnectorReference 61 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o59
+]
+
+ConnectorReference 62 [
+  is_output = i0
+  kind = i2
+  queue_number = i1
+  component = o19
+]
+
+Connector 63 [
+  targets = a0:
+  source_ref = o64
+  y_coord = i5
+  x_coord = i60
+]
+
+ConnectorReference 64 [
+  is_output = i0
+  kind = i1
+  queue_number = i2
+  component = o59
+]
+
+Connector 65 [
+  targets = a1:o67:
+  source_ref = o66
+  y_coord = i5
+  x_coord = i45
+]
+
+ConnectorReference 66 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o59
+]
+
+ConnectorReference 67 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o68
+]
+
+Component 68 [
+  connectors = a2:o69:o72:
+  height = i56
+  width = i123
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i356
+  x_coord = i153
+  gencomp_generator = o75
+]
+
+Connector 69 [
+  targets = a1:o71:
+  source_ref = o70
+  y_coord = i50
+  x_coord = i61
+]
+
+ConnectorReference 70 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o68
+]
+
+ConnectorReference 71 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o59
+]
+
+Connector 72 [
+  targets = a1:o74:
+  source_ref = o73
+  y_coord = i5
+  x_coord = i61
+]
+
+ConnectorReference 73 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o68
+]
+
+ConnectorReference 74 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o11
+]
+
+Generator 75 [
+  out_signals = a0:
+  out_events = a1:a1:o76::
+  class_name = s13:evtnotetofreq:
+  name = s14:evtnotetofreq5:
+  controls = a0:
+]
+
+EventLink 76 [
+  dst = o77
+  dst_q = i1
+  src = o75
+  src_q = i0
+  is_signal = i0
+]
+
+Generator 77 [
+  out_signals = a1:a1:o78::
+  out_events = a0:
+  osc_frequency = d32.7032
+  class_name = s3:vco:
+  name = s4:vco6:
+  osc_phase = d44436.6
+  osc_kind = i2
+  controls = a1:o82:
+]
+
+EventLink 78 [
+  dst = o79
+  dst_q = i1
+  src = o77
+  src_q = i0
+  is_signal = i1
+]
+
+Generator 79 [
+  out_signals = a1:a2:o80:o81::
+  out_events = a0:
+  class_name = s3:vca:
+  name = s4:vca7:
+  controls = a0:
+]
+
+EventLink 80 [
+  dst = o51
+  dst_q = i0
+  src = o79
+  src_q = i0
+  is_signal = i1
+]
+
+EventLink 81 [
+  dst = o42
+  dst_q = i0
+  src = o79
+  src_q = i0
+  is_signal = i1
+]
+
+Control 82 [
+  frame_visible = i1
+  generator = o77
+  page = d0
+  step = d0
+  entry_visible = i1
+  min = d0
+  y_coord = i255
+  desc_index = i1
+  x_coord = i820
+  control_visible = i1
+  panel = o2
+  max = d0
+]
+
+Connector 83 [
+  targets = a0:
+  source_ref = o84
+  y_coord = i5
+  x_coord = i30
+]
+
+ConnectorReference 84 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o59
+]
+
+Connector 85 [
+  targets = a1:o87:
+  source_ref = o86
+  y_coord = i25
+  x_coord = i5
+]
+
+ConnectorReference 86 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o19
+]
+
+ConnectorReference 87 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o15
+]
+
+Connector 88 [
+  targets = a1:o90:
+  source_ref = o89
+  y_coord = i5
+  x_coord = i37
+]
+
+ConnectorReference 89 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o15
+]
+
+ConnectorReference 90 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o11
+]
+
+Connector 91 [
+  targets = a1:o93:
+  source_ref = o92
+  y_coord = i5
+  x_coord = i26
+]
+
+ConnectorReference 92 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o15
+]
+
+ConnectorReference 93 [
+  is_output = i1
+  kind = i1
+  queue_number = i1
+  component = o11
+]
+
+Sheet 94 [
+  visible = i0
+  control_panel = o95
+  components = a9:o97:o163:o172:o116:o125:o134:o109:o101:o143:
+  name = s4:adsr:
+  panel_control_active = i1
+  panel_control = o96
+]
+
+ControlPanel 95 [
+  sizer_x = i0
+  visible = i0
+  sizer_y = i0
+  sheet = o94
+  name = s4:adsr:
+]
+
+Control 96 [
+  frame_visible = i1
+  page = d0
+  step = d0
+  this_panel = o95
+  entry_visible = i1
+  min = d0
+  y_coord = i244
+  x_coord = i389
+  control_visible = i1
+  panel = o2
+  max = d0
+]
+
+Component 97 [
+  connectors = a7:o98:o106:o179:o181:o183:o185:o187:
+  height = i56
+  width = i91
+  class_tag = s7:gencomp:
+  sheet = o94
+  y_coord = i708
+  x_coord = i405
+  gencomp_generator = o156
+]
+
+Connector 98 [
+  targets = a1:o100:
+  source_ref = o99
+  y_coord = i27
+  x_coord = i85
+]
+
+ConnectorReference 99 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o97
+]
+
+ConnectorReference 100 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o101
+]
+
+Component 101 [
+  connectors = a1:o102:
+  height = i56
+  poly = i0
+  ref = o105
+  width = i61
+  class_tag = s6:iscomp:
+  sheet = o94
+  y_coord = i708
+  reftype = i0
+  name = s3:env:
+  refvalid = i1
+  x_coord = i570
+]
+
+Connector 102 [
+  targets = a1:o104:
+  source_ref = o103
+  y_coord = i27
+  x_coord = i5
+]
+
+ConnectorReference 103 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o101
+]
+
+ConnectorReference 104 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o97
+]
+
+ConnectorReference 105 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o97
+]
+
+Connector 106 [
+  targets = a1:o108:
+  source_ref = o107
+  y_coord = i27
+  x_coord = i5
+]
+
+ConnectorReference 107 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o97
+]
+
+ConnectorReference 108 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o109
+]
+
+Component 109 [
+  connectors = a2:o110:o113:
+  height = i56
+  width = i80
+  class_tag = s7:gencomp:
+  sheet = o94
+  y_coord = i708
+  x_coord = i263
+  gencomp_generator = o154
+]
+
+Connector 110 [
+  targets = a1:o112:
+  source_ref = o111
+  y_coord = i27
+  x_coord = i74
+]
+
+ConnectorReference 111 [
+  is_output = i1
+  kind = i2
+  queue_number = i0
+  component = o109
+]
+
+ConnectorReference 112 [
+  is_output = i0
+  kind = i2
+  queue_number = i0
+  component = o97
+]
+
+Connector 113 [
+  targets = a2:o115:o162:
+  source_ref = o114
+  y_coord = i5
+  x_coord = i39
+]
+
+ConnectorReference 114 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o109
+]
+
+ConnectorReference 115 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o116
+]
+
+Component 116 [
+  connectors = a3:o117:o120:o122:
+  height = i56
+  width = i86
+  class_tag = s7:gencomp:
+  sheet = o94
+  y_coord = i582
+  x_coord = i171
+  gencomp_generator = o152
+]
+
+Connector 117 [
+  targets = a1:o119:
+  source_ref = o118
+  y_coord = i50
+  x_coord = i42
+]
+
+ConnectorReference 118 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o116
+]
+
+ConnectorReference 119 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o109
+]
+
+Connector 120 [
+  targets = a0:
+  source_ref = o121
+  y_coord = i5
+  x_coord = i51
+]
+
+ConnectorReference 121 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o116
+]
+
+Connector 122 [
+  targets = a1:o124:
+  source_ref = o123
+  y_coord = i5
+  x_coord = i33
+]
+
+ConnectorReference 123 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o116
+]
+
+ConnectorReference 124 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o125
+]
+
+Component 125 [
+  connectors = a3:o126:o129:o131:
+  height = i56
+  width = i86
+  class_tag = s7:gencomp:
+  sheet = o94
+  y_coord = i476
+  x_coord = i155
+  gencomp_generator = o150
+]
+
+Connector 126 [
+  targets = a1:o128:
+  source_ref = o127
+  y_coord = i50
+  x_coord = i42
+]
+
+ConnectorReference 127 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o125
+]
+
+ConnectorReference 128 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o116
+]
+
+Connector 129 [
+  targets = a0:
+  source_ref = o130
+  y_coord = i5
+  x_coord = i51
+]
+
+ConnectorReference 130 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o125
+]
+
+Connector 131 [
+  targets = a1:o133:
+  source_ref = o132
+  y_coord = i5
+  x_coord = i33
+]
+
+ConnectorReference 132 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o125
+]
+
+ConnectorReference 133 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o134
+]
+
+Component 134 [
+  connectors = a3:o135:o138:o140:
+  height = i56
+  width = i64
+  class_tag = s7:gencomp:
+  sheet = o94
+  y_coord = i386
+  x_coord = i148
+  gencomp_generator = o148
+]
+
+Connector 135 [
+  targets = a1:o137:
+  source_ref = o136
+  y_coord = i50
+  x_coord = i31
+]
+
+ConnectorReference 136 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o134
+]
+
+ConnectorReference 137 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o125
+]
+
+Connector 138 [
+  targets = a0:
+  source_ref = o139
+  y_coord = i5
+  x_coord = i37
+]
+
+ConnectorReference 139 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o134
+]
+
+Connector 140 [
+  targets = a1:o142:
+  source_ref = o141
+  y_coord = i5
+  x_coord = i26
+]
+
+ConnectorReference 141 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o134
+]
+
+ConnectorReference 142 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o143
+]
+
+Component 143 [
+  connectors = a1:o144:
+  height = i56
+  poly = i0
+  ref = o147
+  width = i85
+  class_tag = s6:iscomp:
+  sheet = o94
+  y_coord = i291
+  reftype = i3
+  name = s7:note-on:
+  refvalid = i1
+  x_coord = i141
+]
+
+Connector 144 [
+  targets = a1:o146:
+  source_ref = o145
+  y_coord = i50
+  x_coord = i42
+]
+
+ConnectorReference 145 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o143
+]
+
+ConnectorReference 146 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o134
+]
+
+ConnectorReference 147 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o134
+]
+
+Generator 148 [
+  out_signals = a0:
+  ctrl_value = d12
+  out_events = a1:a1:o149::
+  ctrl_page = d1
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  ctrl_min = d0
+  name = s5:ctrl1:
+  ctrl_max = d100
+  controls = a0:
+]
+
+EventLink 149 [
+  dst = o150
+  dst_q = i0
+  src = o148
+  src_q = i0
+  is_signal = i0
+]
+
+Generator 150 [
+  out_signals = a0:
+  out_events = a1:a1:o151::
+  class_name = s6:evtmul:
+  name = s7:evtmul1:
+  evtmul_factor = d0
+  controls = a0:
+]
+
+EventLink 151 [
+  dst = o152
+  dst_q = i0
+  src = o150
+  src_q = i0
+  is_signal = i0
+]
+
+Generator 152 [
+  out_signals = a0:
+  out_events = a1:a1:o153::
+  evtadd_addend = d1
+  class_name = s6:evtadd:
+  name = s7:evtadd2:
+  controls = a0:
+]
+
+EventLink 153 [
+  dst = o154
+  dst_q = i0
+  src = o152
+  src_q = i0
+  is_signal = i0
+]
+
+Generator 154 [
+  out_signals = a1:a1:o155::
+  out_events = a0:
+  sigctrl_min = d0
+  class_name = s7:sigctrl:
+  sigctrl_page = d1
+  name = s8:sigctrl2:
+  sigctrl_max = d100
+  sigctrl_step = d1
+  sigctrl_value = d0
+  controls = a0:
+]
+
+EventLink 155 [
+  dst = o156
+  dst_q = i0
+  src = o154
+  src_q = i0
+  is_signal = i1
+]
+
+Generator 156 [
+  out_signals = a1:a1:o157::
+  ladspa_inarray = a5:d0.5:d0.01:d0.03:d0.336574:d0.1:
+  out_events = a0:
+  class_name = s11:ladspa-1653:
+  ladspa_oldoutarray = a0:
+  name = s5:adsr1:
+  controls = a4:o158:o159:o160:o161:
+]
+
+EventLink 157 [
+  dst = o79
+  dst_q = i0
+  src = o156
+  src_q = i0
+  is_signal = i1
+]
+
+Control 158 [
+  frame_visible = i1
+  generator = o156
+  page = d0.5
+  step = d0.5
+  entry_visible = i1
+  min = d0
+  y_coord = i9
+  desc_index = i4
+  x_coord = i277
+  control_visible = i1
+  panel = o95
+  max = d100
+]
+
+Control 159 [
+  frame_visible = i1
+  generator = o156
+  page = d0.005
+  step = d0.005
+  entry_visible = i1
+  min = d0
+  y_coord = i7
+  desc_index = i3
+  x_coord = i195
+  control_visible = i1
+  panel = o95
+  max = d1
+]
+
+Control 160 [
+  frame_visible = i1
+  generator = o156
+  page = d0.5
+  step = d0.5
+  entry_visible = i1
+  min = d0
+  y_coord = i7
+  desc_index = i2
+  x_coord = i101
+  control_visible = i1
+  panel = o95
+  max = d100
+]
+
+Control 161 [
+  frame_visible = i1
+  generator = o156
+  page = d0.5
+  step = d0.5
+  entry_visible = i1
+  min = d0
+  y_coord = i6
+  desc_index = i1
+  x_coord = i6
+  control_visible = i1
+  panel = o95
+  max = d100
+]
+
+ConnectorReference 162 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o163
+]
+
+Component 163 [
+  connectors = a3:o164:o167:o169:
+  height = i56
+  width = i86
+  class_tag = s7:gencomp:
+  sheet = o94
+  y_coord = i404
+  x_coord = i297
+  gencomp_generator = o177
+]
+
+Connector 164 [
+  targets = a1:o166:
+  source_ref = o165
+  y_coord = i50
+  x_coord = i42
+]
+
+ConnectorReference 165 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o163
+]
+
+ConnectorReference 166 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o109
+]
+
+Connector 167 [
+  targets = a0:
+  source_ref = o168
+  y_coord = i5
+  x_coord = i51
+]
+
+ConnectorReference 168 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o163
+]
+
+Connector 169 [
+  targets = a1:o171:
+  source_ref = o170
+  y_coord = i5
+  x_coord = i33
+]
+
+ConnectorReference 170 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o163
+]
+
+ConnectorReference 171 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o172
+]
+
+Component 172 [
+  connectors = a1:o173:
+  height = i56
+  poly = i0
+  ref = o176
+  width = i86
+  class_tag = s6:iscomp:
+  sheet = o94
+  y_coord = i291
+  reftype = i3
+  name = s8:note-off:
+  refvalid = i1
+  x_coord = i285
+]
+
+Connector 173 [
+  targets = a1:o175:
+  source_ref = o174
+  y_coord = i50
+  x_coord = i42
+]
+
+ConnectorReference 174 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o172
+]
+
+ConnectorReference 175 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o163
+]
+
+ConnectorReference 176 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o163
+]
+
+Generator 177 [
+  out_signals = a0:
+  out_events = a1:a1:o178::
+  class_name = s6:evtmul:
+  name = s7:evtmul3:
+  evtmul_factor = d0
+  controls = a0:
+]
+
+EventLink 178 [
+  dst = o154
+  dst_q = i0
+  src = o177
+  src_q = i0
+  is_signal = i0
+]
+
+Connector 179 [
+  targets = a0:
+  source_ref = o180
+  y_coord = i5
+  x_coord = i65
+]
+
+ConnectorReference 180 [
+  is_output = i0
+  kind = i1
+  queue_number = i4
+  component = o97
+]
+
+Connector 181 [
+  targets = a0:
+  source_ref = o182
+  y_coord = i5
+  x_coord = i55
+]
+
+ConnectorReference 182 [
+  is_output = i0
+  kind = i1
+  queue_number = i3
+  component = o97
+]
+
+Connector 183 [
+  targets = a0:
+  source_ref = o184
+  y_coord = i5
+  x_coord = i45
+]
+
+ConnectorReference 184 [
+  is_output = i0
+  kind = i1
+  queue_number = i2
+  component = o97
+]
+
+Connector 185 [
+  targets = a0:
+  source_ref = o186
+  y_coord = i5
+  x_coord = i35
+]
+
+ConnectorReference 186 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o97
+]
+
+Connector 187 [
+  targets = a0:
+  source_ref = o188
+  y_coord = i5
+  x_coord = i25
+]
+
+ConnectorReference 188 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o97
+]
+
+Connector 189 [
+  targets = a2:o191:o192:
+  source_ref = o190
+  y_coord = i50
+  x_coord = i45
+]
+
+ConnectorReference 190 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o11
+]
+
+ConnectorReference 191 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o68
+]
+
+ConnectorReference 192 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o15
+]
+
+Connector 193 [
+  targets = a0:
+  source_ref = o194
+  y_coord = i5
+  x_coord = i90
+]
+
+ConnectorReference 194 [
+  is_output = i0
+  kind = i1
+  queue_number = i4
+  component = o11
+]
+
+Connector 195 [
+  targets = a1:o197:
+  source_ref = o196
+  y_coord = i5
+  x_coord = i75
+]
+
+ConnectorReference 196 [
+  is_output = i0
+  kind = i1
+  queue_number = i3
+  component = o11
+]
+
+ConnectorReference 197 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o7
+]
+
+Connector 198 [
+  targets = a1:o200:
+  source_ref = o199
+  y_coord = i5
+  x_coord = i60
+]
+
+ConnectorReference 199 [
+  is_output = i0
+  kind = i1
+  queue_number = i2
+  component = o11
+]
+
+ConnectorReference 200 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o201
+]
+
+Component 201 [
+  connectors = a3:o202:o205:o207:
+  height = i56
+  width = i71
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i112
+  x_coord = i330
+  gencomp_generator = o215
+]
+
+Connector 202 [
+  targets = a1:o204:
+  source_ref = o203
+  y_coord = i50
+  x_coord = i35
+]
+
+ConnectorReference 203 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o201
+]
+
+ConnectorReference 204 [
+  is_output = i0
+  kind = i1
+  queue_number = i2
+  component = o11
+]
+
+Connector 205 [
+  targets = a0:
+  source_ref = o206
+  y_coord = i5
+  x_coord = i41
+]
+
+ConnectorReference 206 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o201
+]
+
+Connector 207 [
+  targets = a1:o209:
+  source_ref = o208
+  y_coord = i5
+  x_coord = i28
+]
+
+ConnectorReference 208 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o201
+]
+
+ConnectorReference 209 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o210
+]
+
+Component 210 [
+  connectors = a1:o211:
+  height = i56
+  poly = i0
+  ref = o214
+  width = i62
+  class_tag = s6:iscomp:
+  sheet = o1
+  y_coord = i32
+  reftype = i3
+  name = s4:edit:
+  refvalid = i1
+  x_coord = i328
+]
+
+Connector 211 [
+  targets = a1:o213:
+  source_ref = o212
+  y_coord = i50
+  x_coord = i30
+]
+
+ConnectorReference 212 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o210
+]
+
+ConnectorReference 213 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o201
+]
+
+ConnectorReference 214 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o201
+]
+
+Generator 215 [
+  out_signals = a0:
+  ctrl_value = d0
+  out_events = a1:a1:o216::
+  ctrl_page = d1
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  ctrl_min = d0
+  name = s6:ctrl11:
+  ctrl_max = d100
+  controls = a0:
+]
+
+EventLink 216 [
+  dst = o217
+  dst_q = i2
+  src = o215
+  src_q = i0
+  is_signal = i0
+]
+
+Generator 217 [
+  out_signals = a0:
+  out_events = a2:a2:o218:o219::a1:o220::
+  canvas_transpose = i10
+  canvas_notelen = i4800
+  class_name = s13:canvascontrol:
+  canvas_width = i32
+  name = s14:canvascontrol1:
+  canvas_num = i16
+  canvas_height = i20
+  matrix = b40960:        
+                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                       
+                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                       
+                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                       
+                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  controls = a1:o221:
+]
+
+EventLink 218 [
+  dst = o75
+  dst_q = i0
+  src = o217
+  src_q = i0
+  is_signal = i0
+]
+
+EventLink 219 [
+  dst = o148
+  dst_q = i0
+  src = o217
+  src_q = i0
+  is_signal = i0
+]
+
+EventLink 220 [
+  dst = o177
+  dst_q = i0
+  src = o217
+  src_q = i1
+  is_signal = i0
+]
+
+Control 221 [
+  frame_visible = i1
+  generator = o217
+  page = d0
+  step = d0
+  entry_visible = i1
+  min = d0
+  y_coord = i235
+  desc_index = i0
+  x_coord = i39
+  control_visible = i1
+  panel = o2
+  max = d0
+]
+
+Connector 222 [
+  targets = a1:o224:
+  source_ref = o223
+  y_coord = i5
+  x_coord = i45
+]
+
+ConnectorReference 223 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o11
+]
+
+ConnectorReference 224 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o225
+]
+
+Component 225 [
+  connectors = a3:o226:o236:o238:
+  height = i56
+  width = i71
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i108
+  x_coord = i245
+  gencomp_generator = o246
+]
+
+Connector 226 [
+  targets = a2:o228:o235:
+  source_ref = o227
+  y_coord = i50
+  x_coord = i35
+]
+
+ConnectorReference 227 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o225
+]
+
+ConnectorReference 228 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o229
+]
+
+Component 229 [
+  connectors = a1:o230:
+  height = i56
+  width = i78
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i259
+  x_coord = i376
+  gencomp_generator = o233
+]
+
+Connector 230 [
+  targets = a1:o232:
+  source_ref = o231
+  y_coord = i5
+  x_coord = i38
+]
+
+ConnectorReference 231 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o229
+]
+
+ConnectorReference 232 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o225
+]
+
+Generator 233 [
+  out_signals = a0:
+  out_events = a0:
+  class_name = s6:lights:
+  lights_play = i20
+  name = s7:lights3:
+  controls = a1:o234:
+]
+
+Control 234 [
+  frame_visible = i1
+  generator = o233
+  page = d0
+  step = d0
+  entry_visible = i1
+  min = d0
+  y_coord = i180
+  desc_index = i0
+  x_coord = i19
+  control_visible = i1
+  panel = o2
+  max = d0
+]
+
+ConnectorReference 235 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o11
+]
+
+Connector 236 [
+  targets = a0:
+  source_ref = o237
+  y_coord = i5
+  x_coord = i41
+]
+
+ConnectorReference 237 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o225
+]
+
+Connector 238 [
+  targets = a1:o240:
+  source_ref = o239
+  y_coord = i5
+  x_coord = i28
+]
+
+ConnectorReference 239 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o225
+]
+
+ConnectorReference 240 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o241
+]
+
+Component 241 [
+  connectors = a1:o242:
+  height = i56
+  poly = i0
+  ref = o245
+  width = i65
+  class_tag = s6:iscomp:
+  sheet = o1
+  y_coord = i34
+  reftype = i3
+  name = s4:step:
+  refvalid = i1
+  x_coord = i239
+]
+
+Connector 242 [
+  targets = a1:o244:
+  source_ref = o243
+  y_coord = i50
+  x_coord = i32
+]
+
+ConnectorReference 243 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o241
+]
+
+ConnectorReference 244 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o225
+]
+
+ConnectorReference 245 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o225
+]
+
+Generator 246 [
+  out_signals = a0:
+  ctrl_value = d0
+  out_events = a1:a2:o247:o248::
+  ctrl_page = d1
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  ctrl_min = d0
+  name = s6:ctrl12:
+  ctrl_max = d100
+  controls = a0:
+]
+
+EventLink 247 [
+  dst = o233
+  dst_q = i0
+  src = o246
+  src_q = i0
+  is_signal = i0
+]
+
+EventLink 248 [
+  dst = o217
+  dst_q = i1
+  src = o246
+  src_q = i0
+  is_signal = i0
+]
+
+Connector 249 [
+  targets = a1:o251:
+  source_ref = o250
+  y_coord = i5
+  x_coord = i30
+]
+
+ConnectorReference 250 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o11
+]
+
+ConnectorReference 251 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o252
+]
+
+Component 252 [
+  connectors = a3:o253:o256:o258:
+  height = i56
+  width = i71
+  class_tag = s7:gencomp:
+  sheet = o1
+  y_coord = i108
+  x_coord = i173
+  gencomp_generator = o266
+]
+
+Connector 253 [
+  targets = a1:o255:
+  source_ref = o254
+  y_coord = i50
+  x_coord = i35
+]
+
+ConnectorReference 254 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o252
+]
+
+ConnectorReference 255 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o11
+]
+
+Connector 256 [
+  targets = a0:
+  source_ref = o257
+  y_coord = i5
+  x_coord = i41
+]
+
+ConnectorReference 257 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o252
+]
+
+Connector 258 [
+  targets = a1:o260:
+  source_ref = o259
+  y_coord = i5
+  x_coord = i28
+]
+
+ConnectorReference 259 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o252
+]
+
+ConnectorReference 260 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o261
+]
+
+Component 261 [
+  connectors = a1:o262:
+  height = i56
+  poly = i0
+  ref = o265
+  width = i64
+  class_tag = s6:iscomp:
+  sheet = o1
+  y_coord = i39
+  reftype = i3
+  name = s4:play:
+  refvalid = i1
+  x_coord = i173
+]
+
+Connector 262 [
+  targets = a1:o264:
+  source_ref = o263
+  y_coord = i50
+  x_coord = i31
+]
+
+ConnectorReference 263 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o261
+]
+
+ConnectorReference 264 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o252
+]
+
+ConnectorReference 265 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o252
+]
+
+Generator 266 [
+  out_signals = a0:
+  ctrl_value = d0
+  out_events = a1:a1:o267::
+  ctrl_page = d1
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  ctrl_min = d0
+  name = s6:ctrl13:
+  ctrl_max = d100
+  controls = a0:
+]
+
+EventLink 267 [
+  dst = o217
+  dst_q = i0
+  src = o266
+  src_q = i0
+  is_signal = i0
+]
+
+Connector 268 [
+  targets = a0:
+  source_ref = o269
+  y_coord = i5
+  x_coord = i57
+]
+
+ConnectorReference 269 [
+  is_output = i0
+  kind = i1
+  queue_number = i1
+  component = o7
+]
+
+Connector 270 [
+  targets = a1:o272:
+  source_ref = o271
+  y_coord = i5
+  x_coord = i36
+]
+
+ConnectorReference 271 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o7
+]
+
+ConnectorReference 272 [
+  is_output = i1
+  kind = i1
+  queue_number = i0
+  component = o3
+]
+
+Generator 273 [
+  out_signals = a0:
+  ctrl_value = d10
+  out_events = a1:a1:o274::
+  ctrl_page = d1
+  ctrl_step = d1
+  class_name = s4:ctrl:
+  ctrl_min = d0
+  name = s9:transpose:
+  ctrl_max = d100
+  controls = a1:o275:
+]
+
+EventLink 274 [
+  dst = o217
+  dst_q = i3
+  src = o273
+  src_q = i0
+  is_signal = i0
+]
+
+Control 275 [
+  frame_visible = i1
+  generator = o273
+  page = d1
+  step = d1
+  entry_visible = i1
+  min = d0
+  y_coord = i379
+  desc_index = i0
+  x_coord = i531
+  control_visible = i1
+  panel = o2
+  max = d100
+]
+
+ConnectorReference 276 [
+  is_output = i0
+  kind = i1
+  queue_number = i0
+  component = o7
+]
+

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = complex drums experiments fx misc voices
+SUBDIRS = complex  controllers  drums  experiments  fx  gl  misc  seq-voices  voices
 sheetsdir = $(pkgdatadir)/sheets
 sheets_DATA = 
 #*.gsheet

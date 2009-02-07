@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -469,7 +470,7 @@ PRIVATE void select_master_clock(gpointer userdata, guint action, GtkWidget *wid
   switch (popup_dialog("Select Master Clock", MSGBOX_OK | MSGBOX_CANCEL, 0, MSGBOX_OK,
 		       contents, NULL, NULL)) {
     case MSGBOX_OK:
-      gen_select_clock(clocks[(int) GTK_CLIST(contents)->selection->data]);
+      gen_select_clock(clocks[(intptr_t) GTK_CLIST(contents)->selection->data]);
       break;
 
     default:
@@ -651,14 +652,14 @@ PRIVATE void gui_default_clock_handler(AClock *clock, AClockReason reason) {
 
 
 PRIVATE GtkActionEntry mainmenu_actions[] = {
-  { "FileMenu",		NULL,		    "File"	    },
+  { "FileMenu",		NULL,		    "File",		    NULL,		NULL,			    NULL				},
   { "FileNew",		GTK_STOCK_NEW,	    "New",		    "<control>N",	"Create a new file",	    G_CALLBACK(file_new_callback)	},
   { "FileOpen",		GTK_STOCK_OPEN,	    "Open",		    "<control>O",	"Open a file",		    G_CALLBACK(open_file)		},
   { "FileSave",		GTK_STOCK_SAVE,	    "Save",		    "<control>S",	"Save the File",	    G_CALLBACK(action_save_file)    	},  // 0
   { "FileSaveAs",	GTK_STOCK_SAVE_AS,  "Save As",		    NULL,		"Save File with new name",  G_CALLBACK(action_save_file_as)	},  // 1
   { "FileQuit",		GTK_STOCK_QUIT,	    "Quit",		    "<control>Q",	"Quit the bunch",	    G_CALLBACK(exit_request)		},
 
-  { "SheetMenu",	NULL,		    "Sheet"	    },
+  { "SheetMenu",	NULL,		    "Sheet",		    NULL,		NULL,			    NULL				},
   { "SheetNew",		GTK_STOCK_NEW,	    "New",		    NULL,		"Create New Sheet",	    G_CALLBACK(new_sheet)		},
   { "SheetSave",	GTK_STOCK_SAVE_AS,   "Save",		    NULL,		"Save the sheet only",	    G_CALLBACK(action_save_sheet)   	},  // 2
   { "SheetRename",	NULL,		    "Rename",		    NULL,		"Rename the sheet",	    G_CALLBACK(ren_sheet)		},
@@ -668,22 +669,22 @@ PRIVATE GtkActionEntry mainmenu_actions[] = {
   { "SheetUnconnect",	NULL,		    "Unconnect",	    NULL,		"Unconnect Sheet",	    G_CALLBACK(unconnect_sheet)		},
   { "SheetRegister",	NULL,		    "Register",		    NULL,		"Register Sheet",	    G_CALLBACK(reg_sheet2)		},
 
-  { "EditMenu",		NULL,		    "Edit"	    },
+  { "EditMenu",		NULL,		    "Edit",		    NULL,		NULL,			    NULL				},
   { "EditPreferences",	GTK_STOCK_PREFERENCES, "Prefs",		    "<control>P",	"Edit Preferencences",	    G_CALLBACK(prefs_edit_prefs)	},
   { "EditDelete",	GTK_STOCK_DELETE,   "Delete",		    "Delete",		"Delete Current Selection", G_CALLBACK(action_del_selected)	}, // 0
   { "EditClone",	NULL,		    "Clone",		    NULL,		"Clone current Selection",  G_CALLBACK(action_clone_selected)	}, // 1
   { "EditCloneWConn",	NULL,		    "Clone W Conn",	    NULL,		"Clone with Connections",   G_CALLBACK(clone_selected)		},
   { "EditCloneNewSh",	NULL,		    "Clone on New Sheet",   NULL,		"Clone on new Sheet",	    G_CALLBACK(clone_selected_on_new_sheet)	},
 
-  { "WindowsMenu",	NULL,		    "Windows"	    },
+  { "WindowsMenu",	NULL,		    "Windows",		    NULL,		NULL,			    NULL				},
   { "ShowControlPanel", NULL,		    "Show Control Panel",   "<control>W",	"Show Control Panel",	    G_CALLBACK(show_control_panel)	},
   { "HideControlPanel", NULL,		    "Hide Control Panel",   NULL,		"Hide Control Panel",	    G_CALLBACK(hide_control_panel)	},
 
-  { "ExtrasMenu",	NULL,		    "Extras",	    },
+  { "ExtrasMenu",	NULL,		    "Extras",		    NULL,		NULL,			    NULL				},
   { "SelectMasterClock", NULL,		    "Select Master Clock",  NULL,		"Select Master Clock",	    G_CALLBACK(select_master_clock)	},
   { "About",		GTK_STOCK_ABOUT,    "About",		    NULL,		"About",		    G_CALLBACK(about_callback)		},
 
-  { "AddComp",		GTK_STOCK_ADD,	    "_Add..." },
+  { "AddComp",		GTK_STOCK_ADD,	    "_Add...",		    NULL,		NULL,			    NULL				},
   { "SwitchCPScreen",	NULL,		    "Switch Panel Screen",  NULL,		"Switch ControlPanel Screen",G_CALLBACK(action_switchcontrolpanel_screen)	}
 };
 
@@ -695,10 +696,10 @@ PRIVATE void setup_ui_manager(void) {
 
   ui_manager = gtk_ui_manager_new();
 
+  gtk_action_group_add_actions( menu_actiongroup, mainmenu_actions, n_mainmenu_actions, NULL );
   gtk_ui_manager_insert_action_group( ui_manager, menu_actiongroup, 2 ); 
   gtk_ui_manager_insert_action_group( ui_manager, component_actiongroup, 0 ); 
 
-  gtk_action_group_add_actions( menu_actiongroup, mainmenu_actions, n_mainmenu_actions, NULL );
 
   GError *err = NULL;
   int ret = gtk_ui_manager_add_ui_from_file( ui_manager, "/home/torbenh/galan.ui", &err );

@@ -68,6 +68,10 @@ struct _GalanCompActionClass {
  * Public methods
  */
 GType	galan_compaction_get_type	(void);
+void 	galan_compaction_create_comp	(GalanCompAction * self,
+					Sheet * s,
+					int x,
+					int y);
 
 /*
  * Argument wrapping macros

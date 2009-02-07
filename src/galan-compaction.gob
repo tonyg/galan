@@ -72,6 +72,12 @@ class Galan:CompAction from Gtk:Action {
 		gtk_object_destroy( GTK_OBJECT(self->dragwidget) );
 	}
 
+	public void create_comp( self, Sheet *s, int x, int y ) {
+		s->saved_x = x;
+		s->saved_y = y;
+    		sheet_build_new_component( s, self->klass, self->init_data );
+	}
+
 	override (Gtk:Action) void activate( Gtk:Action *self ) {
 
 		Self  *ich = SELF( self );

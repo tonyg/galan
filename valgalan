@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export GALAN_PLUGIN_DIR=plugins/.libs
+export GALAN_SHEET_DIR=sheets
+export GALAN_PIXMAP_PATH=pixmaps
+valgrind src/.libs/lt-galan $1

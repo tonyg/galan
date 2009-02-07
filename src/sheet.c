@@ -120,7 +120,6 @@ PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
   GtkStyle *style = gtk_widget_get_style(widget);
   Sheet *sheet = gtk_object_get_user_data( GTK_OBJECT(widget) );
   GList *l;
-  int i;
   GdkRectangle area = ee->area;
 
   area.width++;

@@ -126,6 +126,7 @@ PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
   area.width++;
   area.height++;
 
+#if 0
   for (i = 0; i < 5; i++) {
     gdk_gc_set_clip_rectangle(style->fg_gc[i], &area);
     gdk_gc_set_clip_rectangle(style->bg_gc[i], &area);
@@ -137,6 +138,7 @@ PRIVATE gboolean do_sheet_repaint(GtkWidget *widget, GdkEventExpose *ee) {
   }
   gdk_gc_set_clip_rectangle(style->black_gc, &area);
   gdk_gc_set_clip_rectangle(style->white_gc, &area);
+#endif
 
   gdk_draw_rectangle(drawable, style->black_gc, TRUE,
 		     area.x, area.y, area.width, area.height);

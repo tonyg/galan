@@ -47,6 +47,7 @@ enum EVT_INPUTS {
 
 typedef struct Data {
   SAMPLE *delay_buf;
+  int delay_buf_maxsize;
 
   gdouble delay_sec;
   int delay;
@@ -66,9 +67,10 @@ PRIVATE int init_instance(Generator *g) {
   Data *data = safe_malloc(sizeof(Data));
   g->data = data;
 
-  data->delay_buf = NULL;
-  data->delay = 0;
-  data->delay_sec = 0;
+  data->delay_buf_maxsize = SAMPLE_RATE / 2;
+  data->delay_buf = calloc( data->delay_buf_maxsize, sizeof( SAMPLE ) );
+  data->delay = MAXIMUM_REALTIME_STEP;
+  data->delay_sec = data->delay / ((gdouble) SAMPLE_RATE);
   data->offset = 0;
 
   return 1;
@@ -90,13 +92,15 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
   data->delay = objectstore_item_get_integer(item, "delay_delay", 0);
   data->delay_sec = data->delay / ((gdouble) SAMPLE_RATE);
 
-  data->delay_buf = calloc(data->delay, sizeof(SAMPLE));
+  data->delay_buf_maxsize = objectstore_item_get_integer(item, "delay_maxsize", SAMPLE_RATE/2);
+  data->delay_buf = calloc(data->delay_buf_maxsize, sizeof(SAMPLE));
   data->offset = 0;
 }
 
 PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *db) {
   Data *data = g->data;
   objectstore_item_set_integer(item, "delay_delay", data->delay);
+  objectstore_item_set_integer(item, "delay_maxsize", data->delay_buf_maxsize);
 }
 
 PRIVATE gboolean feedback_generator(Generator *g, SAMPLE *buf, int buflen) {
@@ -112,29 +116,24 @@ PRIVATE gboolean feedback_generator(Generator *g, SAMPLE *buf, int buflen) {
 }
 
 PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-  SAMPLE tmpbuf[MAXIMUM_REALTIME_STEP];
+    Data *data = g->data;
+    int i;
+    SAMPLE tmpbuf[MAXIMUM_REALTIME_STEP];
 
-  if (data->delay == 0)
-    return gen_read_realtime_input(g, SIG_INPUT, -1, buf, buflen);
-  else {
     if (!gen_read_realtime_input(g, SIG_INPUT, -1, tmpbuf, buflen))
-      memset(tmpbuf, 0, buflen * sizeof(SAMPLE));
+	memset(tmpbuf, 0, buflen * sizeof(SAMPLE));
 
     for (i = 0; i < buflen; i++) {
 
-      if (data->offset >= data->delay)
-	data->offset = 0;
+	data->offset %= data->delay;
 
-      buf[i] = data->delay_buf[data->offset];
+	buf[i] = data->delay_buf[data->offset];
 
-      data->delay_buf[data->offset] = tmpbuf[i];
-      data->offset++;
+	data->delay_buf[data->offset] = tmpbuf[i];
+	data->offset++;
     }
 
     return TRUE;
-  }
 }
 
 PRIVATE void evt_delay_handler(Generator *g, AEvent *event) {
@@ -145,11 +144,9 @@ PRIVATE void evt_delay_handler(Generator *g, AEvent *event) {
   data->delay = GEN_DOUBLE_TO_INT(data->delay_sec * SAMPLE_RATE);
   gen_update_controls(g, DELAY_CONTROL_DELAY);
 
-  if (data->delay_buf != NULL)
+  if (data->delay > data->delay_buf_maxsize) {
     data->delay_buf = realloc(data->delay_buf, data->delay * sizeof(SAMPLE));
-  else {
-    data->delay_buf = calloc(data->delay, sizeof(SAMPLE));
-    return;
+    data->delay_buf_maxsize = data->delay;
   }
 
   if (data->delay > olddelay) {

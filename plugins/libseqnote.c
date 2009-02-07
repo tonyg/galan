@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -173,7 +174,7 @@ PRIVATE void update_label(GtkWidget *label, int note) {
 }
 
 PRIVATE void value_changed_handler(GtkAdjustment *adj, gpointer userdata) {
-  int step = (int) userdata;
+  int step = (intptr_t) userdata;
   Control *c = gtk_object_get_data(GTK_OBJECT(adj), "Control");
   GtkWidget **widgets = c->data;
   Data *data = c->g->data;
@@ -198,7 +199,7 @@ PRIVATE void focus_in_handler(GtkRange *b, GdkEventFocus *event, gpointer userda
 }
 
 PRIVATE void toggle_changed_handler(GtkWidget *widget, gpointer userdata) {
-  int step = (int) userdata;
+  int step = (intptr_t) userdata;
   Control *c = gtk_object_get_data(GTK_OBJECT(widget), "Control");
   Data *data = c->g->data;
 
@@ -364,7 +365,7 @@ PRIVATE void init_pattern(Control *control) {
 
     gtk_object_set_data(GTK_OBJECT(adj), "Control", control);
     gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
-		       GTK_SIGNAL_FUNC(value_changed_handler), (gpointer) i);
+		       GTK_SIGNAL_FUNC(value_changed_handler), (gpointer) (intptr_t) i);
     gtk_signal_connect(GTK_OBJECT(b), "focus_in_event",
 		       GTK_SIGNAL_FUNC(focus_in_handler), control);
     gtk_widget_set_usize(b, 12, 100);
@@ -374,7 +375,7 @@ PRIVATE void init_pattern(Control *control) {
 
     gtk_object_set_data(GTK_OBJECT(t), "Control", control);
     gtk_signal_connect(GTK_OBJECT(t), "toggled",
-		       GTK_SIGNAL_FUNC(toggle_changed_handler), (gpointer) i);
+		       GTK_SIGNAL_FUNC(toggle_changed_handler), (gpointer)(intptr_t)  i);
     gtk_widget_set_usize(t, 12, 16);
     gtk_box_pack_start(GTK_BOX(vb), t, FALSE, FALSE, 0);
     gtk_widget_show(t);
@@ -433,7 +434,7 @@ PRIVATE void init_2oct_pattern(Control *control) {
 
     gtk_object_set_data(GTK_OBJECT(adj), "Control", control);
     gtk_signal_connect(GTK_OBJECT(adj), "value_changed",
-		       GTK_SIGNAL_FUNC(value_changed_handler), (gpointer) i);
+		       GTK_SIGNAL_FUNC(value_changed_handler), (gpointer) (intptr_t) i);
     gtk_signal_connect(GTK_OBJECT(b), "focus_in_event",
 		       GTK_SIGNAL_FUNC(focus_in_handler), control);
     gtk_widget_set_usize(b, 12, 100);
@@ -443,7 +444,7 @@ PRIVATE void init_2oct_pattern(Control *control) {
 
     gtk_object_set_data(GTK_OBJECT(t), "Control", control);
     gtk_signal_connect(GTK_OBJECT(t), "toggled",
-		       GTK_SIGNAL_FUNC(toggle_changed_handler), (gpointer) i);
+		       GTK_SIGNAL_FUNC(toggle_changed_handler), (gpointer) (intptr_t) i);
     gtk_widget_set_usize(t, 12, 16);
     gtk_box_pack_start(GTK_BOX(vb), t, FALSE, FALSE, 0);
     gtk_widget_show(t);

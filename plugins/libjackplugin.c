@@ -179,7 +179,7 @@ PRIVATE int process_callback( jack_nframes_t nframes, Data *data ) {
     jack_timestamp = gen_get_sampletime();
 
     if( transport_clocks ) {
-	jack_transport_info_t trans_info;
+	//jack_transport_info_t trans_info;
 	jack_position_t jack_trans_pos;
 	jack_transport_state_t jack_trans_state;
 	GList *l;

@@ -106,7 +106,7 @@ PRIVATE OutputSignalDescriptor output_sigs[] = {
 PRIVATE void propgen(Component *c, Generator *g) {
   Data *data = g->data;
 
-    GtkWidget *dialog, *vbox2, *color1, *color2; //*type;
+    GtkWidget *dialog, *vbox2, *color1; //*color2; //*type;
 
     dialog = gtk_dialog_new_with_buttons( "GL Plane Properties",  gui_get_mesh_window(), GTK_DIALOG_DESTROY_WITH_PARENT,
 	    "Oki", GTK_RESPONSE_OK, "Not Now", GTK_RESPONSE_CANCEL, NULL );

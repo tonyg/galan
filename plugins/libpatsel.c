@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -69,7 +70,7 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 PRIVATE void button_clicked(GtkWidget *button, gpointer userdata) {
   Control *c = gtk_object_get_data(GTK_OBJECT(button), "Control");
   Data *data = c->g->data;
-  int index = (int) userdata;
+  int index = (intptr_t) userdata;
 
   if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) && data->pattern != index) {
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data->buttons[data->pattern]), FALSE);
@@ -103,7 +104,7 @@ PRIVATE void ctrl_init(Control *c) {
       gtk_widget_show(button);
       gtk_object_set_data(GTK_OBJECT(button), "Control", c);
       gtk_signal_connect(GTK_OBJECT(button), "toggled",
-			 GTK_SIGNAL_FUNC(button_clicked), (gpointer) index);
+			 GTK_SIGNAL_FUNC(button_clicked), (gpointer) (intptr_t) index);
     }
 
     gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);

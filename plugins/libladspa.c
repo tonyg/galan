@@ -153,7 +153,7 @@ PRIVATE const LADSPA_Descriptor *lplugindata_get_descriptor( LPluginData *lpdat 
 	    return NULL;
 	}
 
-	if( !g_module_symbol(psPluginHandle, "ladspa_descriptor", &fDescriptorFunction ) ) {
+	if( !g_module_symbol(psPluginHandle, "ladspa_descriptor", (gpointer) &fDescriptorFunction ) ) {
 	    lplugindata_release_module( lpdat );
 	    return NULL;
 	}
@@ -335,7 +335,7 @@ PRIVATE gboolean init_instance(Generator *g) {
       //printf( "default %d = %f\n", i, data->inevents[i] );
       data->ladspa_descriptor->connect_port( 
 	      data->instance_handle, 
-	      (int) g_list_nth_data( data->lpdat->inevent, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->inevent, i ),
 	      &(data->inevents[i]) );
   }
   
@@ -345,7 +345,7 @@ PRIVATE gboolean init_instance(Generator *g) {
 
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
-	      (int) g_list_nth_data( data->lpdat->outevent, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->outevent, i ),
 	      &(data->outevents[i]) );
   }  
 
@@ -354,7 +354,7 @@ PRIVATE gboolean init_instance(Generator *g) {
 
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
-	      (int) g_list_nth_data( data->lpdat->outsig, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->outsig, i ),
 	      data->outsignals[i] );
   }  
   for( i=0; i<inscount; i++ ) {
@@ -362,7 +362,7 @@ PRIVATE gboolean init_instance(Generator *g) {
 
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
-	      (int) g_list_nth_data( data->lpdat->insig, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->insig, i ),
 	      data->insignals[i] );
   }  
 
@@ -451,7 +451,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
       data->ladspa_descriptor->connect_port( 
 	      data->instance_handle, 
-	      (int) g_list_nth_data( data->lpdat->inevent, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->inevent, i ),
 	      &(data->inevents[i]) );
   }
   for( i=0; i<outecount; i++ ) {
@@ -463,7 +463,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
-	      (int) g_list_nth_data( data->lpdat->outevent, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->outevent, i ),
 	      &(data->outevents[i]) );
   }
   for( i=0; i<outscount; i++ ) {
@@ -471,7 +471,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
-	      (int) g_list_nth_data( data->lpdat->outsig, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->outsig, i ),
 	      data->outsignals[i] );
   }  
   for( i=0; i<inscount; i++ ) {
@@ -479,7 +479,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 
       data->ladspa_descriptor->connect_port(
 	      data->instance_handle,
-	      (int) g_list_nth_data( data->lpdat->insig, i ),
+	      (intptr_t) g_list_nth_data( data->lpdat->insig, i ),
 	      data->insignals[i] );
   }  
 
@@ -630,7 +630,7 @@ PRIVATE int plugin_count=0;
 PRIVATE void control_LADSPA_Data_updater(Control *c) {
     Data *data=c->g->data;
 
-    control_set_value(c, (data->inevents[(int) c->desc->refresh_data]));
+    control_set_value(c, (data->inevents[(intptr_t) c->desc->refresh_data]));
 }
 				     
 void string_search_and_replace( char **string, char search, char *replace ) {

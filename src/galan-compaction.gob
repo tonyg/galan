@@ -91,26 +91,26 @@ class Galan:CompAction from Gtk:Action {
 		GtkWidget *ret = PARENT_HANDLER( self );
 
 		gtk_drag_source_set( ret, GDK_BUTTON1_MASK, &targette, 1, GDK_ACTION_COPY );
-		g_signal_connect_swapped( ret, "drag_data_get", self_drag_data_get, ich );
-		g_signal_connect_swapped( ret, "drag_begin", self_drag_begin, ich );
-		g_signal_connect_swapped( ret, "drag_end", self_drag_end, ich );
+		g_signal_connect_swapped( ret, "drag_data_get", G_CALLBACK(self_drag_data_get), ich );
+		g_signal_connect_swapped( ret, "drag_begin", G_CALLBACK(self_drag_begin), ich );
+		g_signal_connect_swapped( ret, "drag_end", G_CALLBACK(self_drag_end), ich );
 
 		gtk_drag_dest_set( ret, GTK_DEST_DEFAULT_DROP, &targette, 1, GDK_ACTION_COPY );
-		g_signal_connect_swapped( ret, "drag_data_received", self_drag_data_received, ich );
+		g_signal_connect_swapped( ret, "drag_data_received", G_CALLBACK(self_drag_data_received), ich );
 
 		return ret;
 	}
 
 	override (Gtk:Action) Gtk:Widget *create_tool_item( Gtk:Action *self ) {
 
-		Self *ich = self;
+		Self *ich = SELF(self);
 		GtkWidget *ret = PARENT_HANDLER( self );
 
 		gtk_drag_source_set( ret, GDK_BUTTON1_MASK, &targette, 1, GDK_ACTION_COPY );
-		g_signal_connect_swapped( ret, "drag_data_get", self_drag_data_get, ich );
+		g_signal_connect_swapped( ret, "drag_data_get", G_CALLBACK(self_drag_data_get), ich );
 
 		gtk_drag_dest_set( ret, GTK_DEST_DEFAULT_DROP, &targette, 1, GDK_ACTION_COPY );
-		g_signal_connect_swapped( ret, "drag_data_received", self_drag_data_received, ich );
+		g_signal_connect_swapped( ret, "drag_data_received", G_CALLBACK(self_drag_data_received), ich );
 
 		return ret;
 	}

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -125,7 +126,7 @@ PRIVATE void unpickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore 
 	ObjectStoreDatum *datum = objectstore_datum_array_get(seq, j);
 
 	data->sequence[i] = g_list_append(data->sequence[i],
-					  (gpointer) objectstore_datum_integer_value(datum));
+					  (gpointer) (intptr_t) objectstore_datum_integer_value(datum));
       }
     }
   } else {
@@ -155,7 +156,7 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
     objectstore_datum_array_set(array, i, seq);
 
     for (j = 0; j < len; j++, curr = g_list_next(curr))
-      objectstore_datum_array_set(seq, j, objectstore_datum_new_integer((int) curr->data));
+      objectstore_datum_array_set(seq, j, objectstore_datum_new_integer((intptr_t) curr->data));
   }
 }
 
@@ -192,7 +193,7 @@ PRIVATE void evt_clock_handler(Generator *g, AEvent *event) {
     GList *entry = g_list_nth(data->sequence[data->play], data->step);
 
     if (entry != NULL) {
-      event->d.number = (int) entry->data;
+      event->d.number = (intptr_t) entry->data;
       gen_send_events(g, EVT_PLAY_OUT, -1, event);
     }
   }
@@ -235,7 +236,7 @@ PRIVATE void evt_transport_handler(Generator *g, AEvent *event) {
     GList *entry = g_list_nth(data->sequence[data->play], data->step);
 
     if (entry != NULL) {
-      event->d.number = (int) entry->data;
+      event->d.number = (intptr_t) entry->data;
       gen_send_events(g, EVT_PLAY_OUT, -1, event);
     }
   }
@@ -253,7 +254,7 @@ PRIVATE void evt_transport_handler(Generator *g, AEvent *event) {
   }
 }
 PRIVATE void entry_adder(gpointer data, gpointer user_data) {
-  int num = (int) data;
+  int num = (intptr_t) data;
   GtkCList *list = user_data;
   gchar buf[32];
   gchar *texts[2] = { buf, NULL };
@@ -287,7 +288,7 @@ PRIVATE void add_entry(GtkWidget *widget, GtkEntry *entry) {
 
   //gtk_entry_set_text(entry, "");
 
-  data->sequence[data->edit] = g_list_append(data->sequence[data->edit], (gpointer) num);
+  data->sequence[data->edit] = g_list_append(data->sequence[data->edit], (gpointer) (intptr_t) num);
   data->list_refresh_needed = TRUE;
   update_list(GTK_CLIST(gtk_object_get_data(GTK_OBJECT(entry), "List")));
 }
@@ -307,7 +308,7 @@ PRIVATE void del_entry(GtkWidget *widget, GtkCList *list) {
   int i;
 
   for (i = 0; i < len; i++, curr = g_list_next(curr)) {
-    GList *cell = g_list_find_custom(selection, (gpointer) i, find_row);
+    GList *cell = g_list_find_custom(selection, (gpointer) (intptr_t) i, find_row);
 
     if (cell == NULL)
       newlist = g_list_append(newlist, curr->data);

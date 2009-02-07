@@ -224,7 +224,7 @@ PRIVATE void init_scope( Control *control, int w, int h ) {
 }
 
 PRIVATE void done_scope(Control *control) {
-    GtkWidget *tmp = control->widget;
+    //GtkWidget *tmp = control->widget;
     control->widget = NULL;
     //gtk_widget_destroy( tmp );
 }

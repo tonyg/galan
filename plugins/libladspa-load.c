@@ -52,7 +52,7 @@ LADSPADirectoryPluginSearch
       /* This is a file and the file is a shared library! */
 
       //dlerror();
-      if( g_module_symbol(psPluginHandle, "ladspa_descriptor", &fDescriptorFunction ) ) {
+      if( g_module_symbol(psPluginHandle, "ladspa_descriptor", (gpointer) &fDescriptorFunction ) ) {
 	/* We've successfully found a ladspa_descriptor function. Pass
            it to the callback function. */
 	fCallbackFunction(pcFilename,

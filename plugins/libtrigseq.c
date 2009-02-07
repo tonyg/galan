@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
@@ -134,7 +135,7 @@ PRIVATE void evt_step_handler(Generator *g, AEvent *event) {
 }
 
 PRIVATE void toggled_handler(GtkWidget *widget, gpointer userdata) {
-  int step = (int) userdata;
+  int step = (intptr_t) userdata;
   Control *c = gtk_object_get_data(GTK_OBJECT(widget), "Control");
   Data *data = c->g->data;
 
@@ -280,7 +281,7 @@ PRIVATE void init_pattern(Control *control) {
   for (i = 0; i < SEQUENCE_LENGTH; i++) {
     GtkWidget *b = gtk_toggle_button_new();
     gtk_object_set_data(GTK_OBJECT(b), "Control", control);
-    gtk_signal_connect(GTK_OBJECT(b), "toggled", GTK_SIGNAL_FUNC(toggled_handler), (gpointer) i);
+    gtk_signal_connect(GTK_OBJECT(b), "toggled", GTK_SIGNAL_FUNC(toggled_handler), (gpointer) (intptr_t)i);
     gtk_box_pack_start(GTK_BOX(hb), b, FALSE, FALSE, 0);
     gtk_widget_set_usize(b, 12, 16);
     gtk_widget_show(b);

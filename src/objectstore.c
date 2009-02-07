@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <locale.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #include <glib.h>
 
@@ -120,7 +121,7 @@ PRIVATE void objectstore_write_objectstoredatum(FILE *f, ObjectStoreDatum *datum
       break;
 
     case OSI_KIND_STRING:
-      fprintf(f, "s%d:%s:", strlen(datum->d.string), datum->d.string);
+      fprintf(f, "s%d:%s:", (int)strlen(datum->d.string), datum->d.string);
       break;
 
     case OSI_KIND_OBJECT:
@@ -192,8 +193,8 @@ PUBLIC gboolean objectstore_write(FILE *f, ObjectStore *db) {
 	  db->rootkey);
 
   for (i = 1; i < db->nextkey; i++)
-    objectstore_write_objectstoreitem((gpointer) i,
-				      g_hash_table_lookup(db->object_table, (gconstpointer) i),
+    objectstore_write_objectstoreitem((gpointer)(intptr_t) i,
+				      g_hash_table_lookup(db->object_table, (gconstpointer) (intptr_t) i),
 				      (gpointer) f);
   setlocale( LC_ALL, "" );
   return TRUE;
@@ -388,7 +389,7 @@ PUBLIC gboolean objectstore_read(FILE *f, ObjectStore *db) {
     while (!feof(f)) {
 	item = read_item(f);
 	if (item != NULL) {
-	    g_hash_table_insert(db->object_table, (gpointer) item->key, item);
+	    g_hash_table_insert(db->object_table, (gpointer) (intptr_t)item->key, item);
 	    item->db = db;
 	    db->nextkey = MAX(db->nextkey, item->key + 1);
 	}
@@ -420,7 +421,7 @@ PUBLIC void objectstore_set_root(ObjectStore *db, ObjectStoreItem *root) {
  */
 
 PUBLIC ObjectStoreItem *objectstore_get_root(ObjectStore *db) {
-  return g_hash_table_lookup(db->object_table, (gconstpointer) db->rootkey);
+  return g_hash_table_lookup(db->object_table, (gconstpointer) (intptr_t) db->rootkey);
 }
 
 
@@ -448,7 +449,7 @@ PUBLIC ObjectStoreItem *objectstore_get_item(ObjectStore *db, gpointer object) {
  */
 
 PUBLIC ObjectStoreItem *objectstore_get_item_by_key(ObjectStore *db, ObjectStoreKey key) {
-  return g_hash_table_lookup(db->object_table, (gpointer) key);
+  return g_hash_table_lookup(db->object_table, (gpointer) (intptr_t)  key);
 }
 
 /**
@@ -470,8 +471,8 @@ PUBLIC ObjectStoreItem *objectstore_new_item(ObjectStore *db, char *tag, gpointe
   item->db = db;
   item->fields = g_hash_table_new(g_str_hash, g_str_equal);
 
-  g_hash_table_insert(db->object_table, (gpointer) item->key, item);
-  g_hash_table_insert(db->key_table, object, (gpointer) item->key);
+  g_hash_table_insert(db->object_table, (gpointer) (intptr_t) item->key, item);
+  g_hash_table_insert(db->key_table, object, (gpointer)(intptr_t)  item->key);
 
   return item;
 }
@@ -517,7 +518,7 @@ PUBLIC void objectstore_set_object(ObjectStoreItem *item, gpointer object) {
     }
 
     item->object = object;
-    g_hash_table_insert(item->db->key_table, item->object, (gpointer) item->key);
+    g_hash_table_insert(item->db->key_table, item->object, (gpointer)(intptr_t)  item->key);
 }
 
 /**
@@ -598,7 +599,7 @@ PUBLIC ObjectStoreItem *objectstore_item_get_object(ObjectStoreItem *item, char 
     return NULL;
 
   RETURN_VAL_UNLESS(datum->kind == OSI_KIND_OBJECT, NULL);
-  return g_hash_table_lookup(item->db->object_table, (gconstpointer) datum->d.object_key);
+  return g_hash_table_lookup(item->db->object_table, (gconstpointer) (intptr_t) datum->d.object_key);
 }
 
 /**

@@ -124,6 +124,7 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   g_thread_init(NULL);
   
   gdk_threads_init();
+  gdk_threads_enter();
   main_thread = g_thread_self();
   gtk_set_locale();
   gtk_init(&argc, &argv);
@@ -169,7 +170,6 @@ PUBLIC int galan_main(int argc, char *argv[]) {
 
 
 
-  gdk_threads_enter();
   gtk_main();
   gdk_threads_leave();
 

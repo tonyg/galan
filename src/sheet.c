@@ -34,7 +34,12 @@
 #include "shcomp.h"
 #include "msgbox.h"
 
+#include "galan-compaction.h"
+
 #define GEN_AREA_LENGTH		2048
+
+// TODO: i guess these need to be global somewhere.
+static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
 
 enum SheetModes {
   SHEET_MODE_NORMAL = 0,	    /**< nothing happening */
@@ -674,6 +679,30 @@ PRIVATE gboolean do_sheet_event(GtkWidget *w, GdkEvent *e) {
     return FALSE;
 }
 
+PRIVATE void  
+drag_data_received (GtkWidget          *widget,
+                    GdkDragContext     *drag_context,
+                    gint                x,
+                    gint                y,
+                    GtkSelectionData   *data,
+                    guint               info,
+                    guint               time,
+		    Sheet *sheet)
+{
+  if ((data->length >= 0) && (data->format == 8))
+    {
+      GalanCompAction *compaction = * (GalanCompAction **)data->data;
+
+      //gtk_action_activate( compaction );
+      galan_compaction_create_comp( compaction, sheet, x, y );
+
+         
+      gtk_drag_finish (drag_context, TRUE, FALSE, time);
+      return;
+    }
+      
+   gtk_drag_finish (drag_context, FALSE, FALSE, time);
+}
 
 PRIVATE void sheet_set_dirty( Sheet *s, gboolean d ) {
     s->dirty = d;
@@ -798,6 +827,9 @@ PUBLIC Sheet *create_sheet( void ) {
   
   //gui_register_sheet( sheet );
 
+
+  gtk_drag_dest_set( sheet->drawingwidget, GTK_DEST_DEFAULT_ALL, &targette, 1, GDK_ACTION_COPY );
+  g_signal_connect( G_OBJECT( sheet->drawingwidget ), "drag_data_received", G_CALLBACK( drag_data_received ), sheet );
 
   //sheet->control_panel = control_panel_new( sheet->name );
   sheet_set_dirty( sheet, FALSE );

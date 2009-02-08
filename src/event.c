@@ -68,25 +68,6 @@ PRIVATE void aevent_copy( AEvent *src, AEvent *dst ) {
 	
 }
 
-//PRIVATE void aevent_free( AEvent *e ) {
-//
-//    if( e ) {
-//	switch( e->kind ) {
-//	    case AE_STRING:
-//		if( e->d.string != NULL )
-//		    safe_free( e->d.string );
-//		break;
-//	    case AE_NUMARRAY:
-//		if( e->d.array.numbers != NULL )
-//		    safe_free( e->d.array.numbers );
-//		break;
-//	    default:
-//	    	break;
-//	}
-//	safe_free( e );
-//    }
-//}
-
 PRIVATE void eventq_free( EventQ *evq ) {
 
     if( evq ) {
@@ -106,7 +87,7 @@ PRIVATE void eventq_free( EventQ *evq ) {
 	    default:
 	    	break;
 	}
-	safe_free( evq );
+	g_slice_free1( sizeof(EventQ), evq );
     }
 }
 
@@ -125,7 +106,7 @@ PRIVATE void eventq_free( EventQ *evq ) {
  */
 
 PUBLIC void gen_post_aevent(AEvent *e) {
-  EventQ *q = safe_malloc(sizeof(EventQ));
+  EventQ *q = g_slice_alloc(sizeof(EventQ));
 
   aevent_copy( e, &(q->e) );
 

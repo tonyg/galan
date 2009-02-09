@@ -136,21 +136,24 @@ PUBLIC void comp_create_action( char *menuitem, ComponentClass *k, gpointer init
     char *base = "/ui/MainMenu/AddComp";
     char *mpath = g_strdup_printf( "%s/%s", base, menuitem );
 
-//    GtkAction *action = g_object_new( COMPACTION_TYPE, 
-//	    "component-class", k, 
-//	    "init-data", init_data, 
-    GtkAction *action = g_object_new( GALAN_TYPE_COMPACTION, 
-	    "klass", k, 
-	    "init_data", init_data, 
+    GtkAction *action;
 
-	    "name", g_strdup(name),
-	    "label", long_name,
-	    "short-label", g_strdup(name),
-	    "hide-if-empty", FALSE,
+    action = gtk_action_group_get_action( component_actiongroup, name );
 
-	    NULL );
+    if( action == NULL ) {
+	action = g_object_new( GALAN_TYPE_COMPACTION, 
+		"klass", k, 
+		"init_data", init_data, 
 
-    gtk_action_group_add_action( component_actiongroup, action );
+		"name", g_strdup(name),
+		"label", long_name,
+		"short-label", g_strdup(name),
+		"hide-if-empty", FALSE,
+
+		NULL );
+
+	gtk_action_group_add_action( component_actiongroup, action );
+    }
 
     char *dir_path = g_path_get_dirname( mpath);
     ensure_path_exists( dir_path, base );

@@ -39,12 +39,20 @@
 
 PRIVATE jack_client_t *jack_client = NULL;
 
+PRIVATE jack_port_t *midi_control_port = NULL;
+
 PRIVATE AClock *jack_clock = NULL;
 
 PRIVATE GList *transport_clocks = NULL;
 PRIVATE GList *jack_process_callbacks = NULL;
 
 PRIVATE SAMPLETIME jack_timestamp = 0;
+
+PRIVATE Control *midi_map[128];
+PRIVATE Control *midilearn_target = NULL;
+PRIVATE int      midilearn_CC = 0;
+
+// Registering Process Callbacks (used for midi ports)
 
 typedef struct jack_process_callback_t {
   Generator *g;
@@ -77,6 +85,9 @@ PUBLIC void galan_jack_deregister_process_handler(Generator *g, jack_process_han
   }
 }
 
+
+// Registering of transport callbacks.
+
 typedef struct transport_frame_event_t {
   Generator *g;
   transport_frame_event_handler_t handler;
@@ -92,6 +103,7 @@ PUBLIC void galan_jack_register_transport_clock( Generator *g, transport_frame_e
     new_cb->handler = handler;
     transport_clocks = g_list_append( transport_clocks, new_cb );
 }
+
 PUBLIC void galan_jack_deregister_transport_clock( Generator *g, transport_frame_event_handler_t handler ) {
 
   transport_frame_event_t jpc;
@@ -108,13 +120,71 @@ PUBLIC void galan_jack_deregister_transport_clock( Generator *g, transport_frame
   }
 }
 
-PUBLIC SAMPLETIME galan_jack_get_timestamp( void ) {
-	return jack_timestamp;
+
+// Midi Learn
+
+PUBLIC void midilearn_set_target_control( Control *c ) {
+    midilearn_target = c;
 }
+
+PUBLIC int midilearn_check_result( void ) {
+    if( midilearn_target != NULL )
+	return -1;
+
+    return midilearn_CC;
+}
+	
+
+// Helpers.
+
+PUBLIC SAMPLETIME galan_jack_get_timestamp( void ) {
+    return jack_timestamp;
+}
+
+PUBLIC jack_client_t *galan_jack_get_client(void) {
+    return jack_client;
+}
+
+
+PRIVATE void process_midi_control_port( jack_nframes_t nframes ) {
+
+	int i;
+	void *port_buffer = jack_port_get_buffer( midi_control_port, nframes );
+	jack_nframes_t num_jackevents = jack_midi_get_event_count( port_buffer );
+	jack_midi_event_t jackevent;
+
+	for( i=0; i<num_jackevents; i++ ) {
+		if( jack_midi_event_get( &jackevent, port_buffer, i ) != 0 )
+			break;
+
+		if( (jackevent.buffer[0] & 0xf0) == 0xb0 && midilearn_target ) {
+			midilearn_CC = jackevent.buffer[1];
+			midi_map[midilearn_CC] = midilearn_target;
+			midilearn_target = NULL;
+		} else if( (jackevent.buffer[0] & 0xf0) == 0xb0 && midi_map[jackevent.buffer[1]] != NULL ) {
+			// midi mapped.
+			Control *c = midi_map[jackevent.buffer[1]];
+			if( c != NULL ) {
+			    // XXX: need to lock control here.
+			    // and send out the data.
+			    gdouble rng = c->max - c->min;
+			    gdouble cc  = jackevent.buffer[2];
+			    gdouble val = c->min + rng * cc/127.0;
+
+			    control_emit( c, val );
+
+			}
+
+		} 
+	}
+}
+// Process_CB
 
 PRIVATE int process_callback( jack_nframes_t nframes, void *data ) {
 
     jack_timestamp = gen_get_sampletime();
+
+    process_midi_control_port( nframes );
 
     if( transport_clocks ) {
 	//jack_transport_info_t trans_info;
@@ -182,17 +252,21 @@ PRIVATE void clock_handler(AClock *clock, AClockReason reason) {
     }
 }
 
-PUBLIC jack_client_t *galan_jack_get_client(void) {
-    return jack_client;
-}
+
+// Init/done
 
 PUBLIC void init_jack(void) {
 
+    int i;
     jack_client = jack_client_open( "galan", 0, NULL );
     if (jack_client == NULL) {
 	    popup_msgbox("Error", MSGBOX_OK, 120000, MSGBOX_OK,
 			    "Could not open Jack Client");
 	    exit(10);
+    }
+    midi_control_port = jack_port_register ( jack_client, "control", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+    for(i=0; i<128; i++ ) {
+	midi_map[i] = NULL;
     }
 }
 
@@ -200,6 +274,7 @@ PUBLIC void run_jack(void) {
     jack_clock = gen_register_clock(NULL, "Jack Clock", clock_handler);
     gen_select_clock(jack_clock);
 }
+
 PUBLIC void done_jack(void) {
     jack_deactivate( jack_client );
     jack_client_close( jack_client );

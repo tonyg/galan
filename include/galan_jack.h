@@ -27,6 +27,7 @@ typedef void (*jack_process_handler_t)(Generator *g, jack_nframes_t nframes);
 typedef void (*transport_frame_event_handler_t)( Generator *g, SAMPLETIME frame, SAMPLETIME numframes, double bpm );
 
 extern jack_client_t *galan_jack_get_client(void);
+extern void midilearn_set_target_control( Control *c );
 
 extern void galan_jack_register_process_handler( Generator *g, jack_process_handler_t handler );
 extern void galan_jack_deregister_process_handler(Generator *g, jack_process_handler_t func);

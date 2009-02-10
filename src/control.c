@@ -428,6 +428,10 @@ PRIVATE void rename_ctrl_handler(GtkWidget *widget, Control *c) {
 	       (MsgBoxResponseHandler) ctrl_rename_handler, c);
 }
 
+PRIVATE void midi_learn_handler(GtkWidget *widget, Control *c) {
+  midilearn_set_target_control( c );
+}
+
 PRIVATE void control_visible_ctrl_handler(GtkWidget *widget, Control *c) {
 
     c->control_visible = !(c->control_visible);
@@ -590,6 +594,13 @@ PRIVATE void popup_menu(Control *c, GdkEventButton *be) {
       gtk_menu_append(GTK_MENU(menu), item);
       gtk_signal_connect(GTK_OBJECT(item), "toggled", GTK_SIGNAL_FUNC(control_panel_sizer_visible_ctrl_handler), c);
 
+  }
+
+  if( c->desc->kind == CONTROL_KIND_KNOB || c->desc->kind == CONTROL_KIND_SLIDER ) {
+      item = gtk_menu_item_new_with_label("MIDI Learn");
+      gtk_widget_show(item);
+      gtk_menu_append(GTK_MENU(menu), item);
+      gtk_signal_connect(GTK_OBJECT(item), "activate", GTK_SIGNAL_FUNC(midi_learn_handler), c);
   }
 
   gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
@@ -840,7 +851,6 @@ PUBLIC void control_kill_control(Control *c) {
   if (c->g != NULL)
     gen_deregister_control(c->g, c);
 
-  //gdk_threads_enter();
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );
   //gtk_widget_hide(c->whole);
@@ -851,13 +861,10 @@ PUBLIC void control_kill_control(Control *c) {
   if (c->name != NULL)
     safe_free(c->name);
 
-  //gdk_threads_leave();
-  //
-
-
 
   safe_free(c);
-  // FIXING a race condition with the updater_thread. let the updater delete the control.
+  // TODO: a race condition with the updater_thread. let the updater delete the control.
+  // need to add a lock for the controls list.
   //c->kill_me = TRUE;
   //control_update_value( c );
 }

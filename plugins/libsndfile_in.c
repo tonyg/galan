@@ -74,6 +74,7 @@ PRIVATE void destroy_instance(Generator *g) {
 PRIVATE gboolean try_load(Generator *g, const char *filename, gboolean verbose) {
   Data *data = g->data;
   SAMPLE *inbuf;
+  SAMPLE *old_buf;
   gboolean success = FALSE;
   /* For RAW loading: */
   SNDFILE *f = NULL;
@@ -107,13 +108,16 @@ PRIVATE gboolean try_load(Generator *g, const char *filename, gboolean verbose) 
   if( sf_readf_float( f, inbuf, sfi.frames ) != sfi.frames )
       g_print( "did not read all data !!!\n" );
   
+  old_buf = data->sample;
 
-  if (data->sample != NULL)
-    safe_free(data->sample);
 
   data->frames = sfi.frames;
   data->channels = sfi.channels;
   data->sample = inbuf;
+
+  // TODO: add lock. 
+  if ( old_buf != NULL)
+    safe_free(old_buf);
 
   return TRUE;
 }
@@ -241,6 +245,7 @@ PRIVATE void evt_name_handler( Generator *g, AEvent *event ) {
 	return;
     }
 
+    // TODO: make RT safe.
     if( try_load( g, event->d.string, FALSE ) ) {
     	    if( data->filename )
 	    	g_free( data->filename );

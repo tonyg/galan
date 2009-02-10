@@ -127,6 +127,16 @@ PUBLIC void midilearn_set_target_control( Control *c ) {
     midilearn_target = c;
 }
 
+PUBLIC void midilearn_remove_control( Control *c ) {
+    int i;
+    for( i=0; i<128; i++ ) {
+	if( midi_map[i] == c ) {
+	    midi_map[i] = NULL;
+	    break;
+	}
+    }
+}
+
 PUBLIC int midilearn_check_result( void ) {
     if( midilearn_target != NULL )
 	return -1;

@@ -322,6 +322,7 @@ PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
       g->last_buffers[i] = safe_malloc( sizeof(SAMPLE) * MAXIMUM_REALTIME_STEP );
 
   g->controls = NULL;
+  g->controls_mutex = g_mutex_new();
 
   g->data = NULL;
 
@@ -404,6 +405,7 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
     int i;
     while( (g = g_async_queue_pop( gen_kill_queue_stage2 )) != (gpointer) -1 )
     {
+	g_mutex_lock( g->controls_mutex );
 	if (g->controls != NULL) {
 	    GList *c = g->controls;
 	    g->controls = NULL;
@@ -412,12 +414,13 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
 		GList *tmp = g_list_next(c);
 
 		gdk_threads_enter();
-		control_kill_control(c->data);
+		control_kill_control(c->data, TRUE);
 		gdk_threads_leave();
 		//g_list_free_1(c);
 		c = tmp;
 	    }
 	}
+	g_mutex_unlock( g->controls_mutex );
 	if (g->klass->destroy_instance != NULL)
 	    g->klass->destroy_instance(g);
 
@@ -427,6 +430,7 @@ PRIVATE gint gen_kill_generator_stage2_thread() {
 		safe_free(g->last_buffers[i]);
 
 
+	g_mutex_free( g->controls_mutex );
 	safe_free(g->name);
 	safe_free(g->in_events);
 	safe_free(g->out_events);
@@ -521,6 +525,7 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
 	g->last_buffers[i] = safe_malloc( sizeof(SAMPLE) * MAXIMUM_REALTIME_STEP );
 
     g->controls = NULL;
+    g->controls_mutex = g_mutex_new();
     g->data = NULL;
 
     if (g->klass->unpickle_instance != NULL)
@@ -583,9 +588,11 @@ PUBLIC ObjectStoreItem *gen_pickle(Generator *g, ObjectStore *db) {
     if (g->klass->pickle_instance != NULL)
       g->klass->pickle_instance(g, item, db);
 
+    g_mutex_lock( g->controls_mutex );
     objectstore_item_set(item, "controls",
 			 objectstore_create_list_of_items(g->controls, db,
 							  (objectstore_pickler_t) control_pickle));
+    g_mutex_unlock( g->controls_mutex );
   }
 
   return item;
@@ -663,10 +670,12 @@ PUBLIC Generator *gen_clone( Generator *src, ControlPanel *cp ) {
 
     objectstore_kill_objectstore( db );
 
+    g_mutex_lock( src->controls_mutex );
     for( controlX = src->controls; controlX; controlX = g_list_next( controlX ) ) {
 	Control *c = controlX->data;
 	control_clone( c, dst, cp );
     }
+    g_mutex_unlock( src->controls_mutex );
 
     return dst;
 }
@@ -837,7 +846,9 @@ PUBLIC void gen_mainloop_do_checks( void ) {
  */
 
 PUBLIC void gen_register_control(Generator *g, Control *c) {
+    g_mutex_lock( g->controls_mutex );
   g->controls = g_list_prepend(g->controls, c);
+    g_mutex_unlock( g->controls_mutex );
 }
 
 /** \brief Tells the Generator that a Control is no more.
@@ -848,8 +859,12 @@ PUBLIC void gen_register_control(Generator *g, Control *c) {
  * \note This needs to get thread_safe.
  */
 
-PUBLIC void gen_deregister_control(Generator *g, Control *c) {
+PUBLIC void gen_deregister_control(Generator *g, Control *c, gboolean lock_taken) {
+	if( !lock_taken )
+    g_mutex_lock( g->controls_mutex );
   g->controls = g_list_remove(g->controls, c);
+	if( !lock_taken )
+    g_mutex_unlock( g->controls_mutex );
   //GList *cl = g_list_find( g->controls, c );
   //cl->data = NULL;
 }
@@ -874,14 +889,17 @@ PUBLIC void gen_update_controls(Generator *g, int index) {
     GList *cs = g->controls;
     ControlDescriptor *desc = (index == -1) ? NULL : &g->klass->controls[index];
 
-    while (cs != NULL) {
-	Control *c = cs->data;
+    if( g_mutex_trylock( g->controls_mutex ) ) {
+	while (cs != NULL) {
+	    Control *c = cs->data;
 
-	if (desc == NULL || c->desc == desc) {
-	    control_update_value(c);  
+	    if (desc == NULL || c->desc == desc) {
+		control_update_value(c);  
+	    }
+	    cs = g_list_next(cs);
+
 	}
-	cs = g_list_next(cs);
-
+	g_mutex_unlock( g->controls_mutex );
     }
 }
 

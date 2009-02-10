@@ -33,6 +33,7 @@
 #include "gtkslider.h"
 #include "msgbox.h"
 #include "sheet.h"
+#include "galan_jack.h"
 
 #define GAUGE_SIZE 32
 #define GRANULARITY 1
@@ -167,7 +168,7 @@ PRIVATE void update_entry(GtkAdjustment *adj, GtkEntry *entry) {
 }
 
 PRIVATE void delete_ctrl_handler(GtkWidget *widget, Control *c) {
-  control_kill_control(c);
+  control_kill_control(c, FALSE);
 }
 
 #if 0
@@ -845,11 +846,13 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
  * So make sure you hold the gdk-lock when you call this function.
  */
 
-PUBLIC void control_kill_control(Control *c) {
+PUBLIC void control_kill_control(Control *c, gboolean lock_taken) {
   g_return_if_fail(c != NULL);
 
+  midilearn_remove_control( c );
+
   if (c->g != NULL)
-    gen_deregister_control(c->g, c);
+    gen_deregister_control(c->g, c, lock_taken);
 
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );

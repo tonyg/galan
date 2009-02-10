@@ -258,7 +258,8 @@ struct Generator {
   gboolean *last_results;
 
   /* Controls */
-  GList *controls;
+  GList  *controls;
+  GMutex *controls_mutex;
 
   /* per-class data */
   void *data;
@@ -316,7 +317,7 @@ extern void gen_unlink(EventLink *lnk);
 /*=======================================================================*/
 /* Managing controls for Generators */
 extern void gen_register_control(Generator *g, Control *c);
-extern void gen_deregister_control(Generator *g, Control *c);
+extern void gen_deregister_control(Generator *g, Control *c, gboolean lock_taken);
 extern void gen_update_controls(Generator *g, int index); /* not very elegant */
 
 /*=======================================================================*/

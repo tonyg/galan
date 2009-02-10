@@ -137,7 +137,7 @@ struct Control {
 extern GtkWidget *control_panel;
 
 extern Control *control_new_control(ControlDescriptor *desc, Generator *g, ControlPanel *panel );
-extern void control_kill_control(Control *c);
+extern void control_kill_control(Control *c, gboolean lock_taken);
 
 extern Control *control_unpickle(ObjectStoreItem *item);
 extern ObjectStoreItem *control_pickle(Control *c, ObjectStore *db);

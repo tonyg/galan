@@ -294,7 +294,7 @@ PRIVATE void shcomp_destroy(Component *c) {
   sheet_unregister_ref( d->sheet, c );
 
   if( !sheet_has_refs( d->sheet ) && d->sheet->panel_control_active )
-      control_kill_control( d->sheet->panel_control );
+      control_kill_control( d->sheet->panel_control, FALSE );
 
   if( !sheet_has_refs( d->sheet ) && ! d->sheet->visible )
       sheet_remove( d->sheet );

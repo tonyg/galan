@@ -53,6 +53,9 @@ PUBLIC ObjectStore *objectstore_new_objectstore(void) {
 }
 
 PRIVATE void objectstore_kill_objectstoredatum(ObjectStoreDatum *datum) {
+  if( !datum ) {
+      return;
+  }
   switch (datum->kind) {
     case OSI_KIND_STRING:
       free(datum->d.string);
@@ -111,6 +114,10 @@ PUBLIC void objectstore_kill_objectstore(ObjectStore *db) {
 }
 
 PRIVATE void objectstore_write_objectstoredatum(FILE *f, ObjectStoreDatum *datum) {
+  if( !datum ) {
+      fprintf(f, "n");
+      return;
+  }
   switch (datum->kind) {
     case OSI_KIND_INT:
       fprintf(f, "i%d", datum->d.integer);
@@ -271,6 +278,9 @@ PRIVATE ObjectStoreDatum *read_item_field_value(FILE *f) {
       result = objectstore_datum_new_binary(len, buf);
       free(buf);
       return result;
+    }
+    case 'n': {
+      return NULL;
     }
 
     default:
@@ -823,6 +833,8 @@ PUBLIC char *objectstore_datum_string_value(ObjectStoreDatum *datum) {
  */
 
 PUBLIC ObjectStoreKey objectstore_datum_object_key(ObjectStoreDatum *obj) {
+  if( obj == NULL )
+	  return 0;
   RETURN_VAL_UNLESS(obj->kind == OSI_KIND_OBJECT, 0);
   return obj->d.object_key;
 }

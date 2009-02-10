@@ -144,7 +144,30 @@ PUBLIC int midilearn_check_result( void ) {
     return midilearn_CC;
 }
 	
+PUBLIC ObjectStoreDatum *midi_map_pickle(ObjectStore *db) {
+  ObjectStoreDatum *result = objectstore_datum_new_array(128);
+  int i;
 
+  for (i = 0; i < 128; i++) {
+	  if( midi_map[i] )
+		  objectstore_datum_array_set(result, i, objectstore_datum_new_object(control_pickle(midi_map[i], db)));
+	  else
+		  objectstore_datum_array_set( result, i, NULL );
+  }
+
+  return result;
+}
+
+PUBLIC void unpickle_midi_map_array(ObjectStoreDatum *array, ObjectStore *db) {
+  int i, len;
+  len = objectstore_datum_array_length(array);
+  for (i = 0; i < len; i++) {
+    ObjectStoreDatum *elt = objectstore_datum_array_get(array, i);
+    ObjectStoreItem *item = objectstore_get_item_by_key(db, objectstore_datum_object_key(elt));
+    if( item )
+	    midi_map[i] = control_unpickle(item);
+  }
+}
 // Helpers.
 
 PUBLIC SAMPLETIME galan_jack_get_timestamp( void ) {

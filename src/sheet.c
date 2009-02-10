@@ -1112,6 +1112,7 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
     if( s == NULL ) {
 
 	ObjectStoreDatum *sheetlist = objectstore_item_get( item, "sheets" );
+	ObjectStoreDatum *midi_map  = objectstore_item_get( item, "midi_map" );
 	
 	s=create_sheet( );
 	s->name = safe_string_dup( objectstore_item_get_string( item, "name", "strango" ) );
@@ -1137,6 +1138,9 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
 	if( sheetlist ) {
 	    objectstore_extract_list_of_items(sheetlist, item->db, 
 		    (objectstore_unpickler_t) sheet_unpickle);
+	}
+	if( midi_map ) {
+	    unpickle_midi_map_array( midi_map, item->db );
 	}
     }
     return s;
@@ -1250,9 +1254,11 @@ PUBLIC void sheet_saveto(Sheet *sheet, FILE *f, gboolean sheet_only ) {
 
   objectstore_set_root(db, root);
 
-  if( !sheet_only )
+  if( !sheet_only ) {
       objectstore_item_set(root, "sheets", objectstore_create_list_of_items(get_sheet_list(),
 		  db, (objectstore_pickler_t) sheet_pickle));
+      objectstore_item_set(root, "midi_map", midi_map_pickle( db ) );
+  }
 
   objectstore_write(f, db);
   objectstore_kill_objectstore(db);

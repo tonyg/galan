@@ -1,0 +1,62 @@
+
+<ui>
+	<menubar name='comp'>
+			<menu action='AddComp'>
+			<placeholder name='co'>
+			</placeholder>
+			</menu>
+	</menubar>
+	<menubar name='MainMenu'>
+		<menu action='FileMenu'>
+			<menuitem action='FileNew'/>
+			<menuitem action='FileOpen'/>
+			<menuitem action='FileSave'/>
+			<menuitem action='FileSaveAs'/>
+			<separator/>
+			<menuitem action='FileQuit'/>
+		</menu>
+		<menu action='SheetMenu'>
+			<menuitem action='SheetNew'/>
+			<separator/>
+			<menuitem action='SheetRename'/>
+			<menuitem action='SheetClone'/>
+			<separator/>
+			<menuitem action='SheetSave'/>
+			<menuitem action='SheetRegister'/>
+			<separator/>
+			<menuitem action='SheetUnconnect'/>
+			<menuitem action='SheetClear'/>
+			<menuitem action='SheetRemove'/>
+		</menu>
+		<menu action='EditMenu'>
+			<menuitem action='EditClone'/>
+			<menuitem action='EditCloneWConn'/>
+			<menuitem action='EditCloneNewSh'/>
+			<separator/>
+			<menuitem action='EditDelete'/>
+			<separator/>
+			<menuitem action='EditPreferences'/>
+		</menu>
+		<menu action='WindowsMenu'>
+			<menuitem action='ShowControlPanel'/>
+			<menuitem action='HideControlPanel'/>
+		</menu>
+		<menu action='ExtrasMenu'>
+			<menuitem action='About'/>
+			<menuitem action='SelectMasterClock'/>
+			<menuitem action='SwitchCPScreen'/>
+		</menu>
+		<menu action='AddComp'/>
+	</menubar>
+
+	<toolbar name='MainToolBar'>
+		<toolitem action='FileNew'/>
+		<toolitem action='FileOpen'/>
+		<toolitem action='FileSave'/>
+		<toolitem action='FileSaveAs'/>
+		<separator/>
+		<toolitem action='SheetNew'/>
+		<separator/>
+		<toolitem action='AddComp'/>
+	</toolbar>
+</ui>

@@ -702,7 +702,7 @@ PRIVATE void setup_ui_manager(void) {
 
 
   GError *err = NULL;
-  int ret = gtk_ui_manager_add_ui_from_file( ui_manager, "/home/torbenh/galan.ui", &err );
+  int ret = gtk_ui_manager_add_ui_from_file( ui_manager, "galan.ui", &err );
   
   if( ret == 0 )
       printf( "Error loading ui file ;( Good Luck Without Menus\n" );

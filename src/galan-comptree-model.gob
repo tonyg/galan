@@ -25,6 +25,7 @@
 
 class Galan:CompTree:Model from Gtk:Tree:Store
 	(interface Gtk:Tree:Drag:Dest)
+	(interface Gtk:Tree:Drag:Source)
 {
 
 	init( self ) {
@@ -58,7 +59,7 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 				if( !strcmp( name, splitpath[i] ) ) {
 					found = 1;
 				}
-				free(name);
+				g_free(name);
 				olditer = *iter;
 			} while( (!found) && gtk_tree_model_iter_next( model, iter ) );
 			if( !found ) {
@@ -92,6 +93,45 @@ class Galan:CompTree:Model from Gtk:Tree:Store
 		g_strfreev( splitpath );
 		return FALSE;
 
+	}
+
+	interface Gtk:Tree:Drag:Source
+	private gboolean drag_data_delete( Gtk:Tree:Drag:Source *self, Gtk:Tree:Path *path ) {
+		GtkTreeIter iter;
+		GtkTreeStore *store = GTK_TREE_STORE( self );
+
+		if( ! gtk_tree_model_get_iter( GTK_TREE_MODEL(store), &iter, path ) ) {
+			return FALSE;
+		}
+		gtk_tree_store_remove( store, &iter );
+		return TRUE;
+	}
+
+	interface Gtk:Tree:Drag:Source
+	private gboolean drag_data_get( Gtk:Tree:Drag:Source *self, Gtk:Tree:Path *path, Gtk:Selection:Data *data ) {
+		GtkTreeStore *store = GTK_TREE_STORE( self );
+		gchar *target_name = gdk_atom_name( data->target );
+		if( strcmp( target_name, "galan/CompAction" ) == 0 ) {
+			GtkTreeIter iter;
+			GalanCompAction *compaction;
+			gboolean valid;
+
+			if( ! gtk_tree_model_get_iter( GTK_TREE_MODEL(store), &iter, path ) ) {
+				g_free( target_name );
+				return FALSE;
+			}
+			gtk_tree_model_get( GTK_TREE_MODEL(store), &iter, 1, &valid, 2, &compaction, -1 );
+			if( !valid ) {
+				g_free( target_name );
+				return FALSE;
+			}
+
+			gtk_selection_data_set( data, data->target, 8, (gpointer) &compaction, sizeof( GalanCompAction * ) );
+			g_free( target_name );
+			return TRUE;
+		}
+		g_free( target_name );
+		return FALSE;
 	}
 
 	interface Gtk:Tree:Drag:Dest

@@ -117,6 +117,7 @@ PRIVATE void experiment( void ) {
 
 static GtkTargetEntry targette = { "galan/CompAction", 0, 234 };
 gtk_tree_view_enable_model_drag_dest( tview, &targette, 1, GDK_ACTION_COPY );
+gtk_tree_view_enable_model_drag_source ( tview, GDK_BUTTON1_MASK, &targette, 1, GDK_ACTION_COPY );
     
 
     GtkWindow *win = GTK_WINDOW( gtk_window_new( GTK_WINDOW_TOPLEVEL ) );

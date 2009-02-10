@@ -16,14 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <jack/jack.h>
 
 #ifndef GALAN_JACK_H
 #define GALAN_JACK_H
 
+#include <jack/jack.h>
+#include "generator.h"
+
+typedef void (*jack_process_handler_t)(Generator *g, jack_nframes_t nframes);
+typedef void (*transport_frame_event_handler_t)( Generator *g, SAMPLETIME frame, SAMPLETIME numframes, double bpm );
+
 extern jack_client_t *galan_jack_get_client(void);
 
-extern void init_jack( void );
-extern void done_jack( void );
+extern void galan_jack_register_process_handler( Generator *g, jack_process_handler_t handler );
+extern void galan_jack_deregister_process_handler(Generator *g, jack_process_handler_t func);
 
+extern void galan_jack_register_transport_clock( Generator *g, transport_frame_event_handler_t handler );
+extern void galan_jack_deregister_transport_clock( Generator *g, transport_frame_event_handler_t handler );
+extern SAMPLETIME galan_jack_get_timestamp( void );
+
+extern void init_jack( void );
+extern void run_jack( void );
+extern void done_jack( void );
 #endif

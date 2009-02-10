@@ -148,7 +148,9 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   init_objectstore();
   init_plugins();
 
-  gui_add_comps();
+  run_jack();
+
+  //gui_add_comps();
   
   init_generator_thread();
   init_control_thread();

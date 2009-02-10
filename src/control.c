@@ -293,7 +293,8 @@ PUBLIC void control_update_bg(Control *c) {
 	gtk_widget_queue_draw( c->widget );
 
     } else {
-	gtk_style_set_background(c->widget->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
+	//gtk_style_set_background(c->widget->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
+	gtk_style_set_background(control_panel->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
     }
 }
 

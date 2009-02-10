@@ -130,7 +130,7 @@ PUBLIC int galan_main(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
   gdk_rgb_init();
 
-  gtk_rc_parse_string( "style \"trans\" { bg_pixmap[NORMAL] = \"<parent>\" } \nwidget \"control_panel.*.GtkLayout.*\" style \"trans\" " );
+  gtk_rc_parse_string( "style \"trans\" { bg_pixmap[NORMAL] = \"<parent>\" } \nwidget \"control_panel.GtkNotebook.GtkScrolledWindow.GtkLayout.*\" style \"trans\" " );
 
   init_jack();
   init_lash( argc, argv );

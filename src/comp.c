@@ -676,8 +676,8 @@ PUBLIC void comp_remove_connection(Connector *con, ConnectorReference *other) {
   GList *node = g_list_find_custom(con->refs, other, (GCompareFunc) connectorreference_equal);
   g_return_if_fail(node != NULL);
 
-  free(node->data);
   con->refs = g_list_remove_link(con->refs, node);
+  free(node->data);
   g_list_free_1(node);
 }
 

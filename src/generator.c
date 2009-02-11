@@ -317,6 +317,7 @@ PUBLIC Generator *gen_new_generator(GeneratorClass *k, char *name) {
   g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
   g->last_buflens = safe_calloc(k->out_sig_count, sizeof(int));
   g->last_results = safe_calloc(k->out_sig_count, sizeof(gboolean));
+  g->always_cache = safe_calloc(k->out_sig_count, sizeof(gboolean));
 
   for( i=0; i<k->out_sig_count; i++ )
       g->last_buffers[i] = safe_malloc( sizeof(SAMPLE) * MAXIMUM_REALTIME_STEP );
@@ -521,6 +522,7 @@ PUBLIC Generator *gen_unpickle(ObjectStoreItem *item) {
     g->last_buffers = safe_calloc(k->out_sig_count, sizeof(SAMPLE *));
     g->last_buflens = safe_calloc(k->out_sig_count, sizeof(int));
     g->last_results = safe_calloc(k->out_sig_count, sizeof(gboolean));
+    g->always_cache = safe_calloc(k->out_sig_count, sizeof(gboolean));
     for( i=0; i<k->out_sig_count; i++ )
 	g->last_buffers[i] = safe_malloc( sizeof(SAMPLE) * MAXIMUM_REALTIME_STEP );
 
@@ -1009,10 +1011,20 @@ PUBLIC gboolean gen_read_realtime_output(Generator *g, gint index, SAMPLE *buffe
   g_return_val_if_fail(index < g->klass->out_sig_count && index >= 0, FALSE);
   g_return_val_if_fail((g->klass->out_sigs[index].flags & SIG_FLAG_REALTIME) != 0, FALSE);
 
-  if (g_list_next(g->out_signals[index]) == NULL)
+  if (g_list_next(g->out_signals[index]) == NULL) {
     /* Don't bother caching the only output. */
+    if( g->last_sampletime[index] == gen_get_sampletime() ) {
+	// this looks like a loop.
+	// we must do something to break the cycle.
+	// XXX:
+	g->always_cache[index] = TRUE;
+	return FALSE;
+	// something smarter would be cool.
+	// we basically need to cache our output now.
+	// so we need to mark it for caching.
+    }
     return g->klass->out_sigs[index].d.realtime(g, buffer, buflen);
-  else {
+  } else {
     /* Cache for multiple outputs... you never know who'll be reading you, or how often */
     if (g->last_buffers[index] == NULL || g->last_sampletime[index] < gen_get_sampletime()) {
 	

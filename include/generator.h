@@ -256,6 +256,7 @@ struct Generator {
   SAMPLE **last_buffers;
   int *last_buflens;
   gboolean *last_results;
+  gboolean *always_cache;
 
   /* Controls */
   GList  *controls;

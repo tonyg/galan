@@ -858,9 +858,10 @@ PUBLIC void control_kill_control(Control *c, gboolean lock_taken) {
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );
   //gtk_widget_hide(c->whole);
-  gtk_container_remove(GTK_CONTAINER(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget), c->whole);
+  //gtk_container_remove(GTK_CONTAINER(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget), c->whole);
   g_object_unref( G_OBJECT(c->whole) );
   g_object_unref( G_OBJECT(c->panel == NULL ? global_panel->fixedwidget : c->panel->fixedwidget) );
+  gtk_widget_destroy( c->whole );
 
   if (c->name != NULL)
     safe_free(c->name);

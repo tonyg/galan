@@ -229,7 +229,7 @@ PRIVATE void run_plugin( Generator *g, int buflen ) {
 	      event.d.number = data->outevents[i];
 #else
 	  if( isnan(data->outevents[i]) || isinf( data->outevents[i]) ) {
-	      printf( "nan ... \n" );
+	      printf( "plugin %s, emits nan ... \n", g->name );
 	      event.d.number = 0.0;
 	  } else {
 	      event.d.number = data->outevents[i];

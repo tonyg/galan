@@ -607,7 +607,7 @@ PRIVATE void setup_class(void) {
 			     (AGenerator_pickle_t) midiinport_init_instance, NULL);
 
   gen_configure_event_output(k, 0,   "midi");
-  gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi In",
+  gencomp_register_generatorclass(k, FALSE, "Midi Events/Jack Midi In",
 				  NULL,
 				  NULL);
 
@@ -617,7 +617,7 @@ PRIVATE void setup_class(void) {
 			     (AGenerator_pickle_t) midioutport_init_instance, NULL);
 
   gen_configure_event_input(k, 0,   "midi", midioutport_midievent_handler);
-  gencomp_register_generatorclass(k, FALSE, "Misc/Jack Midi Out",
+  gencomp_register_generatorclass(k, FALSE, "Midi Events/Jack Midi Out",
 				  NULL,
 				  NULL);
 #endif

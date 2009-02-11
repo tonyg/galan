@@ -360,6 +360,7 @@ PUBLIC void gen_send_realtime_fns(AEvent *e) {
  */
 
 PUBLIC gint gen_mainloop_once(void) {
+  int loopcheck_counter=0;
 
   gen_sortin_aevents();
   gen_mainloop_do_checks();
@@ -381,6 +382,14 @@ PUBLIC gint gen_mainloop_once(void) {
     //free(e);
     eventq_free( e );
     gen_sortin_aevents();
+    loopcheck_counter += 1;
+    if( loopcheck_counter > 1000 ) {
+	    // We processed 1000 events now.
+	    // this seems to be an event loop.
+	    // let break out and, let events processing
+	    // lag behind.
+	    return MAXIMUM_REALTIME_STEP;
+    }
   }
 }
 

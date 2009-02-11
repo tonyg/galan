@@ -213,7 +213,6 @@ PRIVATE void run_plugin( Generator *g, int buflen ) {
   }
       
   data->ladspa_descriptor->run( data->instance_handle, buflen );
-  data->lastrun = gen_get_sampletime();
 
   for( i=0; i<outecount; i++ ) {
 
@@ -512,101 +511,44 @@ PRIVATE void pickle_instance(Generator *g, ObjectStoreItem *item, ObjectStore *d
 }
 
 
-PRIVATE gboolean output_generator0(Generator *g, SAMPLE *buf, int buflen) {
+PRIVATE gboolean output_generatorN(Generator *g, SAMPLE *buf, int buflen, int N ) {
   Data *data = g->data;
   int i;
 
-  if( data->lastrun != gen_get_sampletime() )
+  if( data->lastrun != gen_get_sampletime() ) {
+      data->lastrun = gen_get_sampletime();
       run_plugin( g, buflen );
+  }
 
   for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[0][i];
+      buf[i] = data->outsignals[N][i];
 
   return TRUE;
+}
+
+PRIVATE gboolean output_generator0(Generator *g, SAMPLE *buf, int buflen) {
+    return output_generatorN( g, buf, buflen, 0 );
 }
 PRIVATE gboolean output_generator1(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[1][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 1 );
 }
 PRIVATE gboolean output_generator2(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[2][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 2 );
 }
 PRIVATE gboolean output_generator3(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[3][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 3 );
 }
 PRIVATE gboolean output_generator4(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[4][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 4 );
 }
 PRIVATE gboolean output_generator5(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[5][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 5 );
 }
 PRIVATE gboolean output_generator6(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[6][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 6 );
 }
 PRIVATE gboolean output_generator7(Generator *g, SAMPLE *buf, int buflen) {
-  Data *data = g->data;
-  int i;
-
-  if( data->lastrun != gen_get_sampletime() )
-      run_plugin( g, buflen );
-
-  for( i=0; i<buflen; i++ )
-      buf[i] = data->outsignals[7][i];
-
-  return TRUE;
+    return output_generatorN( g, buf, buflen, 7 );
 }
 
 PRIVATE void evt_input_handler(Generator *g, AEvent *event) {

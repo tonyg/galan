@@ -306,7 +306,7 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
     SAMPLETIME offset = gen_get_sampletime() - galan_jack_get_timestamp();
 
 
-    in = jack_port_get_buffer( data->port, buflen );
+    in = jack_port_get_buffer( data->port, buflen+offset );
 
 
     for (i = 0; i < buflen; i++)

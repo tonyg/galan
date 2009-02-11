@@ -140,7 +140,7 @@ PRIVATE void evt_delay_handler(Generator *g, AEvent *event) {
   Data *data = g->data;
   int olddelay = data->delay;
 
-  data->delay_sec = MAX(0, event->d.number);
+  data->delay_sec = MAX((float)MAXIMUM_REALTIME_STEP/(float)SAMPLE_RATE, event->d.number);
   data->delay = GEN_DOUBLE_TO_INT(data->delay_sec * SAMPLE_RATE);
   gen_update_controls(g, DELAY_CONTROL_DELAY);
 

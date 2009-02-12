@@ -702,11 +702,10 @@ PRIVATE void setup_ui_manager(void) {
   gtk_ui_manager_insert_action_group( ui_manager, menu_actiongroup, 2 ); 
   gtk_ui_manager_insert_action_group( ui_manager, component_actiongroup, 0 ); 
 
-  GError *err = NULL;
-  int ret = gtk_ui_manager_add_ui_from_file( ui_manager, UIDIRIFY("galan.ui"), &err );
+  int ret = gtk_ui_manager_add_ui_from_file( ui_manager, UIDIRIFY("galan.ui"), NULL );
   
   if( ret == 0 ) {
-      ret = gtk_ui_manager_add_ui_from_file( ui_manager, "galan.ui", &err );
+      ret = gtk_ui_manager_add_ui_from_file( ui_manager, "galan.ui", NULL );
       if( ret == 0 )
 	      printf( "Error loading ui file ;( Good Luck Without Menus\n" );
   }

@@ -32,13 +32,15 @@
 #include "control.h"
 #include "gencomp.h"
 
-#if HAVE_FLOAT_SAMPLE == 1
+#ifdef HAVE_DOUBLE_SAMPLE 
 #if FFTW_PREFIX == 1
 #include <drfftw.h>
 #else
 #include <rfftw.h>
 #endif
-#else
+#endif
+
+#ifdef HAVE_FLOAT_SAMPLE
 #include <srfftw.h>
 #endif
 

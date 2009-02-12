@@ -25,13 +25,14 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 
+#include "config.h"
 #include "global.h"
 #include "generator.h"
 #include "comp.h"
 #include "control.h"
 #include "gencomp.h"
 
-#if SAMPLE == double
+#if HAVE_FLOAT_SAMPLE == 1
 #if FFTW_PREFIX == 1
 #include <drfftw.h>
 #else

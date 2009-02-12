@@ -109,10 +109,23 @@ if test x$LRDF_FOUND == "xyes"; then
   AC_SUBST(LRDF_LIBS)
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile plugins/Makefile plugins/gl/Makefile pixmaps/Makefile
-		 sheets/Makefile sheets/complex/Makefile sheets/drums/Makefile
-		 sheets/fx/Makefile sheets/misc/Makefile sheets/voices/Makefile
-		 sheets/experiments/Makefile sheets/controllers/Makefile
-		 sheets/gl/Makefile sheets/seq-voices/Makefile
-		 galan.spec])
-AC_OUTPUT
+AC_OUTPUT(
+Makefile
+src/Makefile
+plugins/Makefile
+plugins/gl/Makefile
+pixmaps/Makefile
+sheets/Makefile
+sheets/complex/Makefile
+sheets/drums/Makefile
+sheets/fx/Makefile
+sheets/misc/Makefile
+sheets/voices/Makefile
+sheets/experiments/Makefile
+sheets/controllers/Makefile
+sheets/gl/Makefile
+sheets/seq-voices/Makefile
+galan.spec
+)
+
+

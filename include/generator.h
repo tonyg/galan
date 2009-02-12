@@ -20,6 +20,7 @@
 #define Generator_H
 
 #include <math.h>
+#include "config.h"
 
 #define SAMPLE_RATE		gen_get_sample_rate()
 

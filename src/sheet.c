@@ -979,7 +979,9 @@ PUBLIC gboolean sheet_dont_like_be_destroyed( Sheet *sheet ) {
 		else
 		    return 1;
 	    case GTK_RESPONSE_REJECT:
+		sheet_set_dirty( sheet, FALSE );
 		return 0;
+				
 	    case GTK_RESPONSE_CANCEL:
 		return 1;
 	}
@@ -1025,6 +1027,7 @@ PUBLIC void sheet_clear(Sheet *sheet) {
 
 PUBLIC void sheet_remove( Sheet *sheet ) {
 
+	printf( "remove sheet %s \n", sheet->name );
     if( sheet_dont_like_be_destroyed( sheet ) )
 	return;
 
@@ -1142,6 +1145,7 @@ PUBLIC Sheet *sheet_unpickle( ObjectStoreItem *item ) {
 	if( midi_map ) {
 	    unpickle_midi_map_array( midi_map, item->db );
 	}
+	sheet_set_dirty( s, FALSE );
     }
     return s;
 }

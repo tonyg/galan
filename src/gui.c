@@ -168,11 +168,10 @@ PRIVATE void file_new_callback(gpointer userdata, guint action, GtkWidget *widge
     Sheet *s1;
 
     while( sheetX != NULL ) {
-	GList *temp = g_list_next( sheetX );
 	Sheet *s = sheetX->data;
 
 	sheet_remove( s );
-	sheetX = temp;
+	sheetX = get_sheet_list();
     }
 
     s1 = create_sheet( );

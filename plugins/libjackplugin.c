@@ -109,8 +109,8 @@ PRIVATE void audio_play_fragment(Data *data, SAMPLE *left, SAMPLE *right, int le
   if (length <= 0)
     return;
 
-  lout = jack_port_get_buffer( data->port_l, length );
-  rout = jack_port_get_buffer( data->port_r, length );
+  lout = jack_port_get_buffer( data->port_l, length+offset );
+  rout = jack_port_get_buffer( data->port_r, length+offset );
   
 
   for (i = 0; i < length; i++) {
@@ -128,7 +128,7 @@ PRIVATE void playport_play_fragment(OData *data, SAMPLE *samples, int length) {
   if (length <= 0)
     return;
 
-  out = jack_port_get_buffer( data->port, length );
+  out = jack_port_get_buffer( data->port, length+offset );
   
 
   for (i = 0; i < length; i++) {
@@ -187,11 +187,11 @@ PRIVATE void playport_realtime_handler(Generator *g, AEvent *event) {
 PRIVATE int init_instance(Generator *g) {
   Data *data;
 
-  if (instance_count > 0)
+  instance_count++;
+  if (instance_count > 1)
     /* Not allowed more than one of these things. */
     return 0;
 
-  instance_count++;
   jack_instance_count++;
 
   data = safe_malloc(sizeof(Data));
@@ -201,6 +201,9 @@ PRIVATE int init_instance(Generator *g) {
 
   data->port_l = jack_port_register (galan_jack_get_client(), "std_left", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
   data->port_r = jack_port_register (galan_jack_get_client(), "std_right", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+
+  if( (data->port_l == NULL) || (data->port_r == NULL) )
+	  return 0;
 
   g->data = data;
 

@@ -77,5 +77,6 @@ extern void sheet_register_ref( Sheet *s, Component *comp );
 extern void sheet_unregister_ref( Sheet *s, Component *comp );
 extern gboolean sheet_has_refs( Sheet *s );
 extern void sheet_kill_refs( Sheet *s );
+extern void sheet_set_dirty( Sheet *s, gboolean d );
 
 #endif

@@ -258,7 +258,40 @@ PRIVATE void save_file_to(const char *filename, Sheet *sheet) {
   fclose(f);
 }
 
+PUBLIC gboolean sheet_dont_like_be_destroyed( Sheet *sheet ) {
 
+    if( sheet->dirty ) {
+	GtkWidget *dirtydialog = gtk_message_dialog_new( 
+		GTK_WINDOW( mainwin ),
+		GTK_DIALOG_DESTROY_WITH_PARENT,
+		GTK_MESSAGE_WARNING,
+		GTK_BUTTONS_NONE,
+		"Sheet is not saved !!!\nGo ahead ?" );
+
+	gtk_dialog_add_button( GTK_DIALOG( dirtydialog ), GTK_STOCK_SAVE, 0 );
+	gtk_dialog_add_button( GTK_DIALOG( dirtydialog ), GTK_STOCK_REMOVE, GTK_RESPONSE_REJECT );
+	gtk_dialog_add_button( GTK_DIALOG( dirtydialog ), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL );
+
+	gint dialog_result = gtk_dialog_run( GTK_DIALOG( dirtydialog ) );
+	gtk_widget_destroy( GTK_WIDGET( dirtydialog ) );
+
+	switch( dialog_result ) {
+	    case 0:
+		if( save_sheet( sheet, NULL ) )
+		    return 0;
+		else
+		    return 1;
+	    case GTK_RESPONSE_REJECT:
+		sheet_set_dirty( sheet, FALSE );
+		return 0;
+				
+	    case GTK_RESPONSE_CANCEL:
+		return 1;
+	}
+    }
+
+    return 0;
+}
 
 PRIVATE void save_sheet_callback(GtkWidget *widget, GtkWidget *fs) {
   const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));

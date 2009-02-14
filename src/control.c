@@ -171,45 +171,6 @@ PRIVATE void delete_ctrl_handler(GtkWidget *widget, Control *c) {
   control_kill_control(c, FALSE);
 }
 
-#if 0
-PUBLIC void control_update_bg(Control *c) {
-    GError *err = NULL;
-
-    if( c->desc->kind != CONTROL_KIND_PANEL )
-	return;
-
-
-    if( c->testbg_active || c->this_panel->current_bg ) {
-
-	GdkPixbuf *pb = NULL;
-	GdkPixmap *pixmap;
-	GdkBitmap *mask;
-
-	if( c->testbg_active ) {
-	    pb = gdk_pixbuf_new_from_file( PIXMAPDIRIFY( "galan-bg-ref.png" ), &err );
-	} else {
-	    if( c->this_panel->current_bg )
-		pb = gdk_pixbuf_new_from_file( c->this_panel->current_bg, &err );
-	}
-
-	if( ! GTK_WIDGET_MAPPED( c->widget ) )
-	    return;
-
-	if( !pb ) {
-	    popup_msgbox("Error Loading Pixmap", MSGBOX_OK, 120000, MSGBOX_OK,
-		    "File not found, or file format error: %s",
-		    c->this_panel->current_bg);
-	    return;
-	}
-
-	gdk_pixbuf_render_pixmap_and_mask( pb, &pixmap, &mask, 100 );
-	gdk_window_set_back_pixmap( GTK_LAYOUT(c->widget)->bin_window, pixmap, FALSE );
-
-    } else {
-	gtk_style_set_background(c->widget->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
-    }
-}
-#endif
 PUBLIC void control_update_bg(Control *c) {
     GError *err = NULL;
 
@@ -241,6 +202,8 @@ PUBLIC void control_update_bg(Control *c) {
 		    }
 
 		    gdk_pixbuf_render_pixmap_and_mask( pb, &pixmap, &mask, 100 );
+	gdk_window_set_back_pixmap( GTK_LAYOUT(c->widget)->bin_window, pixmap, FALSE );
+	gtk_widget_queue_draw( c->widget );
 		    break;
 		case CONTROL_PANEL_BG_GRADIENT: 
 		    {
@@ -279,6 +242,9 @@ PUBLIC void control_update_bg(Control *c) {
 			cairo_stroke( cr );
 			cairo_pattern_destroy( pat );
 			cairo_destroy( cr );
+	gdk_window_set_back_pixmap( GTK_LAYOUT(c->widget)->bin_window, pixmap, FALSE );
+	gtk_widget_queue_draw( c->widget );
+
 
 			break;
 		    }
@@ -289,50 +255,11 @@ PUBLIC void control_update_bg(Control *c) {
 	}
 
 
-	gdk_window_set_back_pixmap( GTK_LAYOUT(c->widget)->bin_window, pixmap, FALSE );
-	gtk_widget_queue_draw( c->widget );
-
     } else {
 	//gtk_style_set_background(c->widget->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
 	gtk_style_set_background(control_panel->style, GTK_LAYOUT(c->widget)->bin_window, GTK_STATE_NORMAL);
     }
 }
-
-#if 0
-PRIVATE void change_bg_callback(GtkWidget *widget, GtkWidget *fs) {
-
-  const char *newname = gtk_file_selection_get_filename(GTK_FILE_SELECTION(fs));
-  Control *c = gtk_object_get_user_data( GTK_OBJECT( fs ));
-
-  if( c->desc->kind != CONTROL_KIND_PANEL )
-      return;
-
-  if( c->this_panel->bg_image_name )
-      free( c->this_panel->bg_image_name );
-
-  c->this_panel->bg_image_name = safe_string_dup( newname );
-
-  control_update_bg( c ); 
-  
-  gtk_widget_destroy(fs);
-}
-
-PRIVATE void change_bg_handler(GtkWidget *widget, Control *c) {
-  GtkWidget *fs = gtk_file_selection_new("Load Background");
-
-  if (c->this_panel->bg_image_name != NULL)
-    gtk_file_selection_set_filename(GTK_FILE_SELECTION(fs), c->this_panel->bg_image_name);
-
-  gtk_object_set_user_data( GTK_OBJECT(fs), c );
-
-  gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button), "clicked",
-		     GTK_SIGNAL_FUNC(change_bg_callback), fs);
-  gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button), "clicked",
-			    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(fs));
-
-  gtk_widget_show(fs);
-}
-#endif
 
 PRIVATE void change_bg_handler(GtkWidget *widget, Control *c) {
     GtkWidget *dialog, *vbox2, *color1, *color2, *filename, *framecolor; //*type;

@@ -48,9 +48,10 @@ PRIVATE GList *jack_process_callbacks = NULL;
 
 PRIVATE SAMPLETIME jack_timestamp = 0;
 
-PRIVATE Control *midi_map[128];
+PRIVATE Control *midi_map[128*16];
 PRIVATE Control *midilearn_target = NULL;
 PRIVATE int      midilearn_CC = 0;
+PRIVATE int      midilearn_CH = 0;
 
 // Registering Process Callbacks (used for midi ports)
 
@@ -129,10 +130,9 @@ PUBLIC void midilearn_set_target_control( Control *c ) {
 
 PUBLIC void midilearn_remove_control( Control *c ) {
     int i;
-    for( i=0; i<128; i++ ) {
+    for( i=0; i<(128*16); i++ ) {
 	if( midi_map[i] == c ) {
 	    midi_map[i] = NULL;
-	    break;
 	}
     }
 }
@@ -145,10 +145,10 @@ PUBLIC int midilearn_check_result( void ) {
 }
 	
 PUBLIC ObjectStoreDatum *midi_map_pickle(ObjectStore *db) {
-  ObjectStoreDatum *result = objectstore_datum_new_array(128);
+  ObjectStoreDatum *result = objectstore_datum_new_array(128*16);
   int i;
 
-  for (i = 0; i < 128; i++) {
+  for (i = 0; i < (128*16); i++) {
 	  if( midi_map[i] )
 		  objectstore_datum_array_set(result, i, objectstore_datum_new_object(control_pickle(midi_map[i], db)));
 	  else
@@ -161,6 +161,11 @@ PUBLIC ObjectStoreDatum *midi_map_pickle(ObjectStore *db) {
 PUBLIC void unpickle_midi_map_array(ObjectStoreDatum *array, ObjectStore *db) {
   int i, len;
   len = objectstore_datum_array_length(array);
+  if( len > 128*16 ) {
+	  printf( "Error midi_map len wrong !!!" );
+	  return;
+  }
+
   for (i = 0; i < len; i++) {
     ObjectStoreDatum *elt = objectstore_datum_array_get(array, i);
     ObjectStoreItem *item = objectstore_get_item_by_key(db, objectstore_datum_object_key(elt));
@@ -190,25 +195,31 @@ PRIVATE void process_midi_control_port( jack_nframes_t nframes ) {
 		if( jack_midi_event_get( &jackevent, port_buffer, i ) != 0 )
 			break;
 
-		if( (jackevent.buffer[0] & 0xf0) == 0xb0 && midilearn_target ) {
-			midilearn_CC = jackevent.buffer[1];
-			midi_map[midilearn_CC] = midilearn_target;
-			midilearn_target = NULL;
-		} else if( (jackevent.buffer[0] & 0xf0) == 0xb0 && midi_map[jackevent.buffer[1]] != NULL ) {
-			// midi mapped.
-			Control *c = midi_map[jackevent.buffer[1]];
-			if( c != NULL ) {
-			    // XXX: need to lock control here.
-			    // and send out the data.
-			    gdouble rng = c->max - c->min;
-			    gdouble cc  = jackevent.buffer[2];
-			    gdouble val = c->min + rng * cc/127.0;
+		if( (jackevent.buffer[0] & 0xf0) == 0xb0 ) {
+			int CC = jackevent.buffer[1];
+			int CH = jackevent.buffer[0] & 0x0f;
 
-			    control_emit( c, val );
+			if( CC>=128 )
+			    continue;
 
+			if( midilearn_target ) {
+			    midi_map[CC+CH*128] = midilearn_target;
+			    midilearn_target = NULL;
+			} else if ( midi_map[CC+CH*128] != NULL ) {
+			    // midi mapped.
+
+			    Control *c = midi_map[CC+CH*128];
+			    if( c != NULL ) {
+				// XXX: need to lock control here.
+				// and send out the data.
+				gdouble rng = c->max - c->min;
+				gdouble cc  = jackevent.buffer[2];
+				gdouble val = c->min + rng * cc/127.0;
+
+				control_emit( c, val );
+			    }
 			}
-
-		} 
+		}
 	}
 }
 // Process_CB
@@ -298,7 +309,7 @@ PUBLIC void init_jack(void) {
 	    exit(10);
     }
     midi_control_port = jack_port_register ( jack_client, "control", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
-    for(i=0; i<128; i++ ) {
+    for(i=0; i<(128*16); i++ ) {
 	midi_map[i] = NULL;
     }
 }

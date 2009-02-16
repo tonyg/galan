@@ -28,7 +28,7 @@ plugin_LTLIBRARIES = \
 	libintegrate.la libdiff.la libnotetofreq.la libfbdelay.la libpowerspectrum.la\
 	libarrwindow.la libarrmul.la libarradd.la libra2evt.la libsigpow.la libsigsignum.la libsigabs.la libvoice_allocator.la\
 	libmidievt_noteon.la libmidievt_noteoff.la libmidievt_cc.la libmidievt_cc_demultiplex.la libnumtostring.la\
-	libmidievt_note_decode.la \
+	libmidievt_note_decode.la libevtmodulo.la libevtdiv.la \
 	@OPTIONAL_PLUGINS@
 
 

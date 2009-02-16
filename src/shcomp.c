@@ -240,12 +240,20 @@ PRIVATE Component *shcomp_clone(Component *c, Sheet *sheet) {
   ShCompData *d = c->data;
 
   Sheet *newsheet = sheet_clone( d->sheet );
+
+  if( newsheet == NULL )
+      return NULL;
  
   ShCompInitData id;
   Component *retval;
   
   id.sheet = newsheet;
   retval = comp_new_component( &SheetComponentClass, &id, sheet, 0, 0 );
+
+  if( retval == NULL ) {
+      sheet_remove( newsheet );
+      return NULL;
+  }
 
   if( d->sheet->panel_control_active ) {
 

@@ -266,6 +266,9 @@ PUBLIC Component *comp_clone( Component *c, Sheet *sheet ) {
     }
  
     clone = c->klass->clone_instance( c, sheet );
+    if( clone == NULL )
+	return NULL;
+
     if( sheet == c->sheet ) {
 	clone->x = c->x + 10;
 	clone->y = c->y + 10;

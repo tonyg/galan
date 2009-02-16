@@ -223,13 +223,16 @@ PRIVATE Component *gencomp_clone(Component *c, Sheet *sheet) {
     GenCompInitData *id = g_hash_table_lookup(generatorclasses, d->g->klass->tag);
 
     Component *clone = comp_new_component(  c->klass, id, sheet, 0, 0 );
+    if( clone == NULL )
+	return NULL;
+
     GenCompData *clonedata = clone->data;
 
     gen_kill_generator( clonedata->g );
     clonedata->g = gen_clone( d->g, sheet->control_panel );
 
     return clone;
-    gencomp_resize(clone);
+    //gencomp_resize(clone);
     //sheet_queue_redraw_component( sheet, clone );
 }
 
@@ -583,6 +586,9 @@ PRIVATE void do_clone(Component *c, guint action, GtkWidget *widget) {
     GenCompInitData *id = g_hash_table_lookup(generatorclasses, d->g->klass->tag);
 
     Component *clone = sheet_build_new_component(  c->sheet, c->klass, id );
+    if( clone == NULL )
+	return;
+
     GenCompData *clonedata = clone->data;
     gen_kill_generator( clonedata->g );
     clonedata->g = gen_clone( d->g, c->sheet->control_panel );

@@ -109,6 +109,9 @@ PRIVATE void audio_play_fragment(Data *data, SAMPLE *left, SAMPLE *right, int le
   if (length <= 0)
     return;
 
+  if( (data->port_l==NULL) || (data->port_r==NULL) )
+      return;
+
   lout = jack_port_get_buffer( data->port_l, length+offset );
   rout = jack_port_get_buffer( data->port_r, length+offset );
   
@@ -127,6 +130,9 @@ PRIVATE void playport_play_fragment(OData *data, SAMPLE *samples, int length) {
 
   if (length <= 0)
     return;
+
+  if( data->port == NULL )
+      return;
 
   out = jack_port_get_buffer( data->port, length+offset );
   
@@ -254,15 +260,17 @@ PRIVATE void destroy_instance(Generator *g) {
 
     gen_deregister_realtime_fn(g, realtime_handler);
 
-    if (data != NULL) {
+    if (data != NULL)
+    {
 	if( data->l_buf )
 	    free( data->l_buf );
-
 	if( data->r_buf )
 	    free( data->r_buf );
 
-	jack_port_unregister( galan_jack_get_client(), data->port_l );
-	jack_port_unregister( galan_jack_get_client(), data->port_r );
+	if( data->port_l )
+	    jack_port_unregister( galan_jack_get_client(), data->port_l );
+	if( data->port_r )
+	    jack_port_unregister( galan_jack_get_client(), data->port_r );
 
 	free(data);
     }
@@ -281,7 +289,8 @@ PRIVATE void playport_destroy_instance(Generator *g) {
 	if( data->buf )
 	    free( data->buf );
 
-	jack_port_unregister( galan_jack_get_client(), data->port );
+	if( data->port )
+	    jack_port_unregister( galan_jack_get_client(), data->port );
 
 	free(data);
     }
@@ -294,8 +303,9 @@ PRIVATE void recport_destroy_instance(Generator *g) {
 
   if (data != NULL) {
 
-    jack_port_unregister( galan_jack_get_client(), data->port );
-    free(data);
+      if( data->port )
+	  jack_port_unregister( galan_jack_get_client(), data->port );
+      free(data);
   }
 
   jack_instance_count--;
@@ -308,6 +318,8 @@ PRIVATE gboolean output_generator(Generator *g, SAMPLE *buf, int buflen) {
     OUTPUTSAMPLE *in;
     SAMPLETIME offset = gen_get_sampletime() - galan_jack_get_timestamp();
 
+    if( data->port == NULL )
+	return FALSE;
 
     in = jack_port_get_buffer( data->port, buflen+offset );
 
@@ -450,6 +462,9 @@ PRIVATE void midiinport_jackprocess_handler(Generator *g, jack_nframes_t nframes
     AEvent ev;
 
     data->nframes = nframes;
+    if( data->port == NULL )
+	return;
+
     input_buf = jack_port_get_buffer(data->port, nframes);
     input_event_count = jack_midi_get_event_count(input_buf);
 
@@ -495,22 +510,26 @@ PRIVATE int midiinport_init_instance(Generator *g) {
 }
 
 PRIVATE void midiinport_destroy_instance(Generator *g) {
-  MidiInData *data = g->data;
+    MidiInData *data = g->data;
 
     galan_jack_deregister_process_handler(g, midiinport_jackprocess_handler);
-  if (data != NULL) {
+    if (data != NULL) {
 
-    jack_port_unregister( galan_jack_get_client(), data->port );
-    free(data);
-  }
+	if( data->port )
+	    jack_port_unregister( galan_jack_get_client(), data->port );
+	free(data);
+    }
 
-  jack_instance_count--;
+    jack_instance_count--;
 }
 
 PRIVATE void midioutport_jackprocess_handler( Generator *g, jack_nframes_t nframes ) {
     MidiInData *data = g->data;
 
     void * output_buf;
+    if( data->port == NULL )
+	return;
+
     output_buf = jack_port_get_buffer(data->port, nframes);
 
     jack_midi_clear_buffer( output_buf );
@@ -522,6 +541,9 @@ PRIVATE void midioutport_midievent_handler(Generator *g, AEvent *event) {
     MidiInData *data = g->data;
 
     void * output_buf;
+    if( data->port == NULL )
+	return;
+
     output_buf = jack_port_get_buffer(data->port, data->nframes);
 
     jack_midi_event_write( output_buf,
@@ -548,17 +570,18 @@ PRIVATE int midioutport_init_instance(Generator *g) {
 }
 
 PRIVATE void midioutport_destroy_instance(Generator *g) {
-  MidiInData *data = g->data;
+    MidiInData *data = g->data;
 
     //gen_deregister_realtime_fn(g, midioutport_realtime_handler);
     galan_jack_deregister_process_handler( g, midioutport_jackprocess_handler );
-  if (data != NULL) {
+    if (data != NULL) {
 
-    jack_port_unregister( galan_jack_get_client(), data->port );
-    free(data);
-  }
+	if( data->port )
+	    jack_port_unregister( galan_jack_get_client(), data->port );
+	free(data);
+    }
 
-  jack_instance_count--;
+    jack_instance_count--;
 }
 #endif
 

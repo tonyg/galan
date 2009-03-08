@@ -759,6 +759,8 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
       gen_update_controls( c->g, -1 );
   }
 
+  if( c->widget )
+	  g_object_ref( G_OBJECT(c->widget) );
 
   return c;
 }
@@ -788,6 +790,8 @@ PUBLIC void control_kill_control(Control *c, gboolean lock_taken) {
 
 PRIVATE void control_dispose( Control *c )
 {
+  if( c->widget )
+      g_object_unref( G_OBJECT( c->widget ) );
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );
   //gtk_widget_hide(c->whole);

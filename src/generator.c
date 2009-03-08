@@ -863,12 +863,10 @@ PUBLIC void gen_register_control(Generator *g, Control *c) {
 
 PUBLIC void gen_deregister_control(Generator *g, Control *c, gboolean lock_taken) {
 	if( !lock_taken )
-    g_mutex_lock( g->controls_mutex );
-  g->controls = g_list_remove(g->controls, c);
+		g_mutex_lock( g->controls_mutex );
+	g->controls = g_list_remove(g->controls, c);
 	if( !lock_taken )
-    g_mutex_unlock( g->controls_mutex );
-  //GList *cl = g_list_find( g->controls, c );
-  //cl->data = NULL;
+		g_mutex_unlock( g->controls_mutex );
 }
 
 /**

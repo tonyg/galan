@@ -43,6 +43,8 @@ PRIVATE jack_port_t *midi_control_port = NULL;
 
 PRIVATE AClock *jack_clock = NULL;
 
+PRIVATE GStaticMutex transport_clocks_mutex = G_STATIC_MUTEX_INIT;
+PRIVATE GStaticMutex jack_process_callbacks_mutex = G_STATIC_MUTEX_INIT;
 PRIVATE GList *transport_clocks = NULL;
 PRIVATE GList *jack_process_callbacks = NULL;
 
@@ -51,7 +53,6 @@ PRIVATE SAMPLETIME jack_timestamp = 0;
 PRIVATE Control *midi_map[128*16];
 PRIVATE Control *midilearn_target = NULL;
 PRIVATE int      midilearn_CC = 0;
-PRIVATE int      midilearn_CH = 0;
 
 // Registering Process Callbacks (used for midi ports)
 
@@ -75,6 +76,7 @@ PUBLIC void galan_jack_deregister_process_handler(Generator *g, jack_process_han
   jack_process_callback_t jpc;
   GList *link;
 
+  g_static_mutex_lock( &jack_process_callbacks_mutex );
   jpc.g = g;
   jpc.handler = func;
   link = g_list_find_custom(jack_process_callbacks, &jpc, (GCompareFunc) jack_process_callback_cmp );
@@ -84,6 +86,7 @@ PUBLIC void galan_jack_deregister_process_handler(Generator *g, jack_process_han
     link->data = NULL;
     jack_process_callbacks = g_list_remove_link(jack_process_callbacks, link);
   }
+  g_static_mutex_unlock( &jack_process_callbacks_mutex );
 }
 
 
@@ -110,15 +113,17 @@ PUBLIC void galan_jack_deregister_transport_clock( Generator *g, transport_frame
   transport_frame_event_t jpc;
   GList *link;
 
+  g_static_mutex_lock( &transport_clocks_mutex );
   jpc.g = g;
   jpc.handler = handler;
   link = g_list_find_custom(transport_clocks, &jpc, (GCompareFunc) transport_event_handler_cmp );
 
   if (link != NULL) {
+    transport_clocks = g_list_remove_link( transport_clocks, link );
     free(link->data);
     link->data = NULL;
-    transport_clocks = g_list_remove_link( transport_clocks, link );
   }
+  g_static_mutex_unlock( &transport_clocks_mutex );
 }
 
 
@@ -230,35 +235,43 @@ PRIVATE int process_callback( jack_nframes_t nframes, void *data ) {
 
     process_midi_control_port( nframes );
 
-    if( transport_clocks ) {
-	//jack_transport_info_t trans_info;
-	jack_position_t jack_trans_pos;
-	jack_transport_state_t jack_trans_state;
-	GList *l;
+    if( g_static_mutex_trylock( &transport_clocks_mutex ) )
+    {
+	if( transport_clocks ) {
+	    //jack_transport_info_t trans_info;
+	    jack_position_t jack_trans_pos;
+	    jack_transport_state_t jack_trans_state;
+	    GList *l;
 
-	jack_trans_state = jack_transport_query( jack_client, &jack_trans_pos );
+	    jack_trans_state = jack_transport_query( jack_client, &jack_trans_pos );
 
-	if( jack_trans_state == JackTransportRolling ) {
-	    double bpm;
-	    if( jack_trans_pos.valid & JackPositionBBT ) {
-		bpm = jack_trans_pos.beats_per_minute;
-	    } else {
-		bpm = 120.0;
-	    }
+	    if( jack_trans_state == JackTransportRolling ) {
+		double bpm;
+		if( jack_trans_pos.valid & JackPositionBBT ) {
+		    bpm = jack_trans_pos.beats_per_minute;
+		} else {
+		    bpm = 120.0;
+		}
 
-	    for( l = transport_clocks; l; l = g_list_next( l ) ) {
-		transport_frame_event_t *cb = l->data;
-		cb->handler( cb->g, jack_trans_pos.frame, nframes, bpm );
+		for( l = transport_clocks; l; l = g_list_next( l ) ) {
+		    transport_frame_event_t *cb = l->data;
+		    cb->handler( cb->g, jack_trans_pos.frame, nframes, bpm );
+		}
 	    }
 	}
+	g_static_mutex_unlock( &transport_clocks_mutex );
     }
 
-    if( jack_process_callbacks ) {
-	GList *l;
-	for( l = jack_process_callbacks; l; l = g_list_next( l ) ) {
+    if( g_static_mutex_trylock( &jack_process_callbacks_mutex ) )
+    {
+	if( jack_process_callbacks ) {
+	    GList *l;
+	    for( l = jack_process_callbacks; l; l = g_list_next( l ) ) {
 		jack_process_callback_t *cb = l->data;
 		cb->handler( cb->g, nframes );
+	    }
 	}
+	g_static_mutex_unlock( &jack_process_callbacks_mutex );
     }
     gen_clock_mainloop_have_remaining( nframes );
 

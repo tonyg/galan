@@ -100,6 +100,7 @@ struct ControlDescriptor {
 };
 
 struct Control {
+  int refcnt;
   ControlDescriptor *desc;
   ControlPanel *panel;
   char *name;				/* overriding name. Set to NULL to use default. */
@@ -138,6 +139,9 @@ extern GtkWidget *control_panel;
 
 extern Control *control_new_control(ControlDescriptor *desc, Generator *g, ControlPanel *panel );
 extern void control_kill_control(Control *c, gboolean lock_taken);
+
+extern void control_ref( Control *c );
+extern void control_unref( Control *c );
 
 extern Control *control_unpickle(ObjectStoreItem *item);
 extern ObjectStoreItem *control_pickle(Control *c, ObjectStore *db);

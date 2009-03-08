@@ -603,6 +603,7 @@ PUBLIC Control *control_new_control(ControlDescriptor *desc, Generator *g, Contr
   Control *c = safe_malloc(sizeof(Control));
   GtkAdjustment *adj = NULL;
 
+  c->refcnt = 1;
   c->desc = desc;
   c->name = NULL;
   c->min = desc->min;
@@ -782,6 +783,11 @@ PUBLIC void control_kill_control(Control *c, gboolean lock_taken) {
   if (c->g != NULL)
     gen_deregister_control(c->g, c, lock_taken);
 
+  control_unref( c );
+}
+
+PRIVATE void control_dispose( Control *c )
+{
   if( c->desc->destroy != NULL )
       c->desc->destroy( c );
   //gtk_widget_hide(c->whole);
@@ -799,6 +805,19 @@ PUBLIC void control_kill_control(Control *c, gboolean lock_taken) {
   // need to add a lock for the controls list.
   //c->kill_me = TRUE;
   //control_update_value( c );
+}
+
+PUBLIC void control_ref( Control *c )
+{
+	g_atomic_int_inc( &(c->refcnt) );
+}
+
+PUBLIC void control_unref( Control *c )
+{
+	if( g_atomic_int_dec_and_test( &(c->refcnt) ) )
+	{
+		control_dispose( c );
+	}
 }
 
 PRIVATE int find_control_index(Control *c) {
@@ -1037,27 +1056,17 @@ PUBLIC void control_update_range(Control *c) {
 }
 
 PUBLIC void control_update_value(Control *c) {
-    //c->update_refcount++;
+    control_ref( c );
     g_async_queue_push( update_queue, c );
 }
 
 PRIVATE  void control_update_value_real(Control *c) {
-//    if( c->kill_me ) {
-//	if( c->update_refcount > 0 ) {
-//	    printf( "update_refcount = %d\n", c->update_refcount );
-//	} else {
-//	    safe_free( c );
-//	}
-//  } else {
-
 	c->events_flow = FALSE;	/* as already stated... not very elegant. */
 
 	if (c->desc->refresh != NULL)
 	    c->desc->refresh(c);
 
 	c->events_flow = TRUE;
-
-//    }
 }
 
 PRIVATE gboolean control_panel_delete_handler(GtkWidget *cp, GdkEvent *event) {
@@ -1279,8 +1288,8 @@ PRIVATE gpointer update_processor( gpointer data ) {
     while( 1 ) {
 	Control *c = g_async_queue_pop( update_queue );
 	gdk_threads_enter();
-	//c->update_refcount--;
 	control_update_value_real( c );
+	control_unref( c );
 	gdk_threads_leave();
     }
     return NULL;

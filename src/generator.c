@@ -389,6 +389,7 @@ PRIVATE void check_for_kills( void ) {
 
   while( (g = g_async_queue_try_pop( gen_kill_queue )) != NULL ) {
       gen_purge_event_queue_refs(g);
+      gen_purge_realtime_fns(g);
 
       empty_all_connections(g->klass->in_count, g->in_events, 0, 0);
       empty_all_connections(g->klass->out_count, g->out_events, 0, 1);

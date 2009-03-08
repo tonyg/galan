@@ -256,15 +256,14 @@ PRIVATE void insert_fn_ec(GList **lst, event_callback *ec) {
   *lst = g_list_prepend(*lst, ec);
 }
 PRIVATE gint event_callback_cmp(event_callback *a, event_callback *b) {
-  return !((a->g == b->g) && (a->fn == b->fn));
+  return !(a->g == b->g);
 }
 
-PRIVATE void remove_fn(GList **lst, Generator *g, AEvent_handler_t func) {
+PRIVATE void remove_all_fns(GList **lst, Generator *g) {
   event_callback ec;
   GList *link;
 
   ec.g = g;
-  ec.fn = func;
   link = g_list_find_custom(*lst, &ec, (GCompareFunc) event_callback_cmp);
 
   if (link != NULL) {
@@ -288,8 +287,8 @@ PRIVATE void remove_fn(GList **lst, Generator *g, AEvent_handler_t func) {
  * This function must be threadsafe.
  * an async queue is a good way to accomplish this.
  *
- * should the Destruction of an instance be threadsafe also ?
- * it must be,,,
+ * The deregister_realtime_fn function is changed to a noop.
+ * it gets removed during generator destruction.
  * 
  */
 
@@ -299,8 +298,6 @@ PUBLIC void gen_register_realtime_fn(Generator *g, AEvent_handler_t func) {
     ec->fn = func;
 
     g_async_queue_push( addrt_queue, ec );
-
-  //insert_fn(&rtfuncs, g, func);
 }
 
 /**
@@ -308,10 +305,19 @@ PUBLIC void gen_register_realtime_fn(Generator *g, AEvent_handler_t func) {
  *
  * \param g The Generator
  * \param func The callback that should be removed
+ *
+ * i will make this a no-op.
+ * its only called in destructors and
+ * i will remove all functions for a generator in the RT stage of removal.
  */
 
 PUBLIC void gen_deregister_realtime_fn(Generator *g, AEvent_handler_t func) {
-  remove_fn(&rtfuncs, g, func);
+  //remove_fn(&rtfuncs, g, func);
+}
+
+PUBLIC void gen_purge_realtime_fns( Generator *g )
+{
+    remove_all_fns( &rtfuncs, g );
 }
 
 PRIVATE void sortin_rtevents(void) {
@@ -322,7 +328,7 @@ PRIVATE void sortin_rtevents(void) {
 }
 
 PRIVATE void send_rt_event(event_callback *ec, AEvent *rtevent) {
-    // why a local copy ?
+    // why a local copy ? because the generator can modify an event passed.
     // warning this only works for REALTIME events.
     AEvent local_copy = *rtevent;
     ec->fn(ec->g, &local_copy);

@@ -33,6 +33,7 @@
 #include "iscomp.h"
 #include "shcomp.h"
 #include "msgbox.h"
+#include "galan_jack.h"
 
 #include "galan-compaction.h"
 

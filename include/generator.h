@@ -357,6 +357,7 @@ extern void gen_purge_inputevent_queue_refs(Generator *g);
 
 extern void gen_register_realtime_fn(Generator *g, AEvent_handler_t func);
 extern void gen_deregister_realtime_fn(Generator *g, AEvent_handler_t func);
+extern void gen_purge_realtime_fns( Generator *g );
 extern void gen_send_realtime_fns(AEvent *e);
 
 /* gint gen_mainloop_once(void)

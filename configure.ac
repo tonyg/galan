@@ -64,7 +64,12 @@ AC_ARG_ENABLE(emu10k1,
 [  --enable-emu10k1        Compile emu10k1 support],
 	OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} libemu10k1.la" )
 
-GOB2_CHECK([2.0.0])
+dnl GOB2_CHECK([2.0.0])
+
+AC_PATH_PROG(GOB2,gob2)
+	if test x$GOB2 = x; then	
+		AC_MSG_ERROR("** gob2 not found")
+	fi
 	    
 PKG_CHECK_MODULES( GTK, gtk+-2.0 >= 2.0 )
 PKG_CHECK_MODULES( GTHREAD, gthread-2.0 >= 2.0 )

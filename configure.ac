@@ -38,10 +38,9 @@ dnl ===========================================================================
 AC_SUBST(OPTIONAL_PLUGINS)
 OPTIONAL_PLUGINS=
 
-AC_CHECK_HEADER(esd.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} libesd_output.la")
 AC_CHECK_HEADER(vorbis/vorbisfile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} libogg_ra.la")
 AC_CHECK_HEADERS(audiofile.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} libpcm_out.la libvoice.la")
-AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} libjoyport.la liboss_output.la liboss_input.la libmidi_seq_clock.la libmidiclock.la")
+AC_CHECK_HEADERS(sys/soundcard.h, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} libjoyport.la libmidi_seq_clock.la libmidiclock.la")
 
 dnl PKG_CHECK_MODULES(FST, libfst >= 1.3, OPTIONAL_PLUGINS="${OPTIONAL_PLUGINS} fst.la", AC_MSG_RESULT(fst not found))
 

@@ -13,8 +13,8 @@ plugindir = $(pkglibdir)/plugins
 # see the infopages for automake.)
 
 
-EXTRA_LTLIBRARIES = libesd_output.la libpcm_out.la libogg_ra.la libemu10k1.la libalsa_midi.la libsndfile_in.la libsndfile_out.la \
-		 libjackplugin.la libvoice.la libmidi_seq_clock.la  libmidiclock.la liboss_output.la liboss_input.la libjoyport.la \
+EXTRA_LTLIBRARIES = libpcm_out.la libogg_ra.la libemu10k1.la libalsa_midi.la libsndfile_in.la libsndfile_out.la \
+		 libjackplugin.la libvoice.la libmidi_seq_clock.la  libmidiclock.la libjoyport.la \
 		 libfft.la libifft.la libfst.la libcanvascontrol.la
 
 plugin_LTLIBRARIES = \
@@ -38,9 +38,6 @@ LIBS = @GTK_LIBS@ @GTHREAD_LIBS@ @LASH_LIBS@ $(srcdir)/../src/libgalan.la
 INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglibdir)\" -DSITE_PKGDATA_DIR=\"$(pkgdatadir)\"  @LASH_CFLAGS@
 
 CLEANFILES=*.la.c
-
-libesd_output_la_INCLUDES=`esd-config --cflags`
-libesd_output_la_LDFLAGS=`esd-config --libs` -rpath $(plugindir)
 
 libalsa_midi_la_INCLUDES= @ALSA_CFLAGS@
 libalsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(plugindir)

@@ -40,39 +40,39 @@ INCLUDES = -I.. -I$(srcdir)/../include @GTK_CFLAGS@ -DSITE_PKGLIB_DIR=\"$(pkglib
 CLEANFILES=*.la.c
 
 libalsa_midi_la_INCLUDES= @ALSA_CFLAGS@
-libalsa_midi_la_LDFLAGS= @ALSA_LIBS@ -rpath $(plugindir)
+libalsa_midi_la_LDFLAGS= @ALSA_LIBS@ $(AM_LDFLAGS)
 libjackplugin_la_INCLUDES= @JACK_CFLAGS@
-libjackplugin_la_LDFLAGS= @JACK_LIBS@ -rpath $(plugindir)
+libjackplugin_la_LDFLAGS= @JACK_LIBS@ $(AM_LDFLAGS)-rpath $(plugindir)
 
 libcanvascontrol_la_CFLAGS = @CANVAS_CFLAGS@
-libcanvascontrol_la_LDFLAGS = @CANVAS_LIBS@ -rpath $(plugindir)
+libcanvascontrol_la_LDFLAGS = @CANVAS_LIBS@ $(AM_LDFLAGS)
 
-libmidi_seq_clock_la_LDFLAGS= -rpath $(plugindir)
-libmidiclock_la_LDFLAGS= -rpath $(plugindir)
-libjoyport_la_LDFLAGS= -rpath $(plugindir)
+libmidi_seq_clock_la_LDFLAGS= $(AM_LDFLAGS)
+libmidiclock_la_LDFLAGS= $(AM_LDFLAGS)
+libjoyport_la_LDFLAGS= $(AM_LDFLAGS)
 
 
 libsndfile_in_la_INCLUDES= @SNDFILE_CFLAGS@
-libsndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
+libsndfile_in_la_LDFLAGS= @SNDFILE_LIBS@ $(AM_LDFLAGS)
 libsndfile_out_la_INCLUDES= @SNDFILE_CFLAGS@
-libsndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ -rpath $(plugindir)
+libsndfile_out_la_LDFLAGS= @SNDFILE_LIBS@ $(AM_LDFLAGS)
 
-libvoice_la_LDFLAGS=-laudiofile -rpath $(plugindir)
-libpcm_out_la_LDFLAGS=-laudiofile -rpath $(plugindir)
+libvoice_la_LDFLAGS=-laudiofile $(AM_LDFLAGS)
+libpcm_out_la_LDFLAGS=-laudiofile $(AM_LDFLAGS)
 
-libogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ -rpath $(plugindir)
+libogg_ra_la_LDFLAGS=-lvorbis -lvorbisfile @GTHREAD_LIBS@ $(AM_LDFLAGS)
 libogg_ra_la_INCLUDES= @GTHREAD_CFLAGS@
 
 libemu10k1_la_SOURCES = libemu10k1.c libemu10k1-iocomp.c libemu10k1-patchcomp.c
 libladspa_la_SOURCES = libladspa.c libladspa-load.c
-libladspa_la_LDFLAGS = @LRDF_LIBS@ @GMODULE_LIBS@
+libladspa_la_LDFLAGS = @LRDF_LIBS@ @GMODULE_LIBS@ $(AM_LDFLAGS) 
 libladspa_la_INCLUDES = @LRDF_CFLAGS@ @GMODULE_CFLAGS@
 
-libfst_la_LDFLAGS = @FST_LIBS@ -rpath $(plugindir)
+libfst_la_LDFLAGS = @FST_LIBS@ $(AM_LDFLAGS)
 libfst_la_INCLUDES = @FST_CFLAGS@
 
-libfft_la_LDFLAGS= @FFTW_LIBS@
-libifft_la_LDFLAGS= @FFTW_LIBS@
+libfft_la_LDFLAGS= @FFTW_LIBS@ $(AM_LDFLAGS)
+libifft_la_LDFLAGS= @FFTW_LIBS@ $(AM_LDFLAGS)
 
 SUFFIXES= .la.c
 
